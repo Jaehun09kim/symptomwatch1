@@ -64,12 +64,9 @@ describe("environment", () => {
     vi.stubEnv("SESSION_SECRET", "x".repeat(32));
     expect(getEnv().SEED_SHARED_DEMO_ACCOUNTS).toBe(false);
   });
-  it("requires both Supabase auth settings", () => {
+  it("refuses the not-yet-implemented Supabase Auth adapter instead of half-working", () => {
     vi.stubEnv("AUTH_PROVIDER", "supabase");
-    expect(() => getEnv()).toThrow(/NEXT_PUBLIC_SUPABASE/);
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://demo.supabase.co");
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "demo-public-key");
-    expect(getEnv().AUTH_PROVIDER).toBe("supabase");
+    expect(() => getEnv()).toThrow(/not part of v0.1/);
   });
   it("accepts explicit false booleans without truthiness coercion", () => {
     vi.stubEnv("SEED_SHARED_DEMO_ACCOUNTS", "false");

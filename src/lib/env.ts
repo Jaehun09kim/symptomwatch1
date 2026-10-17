@@ -29,8 +29,8 @@ const environmentSchema = z.object({
     issue("DATABASE_URL", "Required when DATABASE_DRIVER=postgres");
   }
   if (env.AUTH_PROVIDER === "supabase") {
-    if (!env.NEXT_PUBLIC_SUPABASE_URL) issue("NEXT_PUBLIC_SUPABASE_URL", "Required for Supabase auth");
-    if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) issue("NEXT_PUBLIC_SUPABASE_ANON_KEY", "Required for Supabase auth");
+    // Planned (docs/DEPLOYMENT.md §"Supabase Auth"); refuse rather than half-work.
+    issue("AUTH_PROVIDER", "The Supabase Auth adapter is not part of v0.1. Use AUTH_PROVIDER=local (works with Supabase Postgres).");
   }
   if (env.NODE_ENV === "production") {
     if (!env.SESSION_SECRET) issue("SESSION_SECRET", "Required in production (at least 32 characters)");

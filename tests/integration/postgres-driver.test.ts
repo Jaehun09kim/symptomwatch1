@@ -40,7 +40,7 @@ describe("postgres driver (wire protocol)", () => {
   });
 
   it("applies migrations idempotently over the wire", async () => {
-    expect(await migrate(db)).toBe(4);
+    expect(await migrate(db)).toBe(5);
   });
 
   it("enforces tenant isolation through SET LOCAL ROLE and RLS", async () => {
