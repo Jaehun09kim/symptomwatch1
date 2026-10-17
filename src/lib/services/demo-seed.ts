@@ -34,6 +34,7 @@ import {
   type ReferenceDate,
 } from "@/lib/demo/dates";
 import { getEnv } from "@/lib/env";
+import { detectForClinic } from "./detection-system";
 
 export interface SyntheticSeedData {
   patients: readonly SyntheticPatient[];
@@ -208,16 +209,14 @@ async function seedClinicalData(
   return patientIds;
 }
 
-/** C5 integration point: run detection inside the same transaction after a full seed/reset. */
+/** Runs detection inside the same transaction after a full seed/reset, so a fresh clinic opens with flags. */
 export async function afterSeed(
   tx: DbTransaction,
   clinicId: string,
   referenceDate: ReferenceDate,
 ): Promise<void> {
-  // Detection is intentionally not implemented by the C0/C2 runtime spike.
-  void tx;
-  void clinicId;
-  void referenceDate;
+  void referenceDate; // seeded dates are relative to the reference date; detection evaluates "now"
+  await detectForClinic(tx, clinicId);
 }
 
 /** Must run in a system transaction; tenant roles cannot provision identities or clinics. */

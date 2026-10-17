@@ -1,0 +1,1017 @@
+{
+  "generatedAt": "2026-10-17T06:49:34.816Z",
+  "asOf": "2026-06-01T12:00:00.000Z",
+  "rulesVersion": "1.0.0",
+  "labelSetVersion": "2026-10-16.1",
+  "config": {
+    "overdueFollowUp": {
+      "graceDays": 14
+    },
+    "labResultMissing": {
+      "graceDays": 7
+    },
+    "referralOutcomeMissing": {
+      "sentGraceDays": 14,
+      "postVisitRecordsDays": 14
+    },
+    "persistentSymptom": {
+      "minEncounters": 2,
+      "minSpanDays": 28
+    }
+  },
+  "dataset": {
+    "patients": 36,
+    "clinics": 2,
+    "units": 79,
+    "positiveUnits": 18
+  },
+  "overall": {
+    "tp": 15,
+    "fp": 3,
+    "fn": 3,
+    "tn": 58,
+    "units": 79,
+    "precision": 0.8333333333333334,
+    "recall": 0.8333333333333334,
+    "f1": 0.8333333333333334,
+    "falsePositiveRate": 0.04918032786885246
+  },
+  "perRule": {
+    "overdue-follow-up": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 1,
+      "tn": 27,
+      "units": 32,
+      "precision": 1,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "falsePositiveRate": 0
+    },
+    "lab-result-missing": {
+      "tp": 4,
+      "fp": 1,
+      "fn": 1,
+      "tn": 15,
+      "units": 21,
+      "precision": 0.8,
+      "recall": 0.8,
+      "f1": 0.8000000000000002,
+      "falsePositiveRate": 0.0625
+    },
+    "referral-outcome-missing": {
+      "tp": 4,
+      "fp": 1,
+      "fn": 0,
+      "tn": 8,
+      "units": 13,
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.888888888888889,
+      "falsePositiveRate": 0.1111111111111111
+    },
+    "persistent-symptom-unresolved": {
+      "tp": 3,
+      "fp": 1,
+      "fn": 1,
+      "tn": 8,
+      "units": 13,
+      "precision": 0.75,
+      "recall": 0.75,
+      "f1": 0.75,
+      "falsePositiveRate": 0.1111111111111111
+    }
+  },
+  "patientLevel": {
+    "tp": 14,
+    "fp": 3,
+    "fn": 3,
+    "tn": 16,
+    "units": 36,
+    "precision": 0.8235294117647058,
+    "recall": 0.8235294117647058,
+    "f1": 0.8235294117647058,
+    "falsePositiveRate": 0.15789473684210525
+  },
+  "units": [
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-01",
+      "subjectId": "hv-01-e1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "3-month return requested; no-show, never rebooked, ~2 months past due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-02",
+      "subjectId": "hv-02-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "3-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-03",
+      "subjectId": "hv-03-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Return after cardiology; structured interval not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-04",
+      "subjectId": "hv-04-e2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Recheck requested at e2 and a later visit (e3) occurred."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-05",
+      "subjectId": "hv-05-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Follow-up completed."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-06",
+      "subjectId": "hv-06-e3",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Recheck not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-07",
+      "subjectId": "hv-07-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Rescheduled at patient request; confirmed future appointment."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-08",
+      "subjectId": "hv-08-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Return after GI; not yet due (the GI gap is an R3 issue)."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-09",
+      "subjectId": "hv-09-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "6-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-11",
+      "subjectId": "hv-11-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Annual return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-13",
+      "subjectId": "hv-13-e1",
+      "expected": true,
+      "predicted": false,
+      "outcome": "FN",
+      "listed": true,
+      "rationale": "Free-text plan: return in 2 weeks for BP recheck; nothing since (~10 weeks)."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-14",
+      "subjectId": "hv-14-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Care transferred to another practice."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-15",
+      "subjectId": "hv-15-e2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Return after GI; not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-16",
+      "subjectId": "hv-16-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-17",
+      "subjectId": "hv-17-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-18",
+      "subjectId": "hv-18-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "10 days past due — within a reasonable scheduling window (boundary)."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-19",
+      "subjectId": "hv-19-e1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "No-show then patient cancellation, never rebooked."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-20",
+      "subjectId": "hv-20-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "6-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-21",
+      "subjectId": "hv-21-e3",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "3-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-22",
+      "subjectId": "hv-22-e2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "6-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-24",
+      "subjectId": "hv-24-e2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "2-month recheck not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-25",
+      "subjectId": "hv-25-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "6-week return occurred (e2). The open issue is the symptom (R4)."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-26",
+      "subjectId": "hv-26-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "6-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-27",
+      "subjectId": "hv-27-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-28",
+      "subjectId": "hv-28-e2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Free-text: reassess at annual exam in 6 months — not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-29",
+      "subjectId": "hv-29-e2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "6-month return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "hv-30",
+      "subjectId": "hv-30-e1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Clinic cancelled the 1-month follow-up and never rebooked."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "og-01",
+      "subjectId": "og-01-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Annual return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "og-02",
+      "subjectId": "og-02-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Return after orthopedics; structured interval not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "og-03",
+      "subjectId": "og-03-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Annual return not yet due."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "og-04",
+      "subjectId": "og-04-e1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "1-month return requested 80 days ago; nothing scheduled."
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientKey": "og-05",
+      "subjectId": "og-05-e1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "3-month return not yet due."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-01",
+      "subjectId": "hv-01-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-02",
+      "subjectId": "hv-02-l1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "A1c never collected, 40 days."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-02",
+      "subjectId": "hv-02-l2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-05",
+      "subjectId": "hv-05-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-07",
+      "subjectId": "hv-07-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-09",
+      "subjectId": "hv-09-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-10",
+      "subjectId": "hv-10-l1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Collected a month ago; no result."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-11",
+      "subjectId": "hv-11-l1",
+      "expected": false,
+      "predicted": true,
+      "outcome": "FP",
+      "listed": true,
+      "rationale": "Result is in the chart under a separate outside-lab entry; clerical only."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-11",
+      "subjectId": "hv-11-l2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-11",
+      "subjectId": "hv-11-l3",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted (outside result)."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-14",
+      "subjectId": "hv-14-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Care transferred."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-16",
+      "subjectId": "hv-16-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-16",
+      "subjectId": "hv-16-l2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Cancelled as duplicate with documented reason."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-17",
+      "subjectId": "hv-17-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Lab draw rescheduled; appointment in 3 days."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-18",
+      "subjectId": "hv-18-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-19",
+      "subjectId": "hv-19-l1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Vitamin D never collected, >4 months."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-19",
+      "subjectId": "hv-19-l2",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "hv-27",
+      "subjectId": "hv-27-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Still within expected turnaround + grace (boundary)."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "og-01",
+      "subjectId": "og-01-l1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Never collected, 45 days."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "og-03",
+      "subjectId": "og-03-l1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Resulted."
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientKey": "og-05",
+      "subjectId": "og-05-l1",
+      "expected": true,
+      "predicted": false,
+      "outcome": "FN",
+      "listed": true,
+      "rationale": "Marked resulted, but specimen hemolyzed and redraw required; none ordered."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-03",
+      "subjectId": "hv-03-r1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Sent 75 days ago; no appointment documented."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-06",
+      "subjectId": "hv-06-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Records received."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-08",
+      "subjectId": "hv-08-r1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Specialist date passed ~7 weeks ago; no records."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-09",
+      "subjectId": "hv-09-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Records received."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-14",
+      "subjectId": "hv-14-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Care transferred."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-15",
+      "subjectId": "hv-15-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Specialist appointment scheduled in the future."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-20",
+      "subjectId": "hv-20-r1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Patient reports visit ~6 weeks ago; no consult note."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-22",
+      "subjectId": "hv-22-r1",
+      "expected": false,
+      "predicted": true,
+      "outcome": "FP",
+      "listed": true,
+      "rationale": "Outcome documented in later visit note; status field never updated."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-26",
+      "subjectId": "hv-26-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Declined by patient; documented."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "hv-30",
+      "subjectId": "hv-30-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Records received."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "og-02",
+      "subjectId": "og-02-r1",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Sent 100 days ago; no appointment documented."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "og-03",
+      "subjectId": "og-03-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Records received."
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientKey": "og-06",
+      "subjectId": "og-06-r1",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Cancelled by patient (the open issue is the symptom — R4)."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-04",
+      "subjectId": "hv-04:cough",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Cough at 3 visits over ~3 months; latest visit documents no plan/work-up/follow-up."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-05",
+      "subjectId": "hv-05:headache",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Documented resolved."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-06",
+      "subjectId": "hv-06:knee_pain",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Documented chronic and managed."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-12",
+      "subjectId": "hv-12:fatigue",
+      "expected": true,
+      "predicted": false,
+      "outcome": "FN",
+      "listed": true,
+      "rationale": "Same concept recorded as fatigue then tiredness; no plan."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-15",
+      "subjectId": "hv-15:abdominal_pain",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "GI work-up documented and scheduled."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-21",
+      "subjectId": "hv-21:headache",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Improving with documented plan and follow-up."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-22",
+      "subjectId": "hv-22:blurred_vision",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Documented resolved."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-24",
+      "subjectId": "hv-24:dizziness",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Medication review documented; recheck not yet due."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-25",
+      "subjectId": "hv-25:shortness_of_breath",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "3 visits, no plan/work-up/follow-up at the last two."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-28",
+      "subjectId": "hv-28:insomnia",
+      "expected": false,
+      "predicted": true,
+      "outcome": "FP",
+      "listed": true,
+      "rationale": "Free-text plan documents counseling, diary, and reassessment."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-29",
+      "subjectId": "hv-29:wheezing",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Documented resolved."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "hv-30",
+      "subjectId": "hv-30:chest_discomfort",
+      "expected": false,
+      "predicted": false,
+      "outcome": "TN",
+      "listed": true,
+      "rationale": "Documented resolved after cardiology."
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientKey": "og-06",
+      "subjectId": "og-06:rash",
+      "expected": true,
+      "predicted": true,
+      "outcome": "TP",
+      "listed": true,
+      "rationale": "Persists; referral cancelled; no alternative plan."
+    }
+  ],
+  "predictions": [
+    {
+      "ruleId": "lab-result-missing",
+      "patientId": "hv-02",
+      "subjectId": "hv-02-l1",
+      "fingerprint": "lab-result-missing:lab_order:hv-02-l1",
+      "title": "Hemoglobin A1c ordered Apr 22, 2026 has no documented collection or result"
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientId": "hv-10",
+      "subjectId": "hv-10-l1",
+      "fingerprint": "lab-result-missing:lab_order:hv-10-l1",
+      "title": "CBC with differential ordered Apr 30, 2026 has no documented result"
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientId": "hv-11",
+      "subjectId": "hv-11-l1",
+      "fingerprint": "lab-result-missing:lab_order:hv-11-l1",
+      "title": "Comprehensive metabolic panel ordered Apr 12, 2026 has no documented collection or result"
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientId": "hv-19",
+      "subjectId": "hv-19-l1",
+      "fingerprint": "lab-result-missing:lab_order:hv-19-l1",
+      "title": "Vitamin D, 25-hydroxy ordered Jan 22, 2026 has no documented collection or result"
+    },
+    {
+      "ruleId": "lab-result-missing",
+      "patientId": "og-01",
+      "subjectId": "og-01-l1",
+      "fingerprint": "lab-result-missing:lab_order:og-01-l1",
+      "title": "Lipid panel ordered Apr 17, 2026 has no documented collection or result"
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientId": "hv-01",
+      "subjectId": "hv-01-e1",
+      "fingerprint": "overdue-follow-up:encounter:hv-01-e1",
+      "title": "No documented follow-up visit after the Jan 2, 2026 request to return within 90 days"
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientId": "hv-19",
+      "subjectId": "hv-19-e1",
+      "fingerprint": "overdue-follow-up:encounter:hv-19-e1",
+      "title": "No documented follow-up visit after the Jan 22, 2026 request to return within 60 days"
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientId": "hv-30",
+      "subjectId": "hv-30-e1",
+      "fingerprint": "overdue-follow-up:encounter:hv-30-e1",
+      "title": "No documented follow-up visit after the Feb 1, 2026 request to return within 30 days"
+    },
+    {
+      "ruleId": "overdue-follow-up",
+      "patientId": "og-04",
+      "subjectId": "og-04-e1",
+      "fingerprint": "overdue-follow-up:encounter:og-04-e1",
+      "title": "No documented follow-up visit after the Mar 13, 2026 request to return within 30 days"
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientId": "hv-04",
+      "subjectId": "hv-04:cough",
+      "fingerprint": "persistent-symptom-unresolved:symptom:hv-04:cough",
+      "title": "Cough recorded at 3 visits since Feb 1, 2026 without a documented plan or resolution"
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientId": "hv-25",
+      "subjectId": "hv-25:shortness_of_breath",
+      "fingerprint": "persistent-symptom-unresolved:symptom:hv-25:shortness_of_breath",
+      "title": "Shortness of breath recorded at 3 visits since Jan 2, 2026 without a documented plan or resolution"
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientId": "hv-28",
+      "subjectId": "hv-28:insomnia",
+      "fingerprint": "persistent-symptom-unresolved:symptom:hv-28:insomnia",
+      "title": "Insomnia recorded at 2 visits since Mar 3, 2026 without a documented plan or resolution"
+    },
+    {
+      "ruleId": "persistent-symptom-unresolved",
+      "patientId": "og-06",
+      "subjectId": "og-06:rash",
+      "fingerprint": "persistent-symptom-unresolved:symptom:og-06:rash",
+      "title": "Rash recorded at 2 visits since Apr 2, 2026 without a documented plan or resolution"
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientId": "hv-03",
+      "subjectId": "hv-03-r1",
+      "fingerprint": "referral-outcome-missing:referral:hv-03-r1",
+      "title": "Cardiology referral from Mar 18, 2026 has no recorded outcome"
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientId": "hv-08",
+      "subjectId": "hv-08-r1",
+      "fingerprint": "referral-outcome-missing:referral:hv-08-r1",
+      "title": "Gastroenterology referral from Mar 3, 2026 has no recorded outcome"
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientId": "hv-20",
+      "subjectId": "hv-20-r1",
+      "fingerprint": "referral-outcome-missing:referral:hv-20-r1",
+      "title": "Ophthalmology referral from Mar 8, 2026 has no recorded outcome"
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientId": "hv-22",
+      "subjectId": "hv-22-r1",
+      "fingerprint": "referral-outcome-missing:referral:hv-22-r1",
+      "title": "Ophthalmology referral from Mar 13, 2026 has no recorded outcome"
+    },
+    {
+      "ruleId": "referral-outcome-missing",
+      "patientId": "og-02",
+      "subjectId": "og-02-r1",
+      "fingerprint": "referral-outcome-missing:referral:og-02-r1",
+      "title": "Orthopedics referral from Feb 21, 2026 has no recorded outcome"
+    }
+  ],
+  "unlistedPredictions": []
+}

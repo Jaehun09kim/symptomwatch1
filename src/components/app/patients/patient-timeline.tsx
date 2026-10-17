@@ -24,14 +24,16 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
 
   useEffect(() => {
     const sync = () => {
-      const anchor = window.location.hash.slice(1);
+      const hash = window.location.hash.slice(1);
+      // Evidence may point at a symptom observation; resolve it to the visit that recorded it.
+      const anchor = events.find((event) => event.anchor === hash || event.aliases?.includes(hash))?.anchor ?? hash;
       setHighlight(anchor || null);
       if (anchor) document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "center" });
     };
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
-  }, []);
+  }, [events]);
 
   const visible = useMemo(
     () => sortTimeline(events.filter((event) => !hidden.has(event.filter)), direction),

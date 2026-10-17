@@ -37,6 +37,8 @@ export interface TimelineEvent {
   details: TimelineDetail[];
   /** Events dated after "now" (scheduled appointments). */
   upcoming: boolean;
+  /** Extra anchors that resolve to this event (e.g. symptom observations recorded at a visit). */
+  aliases?: string[];
 }
 
 /** Anchor convention shared with flag evidence (`kind` + record id). */
@@ -91,6 +93,7 @@ export function buildTimeline(record: PatientRecord, now = new Date()): Timeline
       meta: [encounter.providerName, followUpText(encounter.followUpKind, encounter.followUpIntervalDays)].filter(Boolean).join(" · "),
       provenance: "documented",
       upcoming: false,
+      aliases: symptoms.map((item) => anchorFor("symptom_observation", item.id)),
       details: [
         ...(symptoms.length ? [{ label: "Reported symptoms", value: symptoms.map((item) => `${item.label} (${symptomStatusLabel[item.status].toLowerCase()})`).join(", ") }] : []),
         { label: "Assessment", value: encounter.assessment },

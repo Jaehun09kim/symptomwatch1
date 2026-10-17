@@ -1,7 +1,7 @@
 /**
  * Administrative updates to appointments, referrals, and labs — the actions
- * that actually close follow-up loops. Each change is audited and triggers a
- * detection refresh for the patient (wired in Phase 3).
+ * that actually close follow-up loops. Each change is audited, then the
+ * patient's flags are refreshed by the system detection job after commit.
  */
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -9,17 +9,14 @@ import type { AppContext } from "@/lib/authz/context";
 import { can, type Permission } from "@/lib/authz/permissions";
 import { appointments, labOrders, patients, referrals } from "@/lib/db/schema";
 import { withTenant } from "@/lib/db/tenant";
-import type { DatabaseHandle, DbTransaction } from "@/lib/db/types";
+import type { DatabaseHandle } from "@/lib/db/types";
 import { checkFreeText, describePhiFailure } from "@/lib/validation/phi-guard";
 import { recordAudit } from "./audit";
+import { refreshPatientFlags } from "./detection-system";
 import { ServiceError } from "./errors";
 
-export type RecordChangeHook = (tx: DbTransaction, ctx: AppContext, patientId: string) => Promise<void>;
-let afterRecordChange: RecordChangeHook = async () => undefined;
-
-/** Detection registers itself here so record updates refresh flags in the same transaction. */
-export function onRecordChange(hook: RecordChangeHook): void {
-  afterRecordChange = hook;
+async function refreshFlags(ctx: AppContext, patientId: string, database?: DatabaseHandle): Promise<void> {
+  await refreshPatientFlags({ clinicId: ctx.clinicId, patientId, actorUserId: ctx.userId }, database);
 }
 
 function requirePermission(ctx: AppContext, permission: Permission): void {
@@ -45,15 +42,16 @@ export async function updateAppointment(ctx: AppContext, raw: z.input<typeof app
   requirePermission(ctx, "appointment.manage");
   const input = appointmentUpdateSchema.parse(raw);
   assertNoPhi("Reason", input.reason);
-  await withTenant(ctx, async (tx) => {
+  const patientId = await withTenant(ctx, async (tx) => {
     const [row] = await tx.update(appointments)
       .set({ status: input.status, statusReason: input.reason || null })
       .where(and(eq(appointments.clinicId, ctx.clinicId), eq(appointments.id, input.appointmentId)))
       .returning({ patientId: appointments.patientId });
     if (!row) throw new ServiceError("Appointment not found.");
     await recordAudit(tx, ctx, "appointment.updated", { type: "appointment", id: input.appointmentId }, { status: input.status });
-    await afterRecordChange(tx, ctx, row.patientId);
+    return row.patientId;
   }, database);
+  await refreshFlags(ctx, patientId, database);
 }
 
 export const appointmentCreateSchema = z.object({
@@ -68,7 +66,7 @@ export async function scheduleAppointment(ctx: AppContext, raw: z.input<typeof a
   requirePermission(ctx, "appointment.manage");
   const input = appointmentCreateSchema.parse(raw);
   assertNoPhi("Note", input.reason);
-  await withTenant(ctx, async (tx) => {
+  const patientId = await withTenant(ctx, async (tx) => {
     const [patient] = await tx.select({ id: patients.id }).from(patients)
       .where(and(eq(patients.clinicId, ctx.clinicId), eq(patients.id, input.patientId)));
     if (!patient) throw new ServiceError("Patient not found.");
@@ -81,8 +79,9 @@ export async function scheduleAppointment(ctx: AppContext, raw: z.input<typeof a
       statusReason: input.reason || null,
     }).returning({ id: appointments.id });
     await recordAudit(tx, ctx, "appointment.created", { type: "appointment", id: row.id }, { purpose: input.purpose });
-    await afterRecordChange(tx, ctx, input.patientId);
+    return input.patientId;
   }, database);
+  await refreshFlags(ctx, patientId, database);
 }
 
 export const referralUpdateSchema = z.object({
@@ -99,7 +98,7 @@ export async function updateReferral(ctx: AppContext, raw: z.input<typeof referr
   if ((input.status === "scheduled" || input.status === "records_received") && !input.date) {
     throw new ServiceError(input.status === "scheduled" ? "Enter the specialist appointment date." : "Enter the date records were received.");
   }
-  await withTenant(ctx, async (tx) => {
+  const patientId = await withTenant(ctx, async (tx) => {
     const changes: Partial<typeof referrals.$inferInsert> = { status: input.status, statusReason: input.reason || null };
     if (input.status === "scheduled" && input.date) changes.specialistAppointmentAt = atDay(input.date);
     if (input.status === "records_received" && input.date) changes.recordsReceivedAt = atDay(input.date);
@@ -108,8 +107,9 @@ export async function updateReferral(ctx: AppContext, raw: z.input<typeof referr
       .returning({ patientId: referrals.patientId });
     if (!row) throw new ServiceError("Referral not found.");
     await recordAudit(tx, ctx, "referral.updated", { type: "referral", id: input.referralId }, { status: input.status });
-    await afterRecordChange(tx, ctx, row.patientId);
+    return row.patientId;
   }, database);
+  await refreshFlags(ctx, patientId, database);
 }
 
 export const labUpdateSchema = z.object({
@@ -126,7 +126,7 @@ export async function updateLab(ctx: AppContext, raw: z.input<typeof labUpdateSc
   if (input.status === "cancelled" && !input.summary) throw new ServiceError("Give a reason for cancelling the order.");
   if (input.status === "resulted" && !input.summary) throw new ServiceError("Add a short result note (fictional).");
   const date = atDay(input.date ?? new Date().toISOString().slice(0, 10));
-  await withTenant(ctx, async (tx) => {
+  const patientId = await withTenant(ctx, async (tx) => {
     const changes: Partial<typeof labOrders.$inferInsert> = { status: input.status };
     if (input.status === "collected") changes.collectedAt = date;
     if (input.status === "resulted") Object.assign(changes, { resultedAt: date, resultSummary: input.summary });
@@ -136,6 +136,7 @@ export async function updateLab(ctx: AppContext, raw: z.input<typeof labUpdateSc
       .returning({ patientId: labOrders.patientId });
     if (!row) throw new ServiceError("Lab order not found.");
     await recordAudit(tx, ctx, "lab.updated", { type: "lab_order", id: input.labId }, { status: input.status });
-    await afterRecordChange(tx, ctx, row.patientId);
+    return row.patientId;
   }, database);
+  await refreshFlags(ctx, patientId, database);
 }

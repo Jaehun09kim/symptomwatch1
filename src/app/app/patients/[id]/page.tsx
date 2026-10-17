@@ -8,6 +8,7 @@ import { FlagCard } from "@/components/app/primitives/flag-card";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import { ageFrom } from "@/components/app/patients/patients-panel";
 import { PatientTimeline } from "@/components/app/patients/patient-timeline";
+import { FlagReviewActions } from "@/components/app/review/flag-review";
 import {
   CreateTaskDialog,
   ScheduleAppointmentDialog,
@@ -128,6 +129,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                       rationale={flag.rationale}
                       evidence={flag.evidence.map((item) => ({ label: item.label, date: item.date, href: `#${anchorFor(item.kind, item.id)}` }))}
                       missing={flag.missingInfo}
+                      footer={can(session.role, "flag.review") ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} assignees={assignees} /> : undefined}
                     />
                   ))}
                 </div>
