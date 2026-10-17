@@ -115,3 +115,4 @@ Next.js 16 (App Router, Server Actions, Cache Components) · React 19 · TypeScr
 ## Status
 
 v0.1 prototype. Nothing has been deployed publicly; see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) when you're ready.
+# symptomwatch1
