@@ -17,6 +17,8 @@ const environmentSchema = z.object({
   DETECTION_PROVIDER: z.enum(["rules", "llm"]).default("rules"),
   EXTERNAL_AI_ENABLED: z.literal("false").default("false").transform(() => false as const),
   APP_BASE_URL: z.url().default("http://localhost:3000"),
+  // Multiplies rate-limit allowances (e.g. 50 for end-to-end tests). Cannot disable limiting.
+  RATE_LIMIT_SCALE: z.coerce.number().int().min(1).max(1000).default(1),
   // Set by serverless hosts, where a PGlite directory is per-instance and ephemeral.
   VERCEL: z.string().optional(),
   AWS_LAMBDA_FUNCTION_NAME: z.string().optional(),
@@ -27,8 +29,8 @@ const environmentSchema = z.object({
     issue("DATABASE_URL", "Required when DATABASE_DRIVER=postgres");
   }
   if (env.AUTH_PROVIDER === "supabase") {
-    if (!env.NEXT_PUBLIC_SUPABASE_URL) issue("NEXT_PUBLIC_SUPABASE_URL", "Required for Supabase auth");
-    if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) issue("NEXT_PUBLIC_SUPABASE_ANON_KEY", "Required for Supabase auth");
+    // Planned (docs/DEPLOYMENT.md §"Supabase Auth"); refuse rather than half-work.
+    issue("AUTH_PROVIDER", "The Supabase Auth adapter is not part of v0.1. Use AUTH_PROVIDER=local (works with Supabase Postgres).");
   }
   if (env.NODE_ENV === "production") {
     if (!env.SESSION_SECRET) issue("SESSION_SECRET", "Required in production (at least 32 characters)");

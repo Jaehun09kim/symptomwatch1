@@ -32,3 +32,12 @@ Entries are appended as work proceeds.
 - **Codex — task C2 (database foundation):** SQL migrations (schema, `sw_app` role, RLS policies, SECURITY DEFINER helpers, review-protection trigger), PGlite/postgres client with init promise and lock file, migrator, `withTenant`/`withSystem`, Drizzle schema, password hashing, env validation, seeder, snapshot builders, scripts, and 49 tests. Codex hit its **usage limit** before running the test suite.
 - **Claude — review & fixes to C2:** the test fixture schema mismatch (`tasks.due_date` default) that failed 23 tests; replaced a font import from a private Next.js internal path with the `geist` package; scrypt hashed once per seed instead of once per account; production env guard scoped to serverless hosts so local `npm start` works; `.env.example` + `npm run setup`; migrations bundled into a generated module (removes whole-project file tracing on Vercel) with a drift test. Result: 50/50 tests, clean typecheck/lint/build, production server health check verified.
 - **Decision (product owner):** with Codex's quota exhausted, Claude continues implementation alone and uses Codex for read-only code reviews when quota is available.
+
+### 2026-10-16/17 — Phases 1–4 (Claude implementing; Codex quota exhausted)
+
+- **Phase 1:** design system, public site, demo-request form with PHI tripwire, security headers, robots/sitemap.
+- **Phase 2:** local auth (sessions, reset, invitations), sandboxes and view-as, permission guards, dashboard and charts, patient list and role-aware timeline, follow-up queue, staff and audit, settings and demo reset.
+- **Phase 3:** rule engine implemented by Claude from PRODUCT_SPEC §6 (the spec and the reference labels were committed before engine code, but Claude had authored the labels — this is disclosed in `evaluation/RESULTS.md`), flag lifecycle, review workflow, evaluation runner, Python verifier.
+- **Phase 4:** Playwright e2e + axe suite, postgres wire-protocol test, hosted-Postgres compatibility migration, documentation.
+- Bugs found by Claude's own review and tests (fixed): partial-commit on invitation race, missing `users` grant for tenant name lookups, re-confirm overwriting review notes, single-patient refreshes shown as "last run", prerender clock usage in session checks, React form auto-reset losing input, contrast below AA.
+- **Pending:** an independent Codex review of the engine against PRODUCT_SPEC §6 *without* reading the labels, and a security review of the RLS migrations, once Codex quota is available.

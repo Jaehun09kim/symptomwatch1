@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useFormAction } from "@/hooks/use-form-action";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import type { ActionResult } from "@/app/app/actions";
@@ -40,7 +41,7 @@ export function ActionDialog({
 }) {
   const [open, setOpen] = useState(false);
   // Success handling lives in the action wrapper, not an effect.
-  const [state, formAction] = useActionState(async (previous: ActionResult | null, form: FormData) => {
+  const [state, onSubmit, pending] = useFormAction(async (previous: ActionResult | null, form: FormData) => {
     const result = await action(previous, form);
     if (result.ok) {
       toast.success(result.message ?? "Saved.");
@@ -58,13 +59,13 @@ export function ActionDialog({
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           {children(state && !state.ok ? state.fieldErrors ?? {} : {})}
           {showResult ? <FormMessage status={state.ok ? "success" : "error"} message={state.message} /> : null}
           {showResult && state.link ? <CopyLink link={state.link} /> : null}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Close</Button>
-            <SubmitButton size="default" pendingLabel="Saving…">{submitLabel}</SubmitButton>
+            <SubmitButton size="default" pending={pending} pendingLabel="Saving…">{submitLabel}</SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

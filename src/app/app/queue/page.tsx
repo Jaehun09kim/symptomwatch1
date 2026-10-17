@@ -100,7 +100,7 @@ async function Queue({ searchParams }: { searchParams: Promise<Params> }) {
         {tasks.length === 0 ? (
           <EmptyState className="m-4 border-0" icon={Inbox} title="Nothing here" description="No tasks match these filters." />
         ) : (
-          <div className="overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Task table" className="overflow-x-auto">
             <table className="w-full min-w-[52rem] text-left text-sm">
               <caption className="sr-only">Follow-up tasks</caption>
               <thead className="bg-surface text-xs text-slate-500">

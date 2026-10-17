@@ -65,7 +65,7 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
       {rows.length === 0 ? (
         <EmptyState className="m-4 border-0" icon={UsersRound} title="No patients match these filters" description="Try clearing the search or choosing a different status." />
       ) : (
-        <div className="overflow-x-auto">
+        <div tabIndex={0} role="region" aria-label="Patient table" className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left text-sm">
             <caption className="sr-only">Fictional patients and follow-up status</caption>
             <thead className="bg-surface text-xs text-slate-500">

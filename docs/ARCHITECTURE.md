@@ -212,3 +212,21 @@ Codex reviewed this plan (`codex_review_plan`) before implementation. Adopted ch
 6. **Auth-failure auditing** uses a tenantless system insert (`clinic_id NULL`). Audit rows are append-only; demo reset deletes clinical/task data but never audit rows. `patient.timeline_viewed` is recorded by the timeline Server Component and de-duplicated per (user, patient) per 10 minutes so prefetch/re-renders don't inflate it.
 7. **Flag lifecycle** (supersedes §9 bullet and PRODUCT_SPEC §6 “Flag lifecycle”): see PRODUCT_SPEC §6.6.
 8. **Contracts first.** Claude owns the normalized detection input/output contract in `src/lib/detection/types.ts` and the evaluation unit list in `evaluation/reference-labels.ts`; Codex implements against them.
+
+## 15. As built (v0.1) — deltas from the plan
+
+| Area | As built | Why |
+|---|---|---|
+| Auth provider | Built-in local auth only. `AUTH_PROVIDER=supabase` fails at startup with an explanatory error; the Supabase SDK packages were removed. | One fully tested auth path; Supabase is used as hosted Postgres. Supabase Auth is planned (see DEPLOYMENT.md). |
+| Hosted PGlite | Refused only on serverless hosts (`VERCEL`, `AWS_LAMBDA_FUNCTION_NAME`, `NETLIFY`) unless `ALLOW_EPHEMERAL_PGLITE=true`; a local `npm start` with file-backed PGlite is allowed. | Local production runs are durable; serverless instances are not. |
+| Migrations | Bundled into `src/lib/db/migrations.generated.ts` at `predev`/`prebuild`/`pretest` (drift test). | Runtime filesystem reads made Next trace the whole project into serverless bundles. |
+| `0004_users_directory.sql` | `sw_app` may read `users(id, email, display_name, is_placeholder)` only for members of the current clinic. | Assignee/actor names in tenant queries; never password hashes. |
+| `0005_owner_rls_compat.sql` | Drops `FORCE` RLS for the owner only when the connection user can't bypass RLS. | Managed Postgres (e.g. Supabase) where the owner isn't a superuser; `sw_app` is unaffected. |
+| Detection refresh | `src/lib/services/detection-system.ts` (system path, on the allowlist) refreshes one patient's flags after any appointment/referral/lab update, and runs a full pass after seed/reset. Patient-scoped refreshes don't create `detection_runs` rows. | Front desk closes loops but cannot read flags; flags must still resolve. |
+| Snapshot loader | Accepts an explicit `{ clinicId, clinical }` scope for system runs; otherwise derives both from the tenant context. | Same normalized input for tenant runs, system runs, and the evaluator. |
+| Request-time rendering | `getCurrentSession()` calls `connection()` before reading cookies; app routes set `instant = false`. | Clock-based session expiry must never run during (runtime) prerendering; authenticated pages are never cached. |
+| Forms | `useFormAction` submits via `onSubmit` + `startTransition`. | React 19 auto-resets forms after an `action`, wiping user input on validation errors (caught by e2e). |
+| Re-confirming a flag | Keeps the original review and event; only allows adding a task. | A second confirm must not overwrite the physician's note. |
+| Rate limits | `RATE_LIMIT_SCALE` multiplies allowances (tests use 50); cannot disable limiting. | Deterministic e2e runs without an "off" switch that could leak into production. |
+| Muted text color | `slate-500` → `#56667c` (≥ 5:1 on every surface). | axe flagged Tailwind's default at 4.47:1. |
+| Timeline anchors | `ev-<kind>-<id>`; visits also carry `ev-symptom_observation-<id>` aliases. | Flag evidence links resolve to the exact charted entry. |

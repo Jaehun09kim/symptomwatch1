@@ -22,3 +22,12 @@ describe("RateLimiter", () => {
     expect(limiter.check("a", rule).allowed).toBe(false);
   });
 });
+
+describe("RateLimiter scale", () => {
+  it("multiplies the allowance but never removes the limit", () => {
+    const limiter = new RateLimiter(() => 0, 3);
+    const rule = { limit: 1, windowMs: 1_000 };
+    expect([1, 2, 3].map(() => limiter.check("k", rule).allowed)).toEqual([true, true, true]);
+    expect(limiter.check("k", rule).allowed).toBe(false);
+  });
+});

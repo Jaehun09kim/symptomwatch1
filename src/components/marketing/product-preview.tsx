@@ -65,7 +65,7 @@ export function DashboardPreview() {
             <StatCard label="Pending labs" value={previewStats.pendingLabs} icon={FlaskConical} tone="attention" className="p-3.5" />
             <StatCard label="Pending records" value={previewStats.pendingRecords} icon={Send} tone="teal" className="p-3.5" />
           </div>
-          <div className="overflow-x-auto rounded-xl border border-border">
+          <div tabIndex={0} role="region" aria-label="Follow-up queue preview" className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full min-w-[30rem] text-left text-xs">
               <caption className="sr-only">Follow-up queue preview (fictional)</caption>
               <thead className="bg-surface text-slate-500">

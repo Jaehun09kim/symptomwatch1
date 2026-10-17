@@ -208,7 +208,7 @@ export async function writeOutbox(
 
 export function selfServiceResetAvailable(): boolean {
   const env = getEnv();
-  return env.NODE_ENV !== "production" || env.AUTH_PROVIDER === "supabase";
+  return env.NODE_ENV !== "production";
 }
 
 function resetLink(token: string): string {
