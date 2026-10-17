@@ -36,7 +36,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "blue", href, 
       {locked ? (
         <p className="mt-1 text-sm text-slate-500">{locked}</p>
       ) : (
-        <p className="tabular mt-1 text-3xl font-semibold tracking-tight text-navy">{value}</p>
+        <p className="mt-1 text-3xl font-semibold tracking-tight text-navy">{value}</p>
       )}
       {hint && !locked ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </>

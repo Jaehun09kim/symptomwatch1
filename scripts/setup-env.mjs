@@ -10,5 +10,10 @@ if (existsSync(target)) {
 }
 const template = readFileSync(".env.example", "utf8");
 const secret = randomBytes(32).toString("base64url");
-writeFileSync(target, template.replace(/^SESSION_SECRET=.*$/m, `SESSION_SECRET=${secret}`), { mode: 0o600 });
+const local = template
+  .replace(/^SESSION_SECRET=.*$/m, `SESSION_SECRET=${secret}`)
+  // Local demo: keep the shared demo logins even when running `npm start` (production mode).
+  .replace(/^# SEED_SHARED_DEMO_ACCOUNTS=true$/m, "SEED_SHARED_DEMO_ACCOUNTS=true")
+  .replace(/^# DEMO_ACCOUNT_PASSWORD=(.*)$/m, "DEMO_ACCOUNT_PASSWORD=$1");
+writeFileSync(target, local, { mode: 0o600 });
 console.log(`Created ${target} with a random SESSION_SECRET.`);
