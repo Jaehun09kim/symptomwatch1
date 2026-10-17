@@ -23,3 +23,12 @@ The reference labels used to evaluate detection were written by Claude from the 
 ## Log
 
 Entries are appended as work proceeds.
+
+### 2026-10-16 — Phase 0/1: plan, contracts, database foundation
+
+- **Bridge status.** Verified the `codex` MCP server (claude-codex-bridge). Read-only tools work (`codex_query`, `codex_review_plan`). Write tools are blocked by a bridge bug: `codex_implement` passes `--full-auto`, which Codex CLI 0.163 rejects, and every call after the first resumes the original thread without re-sending `--sandbox`, so later calls are stuck read-only. Workaround: implementation tasks were run with the Codex CLI directly (`codex exec --sandbox workspace-write`).
+- **Codex — plan review** (`codex_review_plan`): 11 prioritized findings (hosted PGlite, RLS trust model, write policies, Next 16 caching, runtime spike, auth semantics, contracts, rule ambiguities, flag state machine, evaluation denominators, omitted deliverables). Claude adopted them in ARCHITECTURE §14 and PRODUCT_SPEC §6.5–6.7.
+- **Claude:** architecture, product spec, detection contract (`src/lib/detection/types.ts`), the 36-patient synthetic dataset, 37 queue tasks, and 79 pre-declared reference labels — all written before any engine code.
+- **Codex — task C2 (database foundation):** SQL migrations (schema, `sw_app` role, RLS policies, SECURITY DEFINER helpers, review-protection trigger), PGlite/postgres client with init promise and lock file, migrator, `withTenant`/`withSystem`, Drizzle schema, password hashing, env validation, seeder, snapshot builders, scripts, and 49 tests. Codex hit its **usage limit** before running the test suite.
+- **Claude — review & fixes to C2:** the test fixture schema mismatch (`tasks.due_date` default) that failed 23 tests; replaced a font import from a private Next.js internal path with the `geist` package; scrypt hashed once per seed instead of once per account; production env guard scoped to serverless hosts so local `npm start` works; `.env.example` + `npm run setup`; migrations bundled into a generated module (removes whole-project file tracing on Vercel) with a drift test. Result: 50/50 tests, clean typecheck/lint/build, production server health check verified.
+- **Decision (product owner):** with Codex's quota exhausted, Claude continues implementation alone and uses Codex for read-only code reviews when quota is available.
