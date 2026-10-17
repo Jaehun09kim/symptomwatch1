@@ -39,7 +39,7 @@ function moduleReferences(source: ts.SourceFile): string[] {
 }
 
 function isAllowed(path: string): boolean {
-  return /^(?:src\/lib\/auth\/|src\/lib\/services\/(?:demo|public)[^/]*\.ts$|scripts\/|db\/|tests\/)/.test(path);
+  return /^(?:src\/lib\/auth\/|src\/lib\/services\/(?:demo|public|detection-system)[^/]*\.ts$|scripts\/|db\/|tests\/)/.test(path);
 }
 
 it("restricts the RLS-bypassing system module to the architecture allowlist", async () => {

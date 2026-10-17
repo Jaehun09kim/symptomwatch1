@@ -212,7 +212,14 @@ describe("synthetic seeding and snapshot parity", () => {
       tx.select().from(detectionFlags).where(eq(detectionFlags.clinicId, seeded.clinicId)),
       tx.select().from(detectionRuns).where(eq(detectionRuns.clinicId, seeded.clinicId)),
     ]), database);
-    expect(remainingFlags).toEqual([[], [], [], []]);
+    // Reset removes all prior flags, events, and feedback, then re-runs detection on the fresh data.
+    const [events, feedback, flags, runs] = remainingFlags;
+    expect(feedback).toEqual([]);
+    expect(flags.some((flag) => flag.fingerprint === "fixture:flag")).toBe(false);
+    expect(flags.every((flag) => flag.status === "open")).toBe(true);
+    expect(events.every((event) => event.eventType === "created")).toBe(true);
+    expect(runs).toHaveLength(1);
+    expect(runs[0].startedBy).toBeNull();
     const resetTasks = await withSystem((tx) => tx.select().from(tasks).where(eq(tasks.clinicId, seeded.clinicId)), database);
     expect(resetTasks).toHaveLength(2);
     const completedTask = resetTasks.find((task) => task.seedKey === "task-admin");

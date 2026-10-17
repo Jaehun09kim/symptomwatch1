@@ -18,7 +18,9 @@
     "db:bundle": "node scripts/bundle-migrations.mjs",
     "predev": "node scripts/bundle-migrations.mjs",
     "prebuild": "node scripts/bundle-migrations.mjs",
-    "pretest": "node scripts/bundle-migrations.mjs"
+    "pretest": "node scripts/bundle-migrations.mjs",
+    "evaluate": "tsx evaluation/run-evaluation.ts",
+    "evaluate:verify": "python3 research/verify_metrics.py"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import {
   appointments,
   encounters,
@@ -18,17 +18,29 @@ function bySeedKey<T extends { id: string; seedKey: string | null }>(rows: T[]):
 const iso = (timestamp: string): string => new Date(timestamp).toISOString();
 const optionalIso = (timestamp: string | null): string | null => timestamp === null ? null : iso(timestamp);
 
-/** Uses the caller's withTenant transaction; clinical fields never enter staff payloads. */
+/**
+ * By default uses the caller's withTenant transaction (clinic and role come from
+ * the tenant context; clinical fields never enter staff payloads). System-path
+ * detection refreshes pass an explicit `scope` instead.
+ */
 export async function loadPatientSnapshots(
   tx: DbTransaction,
   patientIds?: readonly string[],
+  scope?: { clinicId: string; clinical: boolean },
 ): Promise<PatientSnapshot[]> {
   if (patientIds?.length === 0) return [];
-  const [context] = await tx.select({ role: sql<StaffRole | null>`app.current_role()` })
-    .from(sql`(select 1) as tenant_context`);
-  if (!context?.role) return [];
-  const clinical = context.role === "physician" || context.role === "clinic_admin";
-  const clinicId = sql<string>`app.current_clinic_id()`;
+  let clinical: boolean;
+  let clinicId: SQL<string> | string;
+  if (scope) {
+    clinical = scope.clinical;
+    clinicId = scope.clinicId;
+  } else {
+    const [context] = await tx.select({ role: sql<StaffRole | null>`app.current_role()` })
+      .from(sql`(select 1) as tenant_context`);
+    if (!context?.role) return [];
+    clinical = context.role === "physician" || context.role === "clinic_admin";
+    clinicId = sql<string>`app.current_clinic_id()`;
+  }
   const selectedPatients = bySeedKey(await tx.select({
     id: patients.id,
     careStatus: patients.careStatus,

@@ -9,6 +9,7 @@ import type { AppContext } from "@/lib/authz/context";
 import type { Permission } from "@/lib/authz/permissions";
 import type { MemberRole } from "@/lib/labels";
 import { resetDemoClinic } from "@/lib/services/demo-sandbox";
+import { addFlagFeedback, confirmFlag, dismissFlag, runDetectionForClinic } from "@/lib/services/detection";
 import { ServiceError } from "@/lib/services/errors";
 import { scheduleAppointment, updateAppointment, updateLab, updateReferral } from "@/lib/services/records";
 import { changeMemberRole, inviteStaff, revokeInvitation, setMemberStatus } from "@/lib/services/staff";
@@ -143,4 +144,38 @@ export async function resetDemoAction(): Promise<void> {
   const { ctx } = await authorizeAction("demo.reset");
   await resetDemoClinic({ clinicId: ctx.clinicId, actorUserId: ctx.actorUserId, effectiveUserId: ctx.userId });
   redirect("/app?reset=1");
+}
+
+export async function runDetectionAction(): Promise<ActionResult> {
+  return run("detection.run", async (ctx) => {
+    const summary = await runDetectionForClinic(ctx);
+    return {
+      ok: true,
+      message: `Detection complete: ${summary.patientsEvaluated} patients checked, ${summary.created} new, ${summary.reopened} reopened, ${summary.resolved} resolved by new documentation.`,
+    };
+  }, "Detection complete.");
+}
+
+export async function confirmFlagAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("flag.review", (ctx) => confirmFlag(ctx, {
+    flagId: str(form, "flagId") ?? "",
+    note: str(form, "note") ?? "",
+    createTask: form.get("createTask") === "on",
+    taskTitle: str(form, "taskTitle") ?? "",
+    taskCategory: (str(form, "taskCategory") ?? "clinical_review") as never,
+    assigneeId: str(form, "assigneeId") ?? "",
+    dueDate: str(form, "dueDate") ?? "",
+  }), "Gap confirmed.");
+}
+
+export async function dismissFlagAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("flag.review", (ctx) => dismissFlag(ctx, { flagId: str(form, "flagId") ?? "", reason: str(form, "reason") ?? "" }), "Flag dismissed.");
+}
+
+export async function flagFeedbackAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("flag.review", (ctx) => addFlagFeedback(ctx, {
+    flagId: str(form, "flagId") ?? "",
+    verdict: str(form, "verdict") as never,
+    comment: str(form, "comment") ?? "",
+  }), "Feedback recorded — thank you.");
 }
