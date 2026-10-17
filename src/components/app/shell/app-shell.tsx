@@ -114,8 +114,9 @@ function UserMenu({ user }: { user: ShellUser }) {
   const initials = user.displayName.replace(/^Dr\.\s+/, "").split(/\s+/).map((part) => part[0]).slice(0, 2).join("");
   return (
     <Popover>
-      <PopoverTrigger className={cn(buttonVariants({ variant: "ghost" }), "h-11 gap-2.5 px-2")} aria-label="Account menu">
-        <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-xs font-semibold text-brand-hover">{initials}</span>
+      <PopoverTrigger className={cn(buttonVariants({ variant: "ghost" }), "h-11 gap-2.5 px-2")}>
+        <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-xs font-semibold text-brand-hover" aria-hidden>{initials}</span>
+        <span className="sr-only">Account menu: </span>
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-medium leading-tight text-navy">{user.displayName}</span>
           <span className="block text-xs leading-tight text-slate-500">{roleLabel[user.role]}</span>

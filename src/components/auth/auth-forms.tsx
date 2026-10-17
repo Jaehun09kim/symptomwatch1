@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useRef } from "react";
+import { useFormAction } from "@/hooks/use-form-action";
 import Link from "next/link";
 import {
   acceptInvitationAction,
@@ -26,7 +27,7 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
   demoPassword?: string;
   notice?: string;
 }) {
-  const [state, action] = useActionState(signInAction, idle);
+  const [state, onSubmit, pending] = useFormAction(signInAction, idle);
   const email = useRef<HTMLInputElement>(null);
   const password = useRef<HTMLInputElement>(null);
   const fill = (login: DemoLogin) => {
@@ -36,7 +37,7 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
   return (
     <div className="space-y-6">
       {notice ? <FormMessage status="success" message={notice} /> : null}
-      <form action={action} className="space-y-4" noValidate>
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <input type="hidden" name="next" value={next ?? ""} />
         <TextField ref={email} label="Email" name="email" type="email" autoComplete="email" required error={state.fieldErrors?.email} />
         <TextField
@@ -50,7 +51,7 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
           labelAside={<Link href="/forgot-password" className="text-sm font-medium text-brand hover:underline">Forgot password?</Link>}
         />
         <FormMessage status={state.status} message={state.message} />
-        <SubmitButton className="w-full" pendingLabel="Signing in…">Sign in</SubmitButton>
+        <SubmitButton pending={pending} className="w-full" pendingLabel="Signing in…">Sign in</SubmitButton>
       </form>
       {demoLogins.length && demoPassword ? (
         <section aria-labelledby="demo-logins" className="rounded-xl border border-border bg-surface p-4">
@@ -65,7 +66,7 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
                   <span className="block text-sm font-medium text-navy">{login.label}</span>
                   <span className="block truncate text-xs text-slate-500">{login.email}</span>
                 </span>
-                <Button type="button" variant="outline" size="sm" onClick={() => fill(login)} aria-label={`Fill sign-in form with ${login.label}`}>
+                <Button type="button" variant="outline" size="sm" onClick={() => fill(login)} aria-label={`Use ${login.label}`}>
                   Use
                 </Button>
               </li>
@@ -78,10 +79,10 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
 }
 
 export function SignUpForm({ inviteToken, invitedEmail }: { inviteToken?: string; invitedEmail?: string }) {
-  const [state, action] = useActionState(signUpAction, idle);
+  const [state, onSubmit, pending] = useFormAction(signUpAction, idle);
   const errors = state.fieldErrors ?? {};
   return (
-    <form action={action} className="space-y-4" noValidate>
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <input type="hidden" name="inviteToken" value={inviteToken ?? ""} />
       <TextField label="Your name" name="displayName" autoComplete="name" required error={errors.displayName} />
       <TextField
@@ -104,7 +105,7 @@ export function SignUpForm({ inviteToken, invitedEmail }: { inviteToken?: string
       <CheckboxField name="noRealData" error={errors.noRealData}
         label="I understand this is a demo and I will only use fictional data — never real patient information." />
       <FormMessage status={state.status} message={state.message} />
-      <SubmitButton className="w-full" pendingLabel="Creating your workspace…">
+      <SubmitButton pending={pending} className="w-full" pendingLabel="Creating your workspace…">
         {inviteToken ? "Create account and join clinic" : "Create demo account"}
       </SubmitButton>
     </form>
@@ -112,38 +113,38 @@ export function SignUpForm({ inviteToken, invitedEmail }: { inviteToken?: string
 }
 
 export function ForgotPasswordForm() {
-  const [state, action] = useActionState(forgotPasswordAction, idle);
+  const [state, onSubmit, pending] = useFormAction(forgotPasswordAction, idle);
   if (state.status === "success") return <FormMessage status="success" message={state.message} />;
   return (
-    <form action={action} className="space-y-4" noValidate>
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <TextField label="Email" name="email" type="email" autoComplete="email" required error={state.fieldErrors?.email} />
       <FormMessage status={state.status} message={state.message} />
-      <SubmitButton className="w-full" pendingLabel="Sending…">Send reset link</SubmitButton>
+      <SubmitButton pending={pending} className="w-full" pendingLabel="Sending…">Send reset link</SubmitButton>
     </form>
   );
 }
 
 export function ResetPasswordForm({ token }: { token: string }) {
-  const [state, action] = useActionState(resetPasswordAction, idle);
+  const [state, onSubmit, pending] = useFormAction(resetPasswordAction, idle);
   return (
-    <form action={action} className="space-y-4" noValidate>
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <input type="hidden" name="token" value={token} />
       <TextField label="New password" name="password" type="password" autoComplete="new-password" required minLength={10}
         error={state.fieldErrors?.password} hint="At least 10 characters." />
       <TextField label="Confirm new password" name="confirm" type="password" autoComplete="new-password" required error={state.fieldErrors?.confirm} />
       <FormMessage status={state.status} message={state.message} />
-      <SubmitButton className="w-full" pendingLabel="Saving…">Set new password</SubmitButton>
+      <SubmitButton pending={pending} className="w-full" pendingLabel="Saving…">Set new password</SubmitButton>
     </form>
   );
 }
 
 export function AcceptInvitationForm({ token }: { token: string }) {
-  const [state, action] = useActionState(acceptInvitationAction, idle);
+  const [state, onSubmit, pending] = useFormAction(acceptInvitationAction, idle);
   return (
-    <form action={action} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-3">
       <input type="hidden" name="token" value={token} />
       <FormMessage status={state.status} message={state.message} />
-      <SubmitButton className="w-full" pendingLabel="Joining…">Accept invitation</SubmitButton>
+      <SubmitButton pending={pending} className="w-full" pendingLabel="Joining…">Accept invitation</SubmitButton>
     </form>
   );
 }

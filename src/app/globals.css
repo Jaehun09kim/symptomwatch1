@@ -60,7 +60,7 @@
   --secondary: #eef3fb;
   --secondary-foreground: #0b1f3a;
   --muted: #f6f8fb;
-  --muted-foreground: #5b6b80;
+  --muted-foreground: #56667c;
   --accent: #eef3fb;
   --accent-foreground: #0b1f3a;
   --destructive: #c2410c;
@@ -99,6 +99,8 @@
 }
 
 @theme inline {
+  /* Darkened from Tailwind's #62748e so muted text meets WCAG AA (≥ 5:1) on every surface we use. */
+  --color-slate-500: #56667c;
   --color-navy: var(--sw-navy);
   --color-body: var(--sw-body);
   --color-surface: var(--sw-surface);

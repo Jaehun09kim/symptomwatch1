@@ -17,6 +17,8 @@ const environmentSchema = z.object({
   DETECTION_PROVIDER: z.enum(["rules", "llm"]).default("rules"),
   EXTERNAL_AI_ENABLED: z.literal("false").default("false").transform(() => false as const),
   APP_BASE_URL: z.url().default("http://localhost:3000"),
+  // Multiplies rate-limit allowances (e.g. 50 for end-to-end tests). Cannot disable limiting.
+  RATE_LIMIT_SCALE: z.coerce.number().int().min(1).max(1000).default(1),
   // Set by serverless hosts, where a PGlite directory is per-instance and ephemeral.
   VERCEL: z.string().optional(),
   AWS_LAMBDA_FUNCTION_NAME: z.string().optional(),

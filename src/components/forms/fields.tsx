@@ -100,14 +100,17 @@ export function CheckboxField({ label, error, name, defaultChecked }: { label: R
   );
 }
 
-export function SubmitButton({ children, pendingLabel, className, size = "lg", variant }: {
+export function SubmitButton({ children, pendingLabel, className, size = "lg", variant, pending: pendingOverride }: {
   children: ReactNode;
   pendingLabel?: string;
   className?: string;
   size?: "default" | "sm" | "lg";
   variant?: "default" | "outline" | "secondary" | "destructive";
+  /** For forms submitted via useFormAction (no form action, so useFormStatus can't see them). */
+  pending?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const pending = pendingOverride ?? status.pending;
   return (
     <Button type="submit" size={size} variant={variant} disabled={pending} className={className}>
       {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}

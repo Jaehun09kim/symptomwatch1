@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useId } from "react";
+import { useFormAction } from "@/hooks/use-form-action";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { requestDemoAction, type DemoRequestState } from "@/app/(marketing)/actions";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ function Field({
 }
 
 export function DemoRequestForm() {
-  const [state, action, pending] = useActionState(requestDemoAction, initial);
+  const [state, onSubmit, pending] = useFormAction(requestDemoAction, initial);
   const base = useId();
   const id = (name: string) => `${base}-${name}`;
   const err = state.fieldErrors ?? {};
@@ -55,7 +56,7 @@ export function DemoRequestForm() {
   }
 
   return (
-    <form action={action} className="space-y-4" noValidate>
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id={id("name")} label="Your name" error={err.name}>
           <input id={id("name")} name="name" autoComplete="name" required className={cn(control, "h-11")}

@@ -2,6 +2,7 @@
  * In-memory sliding-window rate limiter. Per process only — adequate for a
  * single-instance demo; production needs a shared store (see deployment checklist).
  */
+import { getEnv } from "@/lib/env";
 
 export interface RateLimitRule {
   limit: number;
@@ -17,9 +18,10 @@ export interface RateLimitResult {
 export class RateLimiter {
   private readonly hits = new Map<string, number[]>();
 
-  constructor(private readonly now: () => number = Date.now) {}
+  constructor(private readonly now: () => number = Date.now, private readonly scale = 1) {}
 
-  check(key: string, rule: RateLimitRule): RateLimitResult {
+  check(key: string, baseRule: RateLimitRule): RateLimitResult {
+    const rule = { ...baseRule, limit: baseRule.limit * this.scale };
     const now = this.now();
     const windowStart = now - rule.windowMs;
     const recent = (this.hits.get(key) ?? []).filter((time) => time > windowStart);
@@ -47,7 +49,7 @@ export class RateLimiter {
 const limiterGlobal = globalThis as typeof globalThis & { __symptomWatchRateLimiter?: RateLimiter };
 
 export function rateLimiter(): RateLimiter {
-  limiterGlobal.__symptomWatchRateLimiter ??= new RateLimiter();
+  limiterGlobal.__symptomWatchRateLimiter ??= new RateLimiter(Date.now, getEnv().RATE_LIMIT_SCALE);
   return limiterGlobal.__symptomWatchRateLimiter;
 }
 

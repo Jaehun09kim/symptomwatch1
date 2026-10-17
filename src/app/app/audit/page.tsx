@@ -51,7 +51,7 @@ async function Audit({ searchParams }: { searchParams: Promise<Params> }) {
           ))}
         </ul>
       </nav>
-      <section className="overflow-x-auto rounded-xl border border-border bg-white shadow-soft">
+      <section tabIndex={0} aria-label="Audit table" className="overflow-x-auto rounded-xl border border-border bg-white shadow-soft">
         <table className="w-full min-w-[48rem] text-left text-sm">
           <caption className="sr-only">Audit events</caption>
           <thead className="bg-surface text-xs text-slate-500">

@@ -20,7 +20,8 @@
     "prebuild": "node scripts/bundle-migrations.mjs",
     "pretest": "node scripts/bundle-migrations.mjs",
     "evaluate": "tsx evaluation/run-evaluation.ts",
-    "evaluate:verify": "python3 research/verify_metrics.py"
+    "evaluate:verify": "python3 research/verify_metrics.py",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@electric-sql/pglite-socket": "^0.2.13",
     "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@testing-library/jest-dom": "^7.0.1",

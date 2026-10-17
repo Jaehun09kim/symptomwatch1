@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import type { AppContext } from "@/lib/authz/context";
 import { can, type Permission } from "@/lib/authz/permissions";
@@ -11,6 +12,8 @@ export const SESSION_COOKIE = "sw_session";
 
 /** Per-request memoized; never cached across requests (clinical data must not go stale after sign-out). */
 export const getCurrentSession = cache(async (): Promise<SessionContext | null> => {
+  // Session checks compare against the clock; opt out of any prerender so this always runs per request.
+  await connection();
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return resolveSession(token);
