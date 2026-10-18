@@ -80,3 +80,42 @@ End each commit message with `Co-Authored-By: Codex <noreply@openai.com>`.
 Verification: `npm run typecheck` and `npm run lint` passed. `npm test` finished with 17 files / 150 tests passing; the wire-protocol suite failed setup with `listen EPERM` on localhost, leaving its 3 tests skipped. Direct Tailwind / Lightning CSS compilation and `git diff --check` passed. Calculated changed-state contrast meets AA: selected text 8.16:1, unselected text 8.57:1, control boundary 3.02:1, and overdue text 5.55:1.
 
 Browser verification remains outstanding: the sandbox rejected the dev server's localhost port, and a separate Playwright Chromium launch failed with a macOS permission error. Actual 390px rendering (including hero/anatomy fit and absence of horizontal scroll), long-page sidebar scrolling, and rendered axe checks could not be verified here.
+
+## Round 3
+
+Implemented on `design-refresh` against v0.2, October 17, 2026. The review flow now uses a triage workspace within the paper, ink, and teal system.
+
+### Layout and interaction
+
+- At **1280px and wider**, compact flag links occupy the left column and one selected detail occupies the right. Each row shows the patient, a one-line truncated title (full text remains in its accessible name and detail), rule short label, first-detected date, and one icon-and-text status marker. Dismissal reasons appear as plain text; snooze replaces the awaiting-review marker with its return date. Suppressed flags retain “Rule turned off”.
+- Below **1280px**, the selected detail sits above the compact list. “Browse flags” and the rows link to labelled, focusable regions, so keyboard and mobile users can move between list and evidence. There is one detail instance at every viewport size.
+- Selection uses real Next links with `?flag=<id>` and preserves `status` and `rule`. Links push history; default, invalid, and filtered-out selections resolve to the first matching flag through a server redirect. A decision that removes the selected flag from the current filter advances to the first remaining flag. Empty filters retain the existing empty state. Selected rows expose `aria-current`; teal rules, underlines, text, and focus outlines supplement color.
+- Status filters are wrapping underlined navigation tabs; rule filters are quiet rectangular segments. All six status tabs remain. The first-detection/not-urgency notice, last-run metadata, permission note, and fictional-data caption sit above the workspace. Rule explanations and clinician feedback move below it; `describeRule(rule, settings)`, disabled-rule labels, and the Detection rules link remain intact.
+- The detail retains the full rationale, evidence links to timeline anchors, missing/uncertain information, review notes, full structured dismissal reason, snooze context, expandable history, and physician actions. “Rule-inferred · needs review” appears once in the detail. Review forms retain their fields, defaults, validation, and server-action bindings.
+- Detection rules uses serif section headings, divided settings rows, 44px number inputs, labelled native checkboxes, and explicit focus outlines. Its signal table retains every column, adds a caption, and stays inside a keyboard-focusable horizontal scroll region. Patient-side flag cards retain their compact typography, use the shared quieter evidence styling, and show snooze return dates.
+
+### Changed files
+
+- `src/app/app/review/page.tsx`: responsive workspace, URL selection/fallback, selected-only history query, filters, review context, and lower reference sections.
+- `src/components/app/primitives/flag-card.tsx`: plain provenance, text status, divided evidence, missing-information inset, compact patient variant, and optional snooze date.
+- `src/components/app/primitives/badges.tsx`: optional plain provenance presentation and a single text-and-icon flag marker including snooze and suppressed states.
+- `src/components/app/review/flag-review.tsx`: labelled action group, larger action targets, and paper/6px-radius dialog fields; action logic and field contracts unchanged.
+- `src/app/app/patients/[id]/page.tsx`: passes the active snooze date into the shared card.
+- `src/app/app/rules/page.tsx`: section typography and signal-table presentation/accessibility.
+- `src/components/app/rules/rule-settings-form.tsx`: settings layout, inputs, checkbox descriptions, focus states, and save-area spacing; same form names and behavior.
+- `tests/e2e/workflow.spec.ts`: scopes confirmation and evidence navigation to the selected detail; explicitly selects the confirmed/resolved flag and checks statuses, Add task, created task, and timeline highlighting. Adds isolated demo workflows for feedback plus dismissal (including required Other-note validation, stored reason, history, and provenance) and snooze → Snoozed tab → Wake now → Awaiting review, including date/note and filter preservation.
+- `tests/e2e/roles.spec.ts`: retains staff restrictions and patient provenance assertions; adds admin read-only review/rules coverage, all clinical action exclusions, four disabled checkboxes, six disabled number fields, and absent save action.
+- `tests/e2e/accessibility.spec.ts`: adds Detection rules to the existing axe pass; adds desktop column positioning, invalid/default selection fallback, keyboard row navigation, `aria-current`, filter preservation, refresh, back/forward, provenance, and selected-detail axe assertions.
+- `tests/e2e/responsive.spec.ts`: adds detail-above-list geometry, mobile selection/jump behavior, provenance visibility, matching row/detail title, enabled rule controls, focusable table region, and absence of page-level horizontal overflow.
+- `docs/DESIGN_REFRESH.md`: this record and handoff.
+- `docs/ROADMAP.md`: round-3 implementation and verification status.
+
+### Verification and handoff
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm test`: 18 files / 168 tests passed. The wire-protocol suite fails setup with `listen EPERM: operation not permitted 127.0.0.1`, leaving its three tests skipped. No assertions or suites were disabled.
+- Direct Tailwind compilation and Lightning CSS optimization: passed (3,647 scanned candidates). The desktop grid utility was verified in the generated CSS.
+- Form-name/action-binding comparison against HEAD and `git diff --check`: passed. No changes to `src/lib/**`, `db/**`, server actions, dependencies, permissions, or import directories.
+- **Not run in this sandbox:** Playwright, rendered axe checks, screenshots, and browser visual/interaction verification. Claude should run desktop/mobile e2e and inspect 390px, 1279px, 1280px, and wider layouts, including action-driven selection fallback and the patient side panel. CSS compilation is not browser verification.
+- **No commit attempted:** the sandbox cannot write the parent repository's worktree Git metadata; Claude will verify and commit outside it.
