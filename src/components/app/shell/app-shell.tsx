@@ -65,8 +65,8 @@ function NavLinks({ items, onNavigate }: { items: NavKey[]; onNavigate?: () => v
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-10 items-center gap-3 rounded-[10px] px-3 text-sm font-medium transition",
-                active ? "bg-white text-navy shadow-soft ring-1 ring-border" : "text-slate-600 hover:bg-white/70 hover:text-navy",
+                "flex min-h-11 items-center gap-3 rounded-sm border-l-2 px-3 text-sm transition",
+                active ? "border-primary bg-brand-soft font-medium text-navy" : "border-transparent text-slate-600 hover:bg-background hover:text-navy",
               )}
             >
               <Icon className={cn("size-[1.125rem]", active ? "text-brand" : "text-slate-500")} aria-hidden />
@@ -81,7 +81,7 @@ function NavLinks({ items, onNavigate }: { items: NavKey[]; onNavigate?: () => v
 
 function ClinicBlock({ user }: { user: ShellUser }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-3">
+    <div className="border-b border-border px-1 pb-5">
       <p className="truncate text-sm font-semibold text-navy" title={user.clinicName}>{user.clinicName}</p>
       <p className="mt-0.5 text-xs text-slate-500">
         {user.isSandbox
@@ -115,7 +115,7 @@ function UserMenu({ user }: { user: ShellUser }) {
   return (
     <Popover>
       <PopoverTrigger className={cn(buttonVariants({ variant: "ghost" }), "h-11 gap-2.5 px-2")}>
-        <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-xs font-semibold text-brand-hover" aria-hidden>{initials}</span>
+        <span className="grid size-8 place-items-center rounded-sm bg-surface text-xs font-semibold text-brand-hover" aria-hidden>{initials}</span>
         <span className="sr-only">Account menu: </span>
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-medium leading-tight text-navy">{user.displayName}</span>
@@ -171,11 +171,11 @@ export function AppShell({ user, nav, viewAs, children }: { user: ShellUser; nav
   const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-1">
-      <aside className="sticky top-[33px] hidden h-[calc(100dvh-33px)] w-64 shrink-0 border-r border-border bg-surface p-4 lg:block">
+      <aside className="sticky top-[33px] hidden h-[calc(100dvh-33px)] w-56 shrink-0 border-r border-border bg-surface p-4 lg:block">
         <SidebarContent user={user} nav={nav} />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center gap-3 border-b border-border bg-white px-4 sm:px-6">
+        <header className="flex h-16 items-center gap-3 border-b border-border bg-background px-4 sm:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "lg:hidden")} aria-label="Open navigation">
               <Menu className="size-5" />
@@ -185,7 +185,7 @@ export function AppShell({ user, nav, viewAs, children }: { user: ShellUser; nav
               <SidebarContent user={user} nav={nav} onNavigate={() => setOpen(false)} />
             </SheetContent>
           </Sheet>
-          <span className="inline-flex h-6 items-center rounded-full border border-border bg-surface px-2.5 text-xs font-medium text-slate-600">
+          <span className="text-xs font-medium text-slate-600">
             {roleLabel[user.role]} view
           </span>
           <div className="ml-auto flex items-center gap-2">

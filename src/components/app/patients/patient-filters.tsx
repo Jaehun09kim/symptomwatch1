@@ -31,7 +31,7 @@ export function PatientFilters({ physicians, showReviewFilter }: { physicians: A
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce on the text only
   }, [q]);
 
-  const select = cn(controlClass, "h-10 w-auto min-w-0 pr-8 text-sm");
+  const select = cn(controlClass, "h-11 w-auto min-w-0 rounded-md bg-background pr-8 text-sm");
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center" role="search" aria-label="Filter patients">
       <div className="relative md:w-72">
@@ -42,7 +42,7 @@ export function PatientFilters({ physicians, showReviewFilter }: { physicians: A
           value={q}
           onChange={(event) => setQ(event.target.value)}
           placeholder="Search name or DEMO-MRN"
-          className={cn(controlClass, "h-10 pl-9 pr-9 text-sm")}
+          className={cn(controlClass, "h-11 rounded-md bg-background pl-9 pr-9 text-sm")}
         />
         {q ? (
           <button type="button" onClick={() => setQ("")} className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-slate-400 hover:text-navy" aria-label="Clear search">

@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { Users } from "lucide-react";
 import { describe, expect, it } from "vitest";
 import { ProvenanceBadge, StatusBadge } from "@/components/app/primitives/badges";
 import { StatCard } from "@/components/app/primitives/stat-card";
@@ -18,7 +17,7 @@ describe("product primitives", () => {
   });
 
   it("hides the value of a locked stat card", () => {
-    render(<StatCard label="Patients needing review" value={7} icon={Users} locked="Requires clinical access" />);
+    render(<StatCard label="Patients needing review" value={7} locked="Requires clinical access" />);
     expect(screen.getByText("Requires clinical access")).toBeInTheDocument();
     expect(screen.queryByText("7")).not.toBeInTheDocument();
   });

@@ -49,7 +49,7 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
     });
 
   return (
-    <section aria-labelledby="timeline-heading" className="rounded-xl border border-border bg-white p-5 shadow-soft">
+    <section aria-labelledby="timeline-heading" className="border-t border-border py-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="timeline-heading" className="text-base font-semibold">Timeline</h2>
         <Button variant="outline" size="sm" onClick={() => setDirection((value) => (value === "desc" ? "asc" : "desc"))}>
@@ -67,7 +67,7 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
               aria-pressed={on}
               onClick={() => toggle(filter.key)}
               className={cn(
-                "inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition",
+                "inline-flex min-h-11 items-center rounded-sm border px-3 text-xs font-medium transition",
                 on ? "border-brand/30 bg-brand-soft text-brand-hover" : "border-border bg-white text-slate-500 line-through",
               )}
             >
@@ -77,7 +77,7 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
         })}
       </div>
       {!clinical ? (
-        <p className="mt-3 rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-slate-600">
+        <p className="mt-3 rounded-md border border-border bg-surface px-3 py-2 text-xs text-slate-600">
           Front-desk view: visits, symptoms, lab orders, referral reasons, and review flags are limited to clinical roles.
         </p>
       ) : null}

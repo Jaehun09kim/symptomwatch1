@@ -24,7 +24,7 @@ async function InviteContent({ params }: { params: Promise<{ token: string }> })
   }
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Join {invitation.clinicName}</h1>
+      <h1 className="display-heading text-4xl">Join {invitation.clinicName}</h1>
       <p className="mt-2 text-body">
         {invitation.inviterName} invited <strong className="text-navy">{invitation.email}</strong> to join as{" "}
         <strong className="text-navy">{roleLabel[invitation.role]}</strong>.

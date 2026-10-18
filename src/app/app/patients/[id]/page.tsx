@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, FlaskConical, ListChecks, Send } from "lucide-react";
-import { FictionalTag, StatusBadge } from "@/components/app/primitives/badges";
+import { StatusBadge } from "@/components/app/primitives/badges";
 import { FlagCard } from "@/components/app/primitives/flag-card";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import { ageFrom } from "@/components/app/patients/patients-panel";
@@ -43,7 +43,7 @@ function RailSection({ title, icon: Icon, count, children, action }: {
   action?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-white p-4 shadow-soft">
+    <section className="border-t border-border py-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Icon className="size-4 text-slate-500" aria-hidden /> {title}
@@ -87,17 +87,17 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
         <ArrowLeft className="size-4" aria-hidden /> All patients
       </Link>
 
-      <header className="flex flex-col gap-4 rounded-xl border border-border bg-white p-5 shadow-soft md:flex-row md:items-center md:justify-between">
+      <header className="flex flex-col gap-4 border-y border-border py-5 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold">{header.firstName} {header.lastName}</h1>
-            <FictionalTag />
+            <span className="text-xs text-muted-foreground">Fictional patient record</span>
             {header.careStatus === "transferred_out" ? (
               <span className="inline-flex h-6 items-center rounded-full border border-slate-300 px-2.5 text-xs font-medium text-slate-600">Care transferred out</span>
             ) : null}
           </div>
           <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-body">
-            <div className="flex gap-1.5"><dt className="text-slate-500">Demo MRN</dt><dd className="tabular-nums">{header.demoMrn}</dd></div>
+            <div className="flex gap-1.5"><dt className="text-slate-500">Demo MRN</dt><dd className="font-mono text-xs">{header.demoMrn}</dd></div>
             <div className="flex gap-1.5"><dt className="text-slate-500">Age</dt><dd>{ageFrom(header.dateOfBirth, now)}</dd></div>
             <div className="flex gap-1.5"><dt className="text-slate-500">Sex</dt><dd>{header.sex === "female" ? "Female" : "Male"}</dd></div>
             <div className="flex gap-1.5"><dt className="text-slate-500">Phone</dt><dd className="tabular-nums">{header.phone}</dd></div>
@@ -117,11 +117,12 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
           {record.clinical ? (
             <RailSection title="Possible gaps for review" icon={ListChecks} count={reviewFlags.length}>
               {reviewFlags.length ? (
-                <div className="space-y-3">
+                <div className="space-y-0">
                   {reviewFlags.map((flag) => (
                     <FlagCard
                       key={flag.id}
                       compact
+                      className="rounded-none border-x-0 border-t-0 bg-transparent px-0 shadow-none"
                       status={flag.status}
                       ruleLabel={ruleShortLabel[flag.ruleId]}
                       ruleVersion={flag.ruleVersion}
@@ -141,9 +142,9 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
 
           <RailSection title="Outstanding tasks" icon={ListChecks} count={openTasks.length}>
             {openTasks.length ? (
-              <ul className="space-y-3">
+              <ul className="space-y-0">
                 {openTasks.map((task) => (
-                  <li key={task.id} className="rounded-lg border border-border p-3">
+                  <li key={task.id} className="border-b border-border py-3">
                     <p className="text-sm font-medium text-navy">{task.title}</p>
                     <p className="mt-0.5 text-xs text-slate-500">
                       {taskCategoryLabel[task.category]} · due {formatTimelineDate(task.dueDate)}{task.assigneeName ? ` · ${task.assigneeName}` : " · unassigned"}
@@ -164,9 +165,9 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
 
           <RailSection title="Referrals" icon={Send} count={record.referrals.length}>
             {record.referrals.length ? (
-              <ul className="space-y-3">
+              <ul className="space-y-0">
                 {record.referrals.map((referral) => (
-                  <li key={referral.id} className="rounded-lg border border-border p-3">
+                  <li key={referral.id} className="border-b border-border py-3">
                     <p className="text-sm font-medium text-navy">{referral.specialty}</p>
                     <p className="mt-0.5 text-xs text-slate-500">Referred {formatTimelineDate(referral.referredAt)} · {referralStatusLabel[referral.status]}</p>
                     {activeReferrals.includes(referral) && can(session.role, "referral.update_admin_status") ? (
@@ -182,9 +183,9 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
 
           <RailSection title="Appointments" icon={CalendarClock} count={upcomingAppointments.length}>
             {upcomingAppointments.length ? (
-              <ul className="space-y-3">
+              <ul className="space-y-0">
                 {upcomingAppointments.map((appointment) => (
-                  <li key={appointment.id} className="flex items-start justify-between gap-2 rounded-lg border border-border p-3">
+                  <li key={appointment.id} className="flex items-start justify-between gap-2 border-b border-border py-3">
                     <div>
                       <p className="text-sm font-medium text-navy">{appointmentPurposeLabel[appointment.purpose]}</p>
                       <p className="mt-0.5 text-xs text-slate-500">{formatTimelineDate(appointment.scheduledFor)} · {appointmentStatusLabel[appointment.status]}</p>
@@ -201,9 +202,9 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
           {record.clinical ? (
             <RailSection title="Pending labs" icon={FlaskConical} count={pendingLabs.length}>
               {pendingLabs.length ? (
-                <ul className="space-y-3">
+                <ul className="space-y-0">
                   {pendingLabs.map((lab) => (
-                    <li key={lab.id} className="flex items-start justify-between gap-2 rounded-lg border border-border p-3">
+                    <li key={lab.id} className="flex items-start justify-between gap-2 border-b border-border py-3">
                       <div>
                         <p className="text-sm font-medium text-navy">{lab.testName}</p>
                         <p className="mt-0.5 text-xs text-slate-500">Ordered {formatTimelineDate(lab.orderedAt)} · {labStatusLabel[lab.status]}</p>

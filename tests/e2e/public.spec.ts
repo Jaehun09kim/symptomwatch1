@@ -1,13 +1,16 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("public website", () => {
-  test("homepage presents the product, benefits, previews, and calls to action", async ({ page }) => {
+  test("homepage presents the case, evidence, product, and calls to action", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/SymptomWatch/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Close the follow-up loops/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/The referral was sent\.\s*The consult note never arrived\./);
     await expect(page.getByText("Demo Only — No Real Patient Data.").first()).toBeVisible();
-    for (const benefit of ["Never lose a follow-up loop", "Explainable flags, clinician in control", "Built for small-clinic workflows"]) {
-      await expect(page.getByRole("heading", { name: benefit })).toBeVisible();
+    for (const heading of [/A flag is a question\s*for the chart\./, /A working list for the people\s*who follow up\./, /Before you try it\./]) {
+      await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    }
+    for (const disclosure of ["not clinically validated", "not HIPAA-compliant", "fictional data only", "No patient contact.", "External AI is disabled."]) {
+      await expect(page.locator("#safety")).toContainText(disclosure);
     }
     await expect(page.getByRole("figure", { name: /Preview of the SymptomWatch dashboard/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Try Demo/ }).first()).toHaveAttribute("href", "/demo");
@@ -46,6 +49,6 @@ test.describe("public website", () => {
     expect(home.headers()["x-robots-tag"]).toBeUndefined();
     expect(home.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
     await page.goto("/privacy");
-    await expect(page.getByRole("heading", { name: "Not HIPAA-compliant — yet" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Not HIPAA-compliant" })).toBeVisible();
   });
 });

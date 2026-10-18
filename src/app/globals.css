@@ -8,6 +8,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-source-serif), Georgia, serif;
   --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -38,69 +39,74 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: 4px;
+  --radius-md: 4px;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
+  --radius-4xl: 6px;
 }
 
 :root {
   /* SymptomWatch palette — light theme only (clinical clarity). */
-  --background: #ffffff;
-  --foreground: #0b1f3a;
-  --card: #ffffff;
-  --card-foreground: #0b1f3a;
-  --popover: #ffffff;
-  --popover-foreground: #0b1f3a;
-  --primary: #1d5fd1;
+  --background: #fbfaf7;
+  --foreground: #20332f;
+  --card: #fbfaf7;
+  --card-foreground: #20332f;
+  --popover: #fbfaf7;
+  --popover-foreground: #20332f;
+  --primary: #17665b;
   --primary-foreground: #ffffff;
-  --secondary: #eef3fb;
-  --secondary-foreground: #0b1f3a;
-  --muted: #f6f8fb;
-  --muted-foreground: #56667c;
-  --accent: #eef3fb;
-  --accent-foreground: #0b1f3a;
-  --destructive: #c2410c;
-  --border: #e3e8ef;
-  --input: #d5dde8;
-  --ring: #1d5fd1;
-  --chart-1: #1d5fd1;
-  --chart-2: #0e9f8e;
-  --chart-3: #64748b;
-  --chart-4: #b45309;
-  --chart-5: #7c6fb0;
-  --radius: 0.75rem;
-  --sidebar: #f6f8fb;
-  --sidebar-foreground: #0b1f3a;
-  --sidebar-primary: #1d5fd1;
+  --secondary: #e7efeb;
+  --secondary-foreground: #20332f;
+  --muted: #f0efe9;
+  --muted-foreground: #59645f;
+  --accent: #e7efeb;
+  --accent-foreground: #20332f;
+  --destructive: #a5362b;
+  --border: #d4d8d0;
+  --input: #88948d;
+  --ring: #17665b;
+  --chart-1: #17665b;
+  --chart-2: #39705c;
+  --chart-3: #59645f;
+  --chart-4: #85521e;
+  --chart-5: #776348;
+  --radius: 0.375rem;
+  --sidebar: #f0efe9;
+  --sidebar-foreground: #20332f;
+  --sidebar-primary: #17665b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8effa;
-  --sidebar-accent-foreground: #0b1f3a;
-  --sidebar-border: #e3e8ef;
-  --sidebar-ring: #1d5fd1;
+  --sidebar-accent: #e7efeb;
+  --sidebar-accent-foreground: #20332f;
+  --sidebar-border: #d4d8d0;
+  --sidebar-ring: #17665b;
 
-  --sw-navy: #0b1f3a;
-  --sw-body: #334155;
-  --sw-surface: #f6f8fb;
-  --sw-blue: #1d5fd1;
-  --sw-blue-hover: #174eae;
-  --sw-blue-soft: #e8effa;
-  --sw-teal: #0e9f8e;
-  --sw-teal-strong: #0b7d70;
-  --sw-teal-soft: #e3f5f2;
-  --sw-attention: #92400e;
-  --sw-attention-soft: #fef3c7;
-  --sw-shadow-sm: 0 1px 2px rgb(11 31 58 / 0.06);
-  --sw-shadow-md: 0 1px 2px rgb(11 31 58 / 0.05), 0 8px 24px rgb(11 31 58 / 0.06);
-  --sw-shadow-lg: 0 2px 4px rgb(11 31 58 / 0.04), 0 24px 48px rgb(11 31 58 / 0.10);
+  --sw-navy: #20332f;
+  --sw-body: #3d4d46;
+  --sw-surface: #f0efe9;
+  --sw-blue: #17665b;
+  --sw-blue-hover: #104e46;
+  --sw-blue-soft: #e7efeb;
+  --sw-teal: #39705c;
+  --sw-teal-strong: #35634c;
+  --sw-teal-soft: #e9f0e7;
+  --sw-attention: #85521e;
+  --sw-attention-soft: #f6ecd6;
+  --sw-shadow-sm: none;
+  --sw-shadow-md: none;
+  --sw-shadow-lg: none;
 }
 
 @theme inline {
-  /* Darkened from Tailwind's #62748e so muted text meets WCAG AA (≥ 5:1) on every surface we use. */
-  --color-slate-500: #56667c;
+  /* Muted text stays above AA on paper, inset surfaces, and status tints. */
+  --color-slate-500: #59645f;
+  --color-slate-600: #4d5c55;
+  --color-slate-700: #3d4d46;
+  --color-slate-400: #64736b;
+  --color-slate-300: #b7c0b8;
+  --color-slate-100: #f0efe9;
   --color-navy: var(--sw-navy);
   --color-body: var(--sw-body);
   --color-surface: var(--sw-surface);
@@ -154,4 +160,29 @@
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+@layer components {
+  .display-heading {
+    font-family: var(--font-source-serif), Georgia, serif;
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+  }
+  .metric-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    border-block: 1px solid var(--border);
+    background: var(--background);
+  }
+  .metric-strip > * {
+    border-inline-end: 1px solid var(--border);
+  }
+  .metric-strip > :last-child { border-inline-end: 0; }
+  @media (min-width: 768px) {
+    .metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1280px) {
+    .metric-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  }
 }
