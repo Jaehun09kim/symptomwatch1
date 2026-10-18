@@ -1,42 +1,40 @@
 # Roadmap
 
-This is the team's working record of where we are, what's unresolved, and what's next. Detailed history is in `COLLABORATION.md`.
+This is the team's working record of where we are, what's unresolved, and what's next. Detailed history is in `COLLABORATION.md`; design decisions are in `DESIGN_REFRESH.md`.
 
 ## Product goal
 
 SymptomWatch helps 1–5-physician primary-care clinics catch follow-up loops that never closed: overdue return visits, lab results never documented, referrals with no outcome, and recurring symptoms without a plan. Every flag explains itself and is reviewed by a clinician. The current target is a credible demo for Orange County clinics. Real patient data is out of scope until the clinical deployment checklist is complete.
 
+**Working agreement (2026-10-17):** we refine the *demo* until the product owner and Claude agree it looks and works right. Only then do we start building the real product.
+
 ## Completed
 
 | Date | Milestone |
 |---|---|
-| 2026-10-17 | **v0.1 prototype.** Covers all four phases: foundation, functional app, detection and evaluation, and demo readiness. It has 153 Vitest tests and 27 Playwright tests passing. `main` was pushed to GitHub (`d6f39c1`). Not deployed. |
+| 2026-10-17 | **v0.1 prototype.** All four phases; 153 Vitest + 27 Playwright tests passing. Pushed to GitHub (`main` at `d6f39c1`). Not deployed. |
+| 2026-10-17 | **v0.2 items 1–3, on branch `v0.2` (local, not pushed).** CI workflow; blind Codex review and fixes; alert-fatigue controls; CSV import; Codex design rounds 1–3. 190 Vitest + 32 Playwright tests passing; `npm run check` green; evaluation unchanged. |
 
-## Design refresh, round 1 (2026-10-17)
+## Current milestone: v0.2, a pilot-ready demo
 
-Implemented on `design-refresh`: local Source Serif 4, paper/ink/teal tokens, case-led homepage, compact dashboard metrics, calmer shell, patient list/detail, auth, demo and privacy pages. Review and queue restructuring remains assigned to the other stream / round 2. No service, data, permission, or action changes.
+| # | Item | Status |
+|---|---|---|
+| 1 | Hardening: CI, blind Codex review + fixes, README cleanup | ✅ Done (CI runs once pushed) |
+| 2 | Data on-ramp: CSV import (lab orders, referrals) | ✅ Done. Appointments import deferred until clinics ask for it |
+| 3 | Alert-fatigue controls: snooze, structured dismissals, per-clinic rule settings, signal quality | ✅ Done |
+| — | Design refresh with Codex (product owner request) | 🔄 Round 3 merged; iterating with the product owner until agreed |
+| 4 | Hosted demo (Vercel + demo-only Supabase) | ⏸ Needs approval and the product owner's accounts |
+| 5 | Customer discovery (interview guide + demo script for 5–10 clinics) | ⏸ Product owner-led; `DEMO_SCRIPT.md` updated for v0.2 |
 
-Typecheck and lint pass. Vitest: 150 passing tests; the three wire-protocol tests cannot start because the sandbox denies localhost binding. Production/e2e is blocked by the same port restriction in Turbopack. Claude still needs to run full tests, axe, and desktop/mobile visual review outside this sandbox. Git staging is also blocked by the sandbox protecting the parent repository’s worktree index; changes remain uncommitted. Details and copy inventory: `DESIGN_REFRESH.md`.
+## Next design round (candidates)
 
-## Current milestone: v0.2, a pilot-ready demo (proposed, awaiting product owner decision)
-
-1. **Hardening:** GitHub Actions CI, a blind Codex review of the detection engine and RLS, fixes for its findings, and README cleanup.
-2. **Data on-ramp:** CSV import of EHR-style report exports (appointments, lab orders, referrals), with column mapping, dry-run preview, validation, and re-detection. Synthetic files only.
-3. **Alert-fatigue controls:** snooze or "expected" acknowledgement per flag, plus per-clinic rule thresholds.
-4. **Hosted demo:** Vercel plus a demo-only Supabase project. Needs approval and the product owner's accounts.
-5. **Customer discovery:** an interview guide and demo script for 5–10 clinics, led by the product owner.
+- Review workspace: keep the detail pane in view (sticky) while scrolling a long list; drop the repeated "Awaiting review" marker on every row in that tab.
+- Product owner's own feedback on rounds 1–3 (pending).
 
 ## Open issues
 
-- The evaluation is not independent (the same author wrote the rules, labels and engine). Blind review and, eventually, external labelers are needed.
-- Migration `0005_owner_rls_compat.sql` hasn't been tested on real Supabase.
-- Rate limits are in-memory per instance, there is no email transport, and auth is custom (no MFA or SSO).
-- Rule limitations: R2 has no order-level linkage, and R1 accepts any later encounter (`PRODUCT_SPEC.md` §6.5).
-- Undecided: whether to keep built-in auth or adopt Supabase Auth. Recommendation: keep built-in auth until real pilots require MFA or SSO.
-- The two stray `# symptomwatch1` lines at the end of `README.md` need removing.
-
-## Design refresh, round 3 (2026-10-17)
-
-Implemented the v0.2 review workspace on `design-refresh`: compact list plus selected detail at ≥1280px, detail above list on smaller screens, URL selection/history, quiet filters and status markers, and matching Detection rules and patient flag styling. Existing clinical actions, settings fields, permissions, and data flow are preserved. Import work is untouched. E2e coverage now includes selection/history, structured dismissal, snooze/wake, administrator restrictions, rule-page axe coverage, and mobile layout.
-
-Typecheck and lint pass. Vitest: 168 tests pass; the three wire-protocol tests cannot start because the sandbox denies localhost binding. Direct Tailwind/Lightning CSS compilation and diff checks pass. Playwright, axe, screenshots, and commit remain for Claude outside the sandbox; this round is implemented but awaiting browser verification. File inventory and handoff: `DESIGN_REFRESH.md` §Round 3.
+- **Not independent evaluation:** the same author wrote the rules, labels, and engine. Codex's blind review checked the engine against the spec, not accuracy. External labelers are needed eventually.
+- Migration `0005` (and the owner-compat blocks in 0006/0008) are untested on real Supabase.
+- Known security limitations from the Codex review are listed in `SECURITY.md` (owner connection vs. arbitrary SQL, referral clinical columns under staff RLS, rate-limit proxy trust, dev outbox gating, flag-event actor attribution).
+- Rate limits are in-memory; no email transport; custom auth (no MFA/SSO). Recommendation: keep built-in auth until real pilots require MFA or SSO.
+- Rule limitations: R2 has no order-level linkage; R1 accepts any later encounter (`PRODUCT_SPEC.md` §6.5).

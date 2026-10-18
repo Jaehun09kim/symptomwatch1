@@ -66,7 +66,7 @@ Physician actions on a flag: **Confirm gap** (optionally create a follow-up task
 Staff view: demographics, appointments, referral administrative status, non-clinical tasks; clinical sections show a permission notice.
 
 ### 5.4 Review queue `/app/review` (physician/admin)
-All open flags across patients, filter by rule/status/physician, sorted by first detected date (not by urgency). “Run detection” button with last-run timestamp.
+Triage workspace (v0.2): a compact flag list beside the selected flag's detail (`?flag=<id>`), stacked on narrow screens. Tabs: Awaiting review · Snoozed · Gap confirmed · Dismissed · Resolved by new data · All; rule filter. Sorted by first detected date (not by urgency). “Run detection” with last-run metadata. Physician actions: confirm (+ optional task), **snooze** until a date (≤ 90 days; wakes early if evidence changes), **wake now**, dismiss with a **structured reason** (expected · addressed elsewhere · not clinically relevant · data error · other — note required for “other”), feedback.
 
 ### 5.5 Staff `/app/staff` (admin)
 Members (role, status), change role, disable/enable (cannot remove last admin or self-demote last admin), invitations (create, copy link, revoke, status).
@@ -76,6 +76,17 @@ Filterable table (action, actor, date range), paginated.
 
 ### 5.7 Settings `/app/settings`
 Clinic name, demo reset (admin, confirm dialog), data-handling notice, detection provider status (“Rule-based v1 · external AI disabled”).
+
+### 5.8 Detection rules `/app/rules` (physician edits, admin reads) — v0.2
+Per-clinic settings: turn each rule on/off; R1 grace (0–60 d, default 14), R2 grace (0–60, 7), R3 appointment grace (0–90, 14) and records wait (0–90, 14), R4 minimum visits (2–6, 2) and span (0–180 d, 28). Saving re-runs detection: flags that no longer qualify close as `resolved_by_data` with the note “No longer meets this clinic's rule settings”; a turned-off rule's open/confirmed flags become `suppressed` and return when it's turned back on. **Signal quality** table per rule: raised, awaiting, snoozed, confirmed, dismissed, resolved, confirm rate (confirmed ÷ reviewed), top dismissal reason — review outcomes, not clinical validation. The evaluation (`npm run evaluate`) always uses the engine defaults.
+
+### 5.9 Import records `/app/import` (clinic admin, physician) — v0.2
+CSV import of EHR report exports: **referrals** (admin or physician) and **lab orders** (physician only — recording a result closes a lab gap). Steps: choose a file (≤ 512 KB, ≤ 1,000 rows) or generate a sample export from the clinic's own fictional records → match columns (auto-matched from common EHR header names) → preview (new / update / no change / problem, per row, with reasons) → import.
+- Patients are matched by **demo MRN within the current clinic only**; non-`DEMO-#####` identifiers are refused. An optional patient-name column is used only to catch wrong-patient rows (surname must match) and is never stored.
+- Matching existing records: by source order/referral id when present, otherwise by (patient, test/specialty, order/referral date). Re-importing the same export is idempotent; source ids are saved for future matches.
+- Statuses only move forward (lab: ordered → collected → resulted/cancelled; referral: sent → scheduled → seen → records received; declined/cancelled terminal). Dates already documented are never overwritten.
+- Free text passes the PHI tripwire; future dates (except specialist appointments) and out-of-order dates are rejected.
+- The commit re-validates on the server, writes the batch, rows, and audit entry in one transaction, and re-runs detection for the affected patients. Recent imports are listed with counts.
 
 ## 6. Detection rules (v1)
 
@@ -128,6 +139,7 @@ Subject: (patient, `symptom_code`).
 - **R4** work-up evidence must be dated on/after the first observation in the candidate set; referrals with status `declined` or `cancelled` and labs `cancelled` do **not** count.
 - **R1** limitations kept for v1: *any* later completed encounter satisfies the recommendation; a future follow-up appointment satisfies it regardless of how far out.
 - Ties on the same day: an encounter on the same day as E does not count as “after E”.
+- **Clarified after the blind Codex review (2026-10-17):** R3 is suppressed whenever `records_received_at ≤ asOf`, whatever the status says; R2/R3 never cite an ordering/referring encounter dated after `asOf`; R2 treats status `collected` as documented collection even without a `collected_at` date (“date not recorded”). Evaluation metrics were unchanged by these fixes.
 
 ### 6.6 Flag lifecycle
 - `fingerprint = ruleId + ":" + subjectType + ":" + subjectId` (stable subject identity). `evidence_hash` = SHA-256 of the canonical (sorted) evidence ids + missing-info codes.
@@ -145,6 +157,7 @@ Subject: (patient, `symptom_code`).
 - Every transition and review writes an append-only `flag_events` row (`created`, `updated`, `confirmed`, `dismissed`, `reopened`, `reopened_evidence_changed`, `resolved_by_data`, `feedback`) with actor, timestamp, note. The flag row stores only the current state.
 - **Confirm + create task** is one transaction and idempotent (at most one open task per `source_flag_id`).
 - A failed run changes nothing (single transaction).
+- **v0.2 additions.** *Snooze* is an overlay on `open` (columns `snoozed_until/by`, `snooze_note`): snoozed flags leave the Awaiting tab and dashboard counts until the date; a run that changes the evidence clears the snooze (event `unsnoozed`, “record changed”). *Suppressed* is a status for flags whose rule the clinic turned off: `open|confirmed` + rule off → `suppressed` (event `suppressed`); `suppressed` + rule on → `open` if the finding is present, else `resolved_by_data`. Dismissals record `review_reason`. A dismissed flag with unchanged evidence still gets its `rule_version` updated. Physician reviews take the same per-clinic advisory lock as detection runs, so a run can't overwrite a review it read before commit.
 
 ### 6.7 Evaluation units (pre-declared)
 `evaluation/reference-labels.ts` enumerates **every** evaluation unit with an expected label, independent of engine output:
@@ -161,6 +174,6 @@ Subject: (patient, `symptom_code`).
 - `npm run evaluate` runs the real engine at the fixed reference date and reports per-rule and overall TP/FP/FN/TN, precision, recall, F1, false-positive rate (FP / (FP + TN) over candidate units), plus patient-level metrics. Results written to `evaluation/results/latest.json` and `evaluation/RESULTS.md`.
 - `research/verify_metrics.py` recomputes metrics independently from the exported predictions and labels.
 
-## 8. Non-goals (v0.1)
+## 8. Non-goals (v0.1–v0.2)
 
 Real EHR integration, real patient messaging, e-prescribing, billing, clinical decision support, urgency triage, LLM inference on any data, mobile apps.
