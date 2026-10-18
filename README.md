@@ -68,7 +68,11 @@ Or click **Try Demo** to get a private sandbox clinic (no sign-up), or **Create 
 
 **Explainable detection** — four transparent, versioned rules (overdue follow-up, lab result missing, referral outcome missing, recurring symptom without documented plan). Each flag shows what was flagged, why, which records support it, and what's missing. Physicians confirm (optionally creating a task), dismiss with a reason, or leave feedback. Flags resolve automatically when someone documents the missing record. External AI is hard-disabled; a provider interface exists for future evaluation only.
 
-**Safety rails** — sticky "Demo Only — No Real Patient Data" banner, synthetic-only database constraints, fictional-phone-only patients, a PHI tripwire on all free text, no file uploads, audit logging, clinic isolation enforced by Postgres row-level security.
+**Alert-fatigue controls (v0.2)** — physicians snooze a flag until a date (it wakes early if the record changes), dismiss with a structured reason, and tune each rule per clinic on **Detection rules**, which also shows per-rule signal quality (confirm rate, top dismissal reason).
+
+**CSV import (v0.2)** — bring in lab orders and referrals from an EHR report export: auto-matched columns, a row-by-row preview (new / update / no change / problem), wrong-patient checks, forward-only status updates, idempotent re-imports, and an automatic detection refresh. Each clinic can generate a sample export from its own fictional records.
+
+**Safety rails** — sticky "Demo Only — No Real Patient Data" banner, synthetic-only database constraints, fictional-phone-only patients, demo-MRN-only imports, a PHI tripwire on all free text, audit logging, clinic isolation enforced by Postgres row-level security.
 
 ## Evaluation (synthetic)
 
@@ -114,4 +118,4 @@ Next.js 16 (App Router, Server Actions, Cache Components) · React 19 · TypeScr
 
 ## Status
 
-v0.1 prototype. Nothing has been deployed publicly; see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) when you're ready.
+v0.2 in progress (branch `v0.2`) — see [`docs/ROADMAP.md`](docs/ROADMAP.md). Nothing has been deployed publicly; see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) when you're ready.
