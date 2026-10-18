@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const initial: DemoRequestState = { status: "idle" };
 
 const control =
-  "w-full rounded-[10px] border border-input bg-white px-3 text-[0.95rem] text-navy shadow-soft outline-none transition placeholder:text-slate-400 focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20 aria-invalid:border-destructive";
+  "w-full rounded-md border border-input bg-background px-3 text-[0.95rem] text-navy outline-none transition placeholder:text-slate-400 focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20 aria-invalid:border-destructive";
 
 function Field({
   id,

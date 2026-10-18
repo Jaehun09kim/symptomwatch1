@@ -18,7 +18,7 @@ const links = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="border-b border-border/70 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
+    <header className="border-b border-border bg-background">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="rounded-md" aria-label="SymptomWatch home">
           <Logo />

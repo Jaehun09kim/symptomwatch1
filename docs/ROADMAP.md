@@ -12,6 +12,12 @@ SymptomWatch helps 1–5-physician primary-care clinics catch follow-up loops th
 |---|---|
 | 2026-10-17 | **v0.1 prototype.** Covers all four phases: foundation, functional app, detection and evaluation, and demo readiness. It has 153 Vitest tests and 27 Playwright tests passing. `main` was pushed to GitHub (`d6f39c1`). Not deployed. |
 
+## Design refresh, round 1 (2026-10-17)
+
+Implemented on `design-refresh`: local Source Serif 4, paper/ink/teal tokens, case-led homepage, compact dashboard metrics, calmer shell, patient list/detail, auth, demo and privacy pages. Review and queue restructuring remains assigned to the other stream / round 2. No service, data, permission, or action changes.
+
+Typecheck and lint pass. Vitest: 150 passing tests; the three wire-protocol tests cannot start because the sandbox denies localhost binding. Production/e2e is blocked by the same port restriction in Turbopack. Claude still needs to run full tests, axe, and desktop/mobile visual review outside this sandbox. Git staging is also blocked by the sandbox protecting the parent repository’s worktree index; changes remain uncommitted. Details and copy inventory: `DESIGN_REFRESH.md`.
+
 ## Current milestone: v0.2, a pilot-ready demo (proposed, awaiting product owner decision)
 
 1. **Hardening:** GitHub Actions CI, a blind Codex review of the detection engine and RLS, fixes for its findings, and README cleanup.

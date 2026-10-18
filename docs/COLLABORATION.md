@@ -41,3 +41,11 @@ Entries are appended as work proceeds.
 - **Phase 4:** Playwright e2e + axe suite, postgres wire-protocol test, hosted-Postgres compatibility migration, documentation.
 - Bugs found by Claude's own review and tests (fixed): partial-commit on invitation race, missing `users` grant for tenant name lookups, re-confirm overwriting review notes, single-patient refreshes shown as "last run", prerender clock usage in session checks, React form auto-reset losing input, contrast below AA.
 - **Pending:** an independent Codex review of the engine against PRODUCT_SPEC §6 *without* reading the labels, and a security review of the RLS migrations, once Codex quota is available.
+
+### 2026-10-17 — Design refresh, round 1 (Codex)
+
+- Adopted a paper/ink/teal system, local Source Serif 4 display typography, 4–6px radius tokens, and divider-led layouts.
+- Rebuilt marketing around the existing William Foster referral scenario and an annotated flag. Preserved safety disclosures and rewrote generic copy. Updated auth, demo, privacy, app shell, dashboard, charts, patient list and detail.
+- All seven dashboard metrics retain semantics, links and role restrictions. Queue/review source directories and service/data code are untouched.
+- Typecheck/lint passed; 150 tests passed. Three wire-protocol tests and production/e2e are blocked by sandbox localhost-binding restrictions. Claude must run full test/axe and visual review before merge. Detailed copy and verification inventory: `DESIGN_REFRESH.md`.
+- Git staging/commit blocked: the sandbox refuses the parent repository worktree `index.lock`. All edits remain uncommitted; the proposed two-commit split and required co-author trailer are recorded in `DESIGN_REFRESH.md`.

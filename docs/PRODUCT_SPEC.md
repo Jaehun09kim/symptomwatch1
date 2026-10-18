@@ -16,40 +16,39 @@ It is a **documentation and coordination aid**. It surfaces *possible documentat
 
 ## 3. Design system
 
-- Background white `#FFFFFF`; surface `#F6F8FB`; borders `#E3E8EF`.
-- Typography navy `#0B1F3A` (headings), slate `#334155` (body), muted `#64748B`.
-- Primary blue `#1D5FD1` (actions), teal `#0E9F8E` (positive / completed / brand accent), amber `#B45309` text on `#FEF3C7` (needs attention), red reserved for destructive actions & errors only — **never** used to imply clinical urgency.
-- Font: Inter (or Geist) via `next/font`; tabular numerals for metrics.
-- Radius: 12px cards, 10px inputs/buttons, pill badges.
-- WCAG 2.2 AA contrast, visible focus rings, ≥44px touch targets on mobile, `prefers-reduced-motion` respected.
-- Provenance badges, used consistently on timeline and flags:
-  - **Documented** (solid teal-outline, check icon) — an event recorded in the chart.
-  - **Not documented** (dashed slate outline, question icon) — an expected event with no record.
-  - **Rule-inferred** (blue outline, sparkle/scan icon) — produced by the detection engine; always shows “Possible gap — needs clinician review”.
+Round 1 (October 2026): an editorial, clinical-instrument treatment. See `DESIGN_REFRESH.md` for palette contrast calculations, copy inventory, and verification limits.
+
+- Warm paper `#FBFAF7`, inset surface `#F0EFE9`, hairline borders `#D4D8D0`.
+- Deep ink `#20332F`, body `#3D4D46`, muted text `#59645F`.
+- Clinical teal `#17665B` for actions and focus; white button text. Amber `#85521E` on `#F6ECD6` for overdue administrative work / needs review; green `#35634C` on `#E9F0E7` for completion. Error red `#A5362B` never implies clinical urgency.
+- Source Serif 4 for marketing/auth display headings and dashboard numbers; Geist Sans for UI/body; Geist Mono and tabular numerals for identifiers, dates, counts. All fonts come from installed local packages. No Google Fonts requests.
+- Display sizes 36/48/60px, section headings 30/36px, body 16/18px, UI 12/14px. Display weight 400, UI emphasis 500/600. Display leading 1.08.
+- Radius tokens 4–6px. Static surfaces use dividers and borders without elevation. Legacy review/queue layouts inherit tokens; restructuring is deferred to round 2.
+- WCAG 2.2 AA contrast, visible focus rings, keyboard access, labelled scroll regions, and reduced-motion support remain required.
+- Provenance retains text and icons: **Documented**, **Not documented** (dashed), **Rule-inferred · needs review**. The timeline uses small rectangular labels; review components retain their existing markup.
 
 ## 4. Public site (indexable)
 
 `/` homepage:
-1. Header: logo (shield + pulse-line mark, “SymptomWatch”), nav (Product, How it works, Safety, Contact), **Sign in**, **Try Demo** (primary).
-2. Hero: headline (“Close the follow-up loops that slip through the cracks.”), subcopy, **Try Demo**, **Create Demo Account**; product preview (rendered dashboard mock built from real components, not a stock image).
-3. Demo disclaimer strip.
-4. Three benefits: *Never lose a follow-up loop* · *Explainable flags, clinician in control* · *Built for small-clinic workflows*.
-5. How it works (3 steps) with timeline preview.
-6. Product previews: follow-up queue, patient timeline, flag explanation.
-7. Safety & privacy section: synthetic-data-only, no patient contact, no external AI, not HIPAA-certified yet.
-8. Demo request form (name, work email, clinic name, role, clinic size, message) → stored; success message; no emails sent.
-9. Footer with disclaimer.
+1. Header: single-color shield + pulse mark, “SymptomWatch”, Product / How it works / Safety / Contact, Sign in, Try Demo.
+2. Case-led hero: “The referral was sent. The consult note never arrived.” William Foster's fictional gastroenterology referral from the existing dataset, with Try Demo / Create Demo Account.
+3. Annotated “Anatomy of a flag”: evidence dates, missing records, referral rule/version, fixed snapshot date, physician review explanation. No simulated browser controls.
+4. Workflow as numbered rows: read evidence, make a review decision, assign follow-up work.
+5. Full-width queue fragment using the existing synthetic preview counts and tasks; one fictional-data caption.
+6. Prose disclosure: fictional data only, not clinically validated, not HIPAA-compliant, no diagnosis/treatment/urgency ranking/care-plan changes, no patient contact, external AI disabled.
+7. Demo request form (same fields and behavior) with specific small-clinic copy and a clear no-email disclosure.
+8. Footer with existing prototype disclaimer.
 
-Also: `/demo` (role picker), `/privacy` (prototype data policy), `robots.ts`, `sitemap.ts`, Open Graph metadata.
+Also: `/demo` uses three divided role rows with existing actions; `/privacy` uses a ruled policy document layout. `robots.ts`, `sitemap.ts`, and Open Graph behavior are unchanged.
 
 ## 5. Application (noindex, authenticated) — `/app/*`
 
 Shell: left sidebar (collapsible to sheet on mobile), clinic name + DEMO badge, role badge, user menu (sign out), sticky demo banner, “View as” switcher in sandbox clinics.
 
 ### 5.1 Dashboard `/app`
-Overview cards (each links to a filtered view): Total demo patients · Open follow-ups (open tasks) · Patients needing review (patients with ≥1 open flag; physician/admin only) · Overdue administrative tasks (due date < today, not completed) · Pending lab follow-ups · Pending specialist records · Tasks completed this week.
-Front-desk staff see the cards they are permitted to see; clinical counts are replaced with a lock-state card explaining the permission.
-Charts: tasks opened vs. completed per week (last 8 weeks, line); open tasks by category (bar); open flags by rule (bar, clinical roles).
+Compact metric strip (each unlocked cell retains its destination): Total demo patients · Open follow-ups (open tasks) · Patients needing review (patients with ≥1 open flag; physician/admin only) · Overdue administrative tasks (due date < today, not completed) · Pending lab follow-ups · Pending specialist records · Tasks completed this week.
+Front-desk staff see the cards they are permitted to see; clinical counts are replaced with a lock-state cell explaining the permission.
+The patient worklist precedes historical charts. Charts: tasks opened vs. completed per week (last 8 weeks, line); open tasks by category (bar); open flags by rule (bar, clinical roles).
 Patient table: search (name, demo MRN), filters (status: needs review / open tasks / no open items; primary physician), sortable columns, pagination; row click → timeline.
 
 ### 5.2 Follow-up queue `/app/queue`
@@ -60,7 +59,7 @@ Actions: create task (dialog), edit, assign, change status (`pending`, `in_progr
 Banner: “Prototype — no calls, emails or texts are sent to patients.”
 
 ### 5.3 Patient timeline `/app/patients/[id]`
-Header: fictional name, demo MRN, age, sex, primary physician, care status, “Synthetic record” badge.
+Header: fictional name, demo MRN, age, sex, primary physician, care status, a single “Fictional patient record” caption.
 Left/main: reverse-chronological (toggle to chronological) timeline grouping events by date: visits (with symptoms, follow-up recommendation), appointments (incl. no-shows, reschedules with reason), lab orders/results, referrals/records, tasks, flags, and **expected-but-not-documented** placeholders derived from flags’ `missingInfo`.
 Right rail: open flags (each expandable: what, why, supporting evidence links that scroll to/highlight the timeline entry, missing/uncertain info, review status, rule id & version), outstanding tasks, active referrals, pending labs.
 Physician actions on a flag: **Confirm gap** (optionally create a follow-up task), **Dismiss** (reason required), **Feedback** (verdict + comment).

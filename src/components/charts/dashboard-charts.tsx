@@ -15,16 +15,16 @@ import {
 } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
-// Validated with the dataviz palette checker (light surface): CVD ΔE 21.8, contrast ≥ 3:1.
-const SERIES = { opened: "#1d5fd1", completed: "#0e9f8e" } as const;
-const GRID = "#e8edf3";
-const AXIS_TEXT = "#5b6b80";
-const SURFACE = "#ffffff";
+// Distinct ink/teal series with a dashed completion line; tables remain available.
+const SERIES = { opened: "#20332f", completed: "#39705c" } as const;
+const GRID = "#e2e4dc";
+const AXIS_TEXT = "#59645f";
+const SURFACE = "#fbfaf7";
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-border bg-white px-3 py-2 text-xs shadow-card">
+    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs">
       <p className="mb-1 font-medium text-navy">{label}</p>
       <ul className="space-y-0.5">
         {payload.map((item) => (
@@ -73,7 +73,7 @@ export function WeeklyTrendChart({ data }: { data: Array<{ weekStart: string; op
     <div>
       <ul className="mb-3 flex flex-wrap gap-4 text-xs text-body" aria-label="Legend">
         <li className="flex items-center gap-2"><span className="h-0.5 w-4 rounded" style={{ background: SERIES.opened }} aria-hidden />Opened</li>
-        <li className="flex items-center gap-2"><span className="h-0.5 w-4 rounded" style={{ background: SERIES.completed }} aria-hidden />Completed</li>
+        <li className="flex items-center gap-2"><span className="w-4 border-t-2 border-dashed" style={{ borderColor: SERIES.completed }} aria-hidden />Completed</li>
       </ul>
       <div className="h-60" role="img" aria-label={`Follow-up tasks opened and completed per week for the last 8 weeks. Latest week: ${last?.opened ?? 0} opened, ${last?.completed ?? 0} completed.`}>
         <ResponsiveContainer width="100%" height="100%">
@@ -89,7 +89,8 @@ export function WeeklyTrendChart({ data }: { data: Array<{ weekStart: string; op
                 dataKey={key}
                 name={key === "opened" ? "Opened" : "Completed"}
                 stroke={SERIES[key]}
-                strokeWidth={2}
+                strokeDasharray={key === "completed" ? "4 3" : undefined}
+                strokeWidth={1.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 dot={false}
@@ -101,8 +102,8 @@ export function WeeklyTrendChart({ data }: { data: Array<{ weekStart: string; op
                   content={({ x, y, value, index }) =>
                     index === rows.length - 1 ? (
                       <g>
-                        <circle cx={Number(x)} cy={Number(y)} r={4} fill={SERIES[key]} stroke={SURFACE} strokeWidth={2} />
-                        <text x={Number(x) + 9} y={Number(y) + 4} fontSize={12} fill="#0b1f3a" fontWeight={500}>{value}</text>
+                        <circle cx={Number(x)} cy={Number(y)} r={4} fill={SERIES[key]} stroke={SURFACE} strokeWidth={1.5} />
+                        <text x={Number(x) + 9} y={Number(y) + 4} fontSize={12} fill="#20332f" fontWeight={500}>{value}</text>
                       </g>
                     ) : null
                   }
@@ -141,10 +142,10 @@ export function HorizontalBarChart({
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 36, bottom: 4, left: 4 }} barCategoryGap={8}>
             <CartesianGrid stroke={GRID} horizontal={false} />
             <XAxis type="number" allowDecimals={false} hide />
-            <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} tick={{ fill: "#334155", fontSize: 12 }} />
-            <Tooltip content={ChartTooltip} cursor={{ fill: "rgb(29 95 209 / 0.06)" }} />
-            <Bar dataKey="value" name={valueLabel} fill={color} maxBarSize={24} radius={[0, 4, 4, 0]} isAnimationActive={false}>
-              <LabelList dataKey="value" position="right" fill="#0b1f3a" fontSize={12} fontWeight={500} />
+            <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} tick={{ fill: "#3d4d46", fontSize: 12 }} />
+            <Tooltip content={ChartTooltip} cursor={{ fill: "rgb(23 102 91 / 0.06)" }} />
+            <Bar dataKey="value" name={valueLabel} fill={color} maxBarSize={10} radius={[0, 1, 1, 0]} isAnimationActive={false}>
+              <LabelList dataKey="value" position="right" fill="#20332f" fontSize={12} fontWeight={500} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>

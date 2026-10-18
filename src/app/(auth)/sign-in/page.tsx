@@ -38,7 +38,7 @@ async function SignInContent({ searchParams }: { searchParams: Promise<Record<st
 export default function SignInPage(props: PageProps<"/sign-in">) {
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Sign in</h1>
+      <h1 className="display-heading text-4xl">Sign in</h1>
       <p className="mt-2 text-body">
         New here? <Link href="/sign-up" className="font-medium text-brand hover:underline">Create a demo account</Link> or{" "}
         <Link href="/demo" className="font-medium text-brand hover:underline">try it instantly</Link>.

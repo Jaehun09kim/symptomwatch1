@@ -54,14 +54,14 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
         <SubmitButton pending={pending} className="w-full" pendingLabel="Signing in…">Sign in</SubmitButton>
       </form>
       {demoLogins.length && demoPassword ? (
-        <section aria-labelledby="demo-logins" className="rounded-xl border border-border bg-surface p-4">
+        <section aria-labelledby="demo-logins" className="border-t border-border pt-5">
           <h2 id="demo-logins" className="text-sm font-semibold">Shared demo logins</h2>
           <p className="mt-1 text-xs text-slate-600">
             Fictional staff of the shared demo clinics. Password: <code className="rounded bg-white px-1 py-0.5 text-navy ring-1 ring-border">{demoPassword}</code>
           </p>
           <ul className="mt-3 grid gap-2">
             {demoLogins.map((login) => (
-              <li key={login.email} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 ring-1 ring-border">
+              <li key={login.email} className="flex items-center justify-between gap-3 border-b border-border py-3">
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-navy">{login.label}</span>
                   <span className="block truncate text-xs text-slate-500">{login.email}</span>

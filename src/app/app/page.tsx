@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { CalendarClock, CheckCheck, ClipboardCheck, FlaskConical, ListChecks, Send, Users } from "lucide-react";
 import { HorizontalBarChart, WeeklyTrendChart } from "@/components/charts/dashboard-charts";
 import { PatientsPanel } from "@/components/app/patients/patients-panel";
 import { PageHeader } from "@/components/app/primitives/layout";
@@ -17,7 +16,7 @@ const welcome: Record<string, string> = {
 
 function Panel({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-white p-5 shadow-soft">
+    <section className="border-t border-border py-5">
       <h2 className="text-base font-semibold">{title}</h2>
       {description ? <p className="mt-0.5 text-sm text-slate-500">{description}</p> : null}
       <div className="mt-4">{children}</div>
@@ -36,44 +35,43 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description={`${session.clinicName} · follow-up overview`}
+        description={`${session.clinicName} · Review open work, then assign the next follow-up.`}
       />
       {welcomeMessage ? (
         <p role="status" className="rounded-xl border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total demo patients" value={summary.totalPatients} icon={Users} tone="slate" href="/app/patients" />
-        <StatCard label="Open follow-ups" value={summary.openTasks} icon={ListChecks} href="/app/queue" hint="Tasks not yet completed" />
+      <div className="metric-strip">
+        <StatCard
+          label="Overdue administrative tasks"
+          value={summary.overdueAdminTasks}
+          tone="attention"
+          href="/app/queue?due=overdue"
+          hint="Past due date, not completed"
+        />
+        <StatCard label="Open follow-ups" value={summary.openTasks} href="/app/queue" hint="Tasks not yet completed" />
         <StatCard
           label="Patients needing review"
           value={summary.patientsNeedingReview ?? 0}
-          icon={ClipboardCheck}
           tone="blue"
           href="/app/review"
           hint="With a possible gap awaiting a physician"
           locked={summary.patientsNeedingReview === null ? locked : undefined}
         />
         <StatCard
-          label="Overdue administrative tasks"
-          value={summary.overdueAdminTasks}
-          icon={CalendarClock}
-          tone="attention"
-          href="/app/queue?due=overdue"
-          hint="Past due date, not completed"
-        />
-        <StatCard
           label="Pending lab follow-ups"
           value={summary.pendingLabs ?? 0}
-          icon={FlaskConical}
           tone="attention"
           href="/app/review?rule=lab-result-missing"
           hint="Ordered or collected, no result yet"
           locked={summary.pendingLabs === null ? locked : undefined}
         />
-        <StatCard label="Pending specialist records" value={summary.pendingRecords} icon={Send} tone="blue" href="/app/queue?view=records" hint="Referrals without records received" />
-        <StatCard label="Tasks completed this week" value={summary.completedThisWeek} icon={CheckCheck} tone="teal" href="/app/queue?status=completed" hint="Since Monday" />
+        <StatCard label="Pending specialist records" value={summary.pendingRecords} tone="blue" href="/app/queue?view=records" hint="Referrals without records received" />
+        <StatCard label="Tasks completed this week" value={summary.completedThisWeek} tone="teal" href="/app/queue?status=completed" hint="Since Monday" />
+        <StatCard label="Total demo patients" value={summary.totalPatients} tone="slate" href="/app/patients" />
       </div>
+
+      <PatientsPanel ctx={ctx} params={params} basePath="/app" />
 
       <div className="grid gap-4 xl:grid-cols-3 [&>*]:min-w-0">
         <div className="xl:col-span-2">
@@ -93,12 +91,12 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
       </div>
 
       {summary.openFlagsByRule ? (
-        <Panel title="Possible documentation gaps awaiting review" description="Open rule-based flags by type. Counts, not urgency — every flag needs physician review.">
+        <Panel title="Possible documentation gaps awaiting review" description="Open rule-based flags by type. Counts do not indicate urgency. Every flag needs physician review.">
           {summary.openFlagsByRule.length ? (
             <HorizontalBarChart
               label="Open flags by rule"
               valueLabel="Open flags"
-              color="#0e9f8e"
+              color="#39705c"
               data={summary.openFlagsByRule.map((row) => ({ name: ruleLabel[row.ruleId], value: row.count })).sort((a, b) => b.value - a.value)}
             />
           ) : (
@@ -106,8 +104,6 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
           )}
         </Panel>
       ) : null}
-
-      <PatientsPanel ctx={ctx} params={params} basePath="/app" />
     </div>
   );
 }
@@ -116,7 +112,7 @@ function DashboardFallback() {
   return (
     <div className="space-y-6">
       <div className="h-9 w-48 animate-pulse rounded-lg bg-surface" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="metric-strip">
         {Array.from({ length: 7 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-xl bg-surface" />)}
       </div>
       <div className="h-80 animate-pulse rounded-xl bg-surface" />

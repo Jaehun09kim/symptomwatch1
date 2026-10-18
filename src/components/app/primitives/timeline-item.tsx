@@ -54,7 +54,7 @@ export function TimelineItem({ id, kind, date, title, meta, provenance, highligh
       <div className="flex flex-col items-center">
         <span
           className={cn(
-            "grid size-9 shrink-0 place-items-center rounded-full border bg-white",
+            "grid size-7 shrink-0 place-items-center rounded-sm border bg-background",
             provenance === "documented" && "border-border text-slate-600",
             provenance === "rule_inferred" && "border-brand/40 bg-brand-soft text-brand",
             dashed && "border-dashed border-slate-400 text-slate-500",
@@ -66,16 +66,16 @@ export function TimelineItem({ id, kind, date, title, meta, provenance, highligh
       </div>
       <div
         className={cn(
-          "mb-5 min-w-0 flex-1 rounded-xl border bg-white p-4 transition",
-          dashed ? "border-dashed border-slate-300 bg-surface" : "border-border",
+          "mb-6 min-w-0 flex-1 border-b bg-background pb-6 transition",
+          dashed ? "border-dashed border-slate-400" : "border-border",
           highlighted && "ring-2 ring-brand/50",
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <time className="tabular text-xs font-medium text-slate-500" dateTime={date}>
+          <time className="font-sans tabular-nums text-xs text-slate-500" dateTime={date}>
             {formatTimelineDate(date)}
           </time>
-          <ProvenanceBadge kind={provenance} />
+          <ProvenanceBadge kind={provenance} className="rounded-sm" />
         </div>
         <p className="mt-1.5 font-medium text-navy">{title}</p>
         {meta ? <p className="mt-0.5 text-sm text-slate-600">{meta}</p> : null}

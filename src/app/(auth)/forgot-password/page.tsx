@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
   const available = selfServiceResetAvailable();
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Reset your password</h1>
+      <h1 className="display-heading text-4xl">Reset your password</h1>
       <p className="mt-2 text-body">
         {available
           ? "Enter your account email and we'll send a single-use link that expires in 30 minutes."

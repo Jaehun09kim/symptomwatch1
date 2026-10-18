@@ -17,9 +17,9 @@ export function QueueFilters({ assignees }: { assignees: Array<{ userId: string;
     else next.delete(key);
     startTransition(() => router.replace(`${pathname}?${next.toString()}`, { scroll: false }));
   };
-  const select = cn(controlClass, "h-10 w-auto pr-8 text-sm");
+  const select = cn(controlClass, "h-11 min-w-0 w-full max-w-full rounded-sm bg-background pr-8 text-sm sm:w-auto");
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter tasks">
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto" role="group" aria-label="Filter tasks">
       <label className="sr-only" htmlFor="queue-status">Status</label>
       <select id="queue-status" className={select} value={params.get("status") ?? "open"} onChange={(event) => update("status", event.target.value, "open")}>
         <option value="open">Open (not completed)</option>

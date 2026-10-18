@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Create demo account", robots: { inde
 export default function SignUpPage() {
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Create your demo account</h1>
+      <h1 className="display-heading text-4xl">Create your demo account</h1>
       <p className="mt-2 text-body">
         You&rsquo;ll get a private demo clinic with 30 fictional patients, and you&rsquo;ll be its administrator. Already have an
         account? <Link href="/sign-in" className="font-medium text-brand hover:underline">Sign in</Link>.

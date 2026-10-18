@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ScanSearch, UsersRound } from "lucide-react";
-import { FictionalTag } from "@/components/app/primitives/badges";
+import { ChevronLeft, ChevronRight, UsersRound } from "lucide-react";
 import { EmptyState } from "@/components/app/primitives/layout";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import type { AppContext } from "@/lib/authz/context";
@@ -54,8 +53,8 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
   const now = new Date();
 
   return (
-    <section aria-labelledby="patients-heading" className="rounded-xl border border-border bg-white shadow-soft">
-      <div className="space-y-3 border-b border-border p-4">
+    <section aria-labelledby="patients-heading" className="border-y border-border">
+      <div className="space-y-4 border-b border-border py-4">
         <div className="flex items-baseline justify-between gap-2">
           <h2 id="patients-heading" className="text-base font-semibold">Patients <span className="font-normal text-slate-500">({total})</span></h2>
           <p className="text-xs text-slate-500">All records fictional</p>
@@ -92,7 +91,7 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
                         {row.careStatus === "transferred_out" ? " · Care transferred" : ""}
                       </p>
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-body"><span className="flex items-center gap-2">{row.demoMrn}<FictionalTag /></span></td>
+                    <td className="px-4 py-3 tabular-nums text-body"><span className="font-mono text-xs">{row.demoMrn}</span></td>
                     <td className="px-4 py-3 text-body">{row.physicianName ?? "—"}</td>
                     <td className="px-4 py-3 tabular-nums text-body">{row.openTasks}</td>
                     <td className={cn("px-4 py-3 tabular-nums", overdue ? "font-medium text-attention" : "text-body")}>
@@ -101,8 +100,8 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
                     {clinical ? (
                       <td className="px-4 py-3">
                         {row.openFlags ? (
-                          <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-brand/30 bg-brand-soft px-2.5 text-xs font-medium text-brand-hover">
-                            <ScanSearch className="size-3.5" aria-hidden /> {row.openFlags} possible gap{row.openFlags === 1 ? "" : "s"}
+                          <span className="text-xs font-medium text-brand-hover">
+                            {row.openFlags} possible gap{row.openFlags === 1 ? "" : "s"}
                           </span>
                         ) : (
                           <span className="text-xs text-slate-500">—</span>
@@ -121,11 +120,11 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
           <span className="text-slate-500">Page {page} of {pages}</span>
           <div className="flex gap-2">
             <Link aria-disabled={page <= 1} tabIndex={page <= 1 ? -1 : undefined} href={pageHref(basePath, params, page - 1)}
-              className={cn("inline-flex h-9 items-center gap-1 rounded-[10px] border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page <= 1 && "pointer-events-none opacity-40")}>
+              className={cn("inline-flex h-11 items-center gap-1 rounded-md border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page <= 1 && "pointer-events-none opacity-40")}>
               <ChevronLeft className="size-4" aria-hidden /> Previous
             </Link>
             <Link aria-disabled={page >= pages} tabIndex={page >= pages ? -1 : undefined} href={pageHref(basePath, params, page + 1)}
-              className={cn("inline-flex h-9 items-center gap-1 rounded-[10px] border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page >= pages && "pointer-events-none opacity-40")}>
+              className={cn("inline-flex h-11 items-center gap-1 rounded-md border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page >= pages && "pointer-events-none opacity-40")}>
               Next <ChevronRight className="size-4" aria-hidden />
             </Link>
           </div>

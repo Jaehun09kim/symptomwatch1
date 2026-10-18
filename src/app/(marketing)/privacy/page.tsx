@@ -57,11 +57,11 @@ const sections: { title: string; body: React.ReactNode }[] = [
     ),
   },
   {
-    title: "Not HIPAA-compliant — yet",
+    title: "Not HIPAA-compliant",
     body: (
       <>
         <p>
-          The prototype includes security controls designed with healthcare in mind — clinic-level data isolation
+          The prototype includes security controls designed with healthcare in mind: clinic-level data isolation
           enforced by the database, role-based permissions, audit logging, hashed credentials, and input validation.
           Implementing these controls does not make a system HIPAA-compliant.
         </p>
@@ -81,15 +81,14 @@ const sections: { title: string; body: React.ReactNode }[] = [
 export default function PrivacyPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <p className="text-sm font-semibold text-brand">Trust</p>
-      <h1 className="mt-2 text-4xl font-semibold">Privacy &amp; data policy</h1>
+      <h1 className="display-heading text-4xl sm:text-5xl">Privacy &amp; data policy</h1>
       <p className="mt-4 text-lg text-body">
         Plain-language rules for the SymptomWatch demonstration prototype. Last updated October 2026.
       </p>
       <div className="mt-12 space-y-10">
         {sections.map((section) => (
-          <section key={section.title} aria-labelledby={section.title}>
-            <h2 id={section.title} className="text-xl font-semibold">{section.title}</h2>
+          <section key={section.title} aria-labelledby={section.title} className="border-t border-border pt-6">
+            <h2 id={section.title} className="text-lg font-medium">{section.title}</h2>
             <div className="mt-3 space-y-3 leading-relaxed text-body">{section.body}</div>
           </section>
         ))}
