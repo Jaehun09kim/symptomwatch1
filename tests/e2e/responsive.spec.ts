@@ -2,12 +2,21 @@ import { expect, test } from "@playwright/test";
 import { signIn, USERS } from "./helpers";
 
 test.describe("mobile layout", () => {
-  for (const path of ["/", "/demo", "/sign-in"]) {
+  for (const path of ["/", "/product", "/how-it-works", "/safety", "/about", "/contact", "/demo", "/sign-in"]) {
     test(`${path} has no horizontal scroll`, async ({ page }) => {
       await page.goto(path);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     });
   }
+
+  test("the mobile menu expands a section and navigates", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const mobile = page.getByRole("navigation", { name: "Mobile" });
+    await mobile.getByRole("button", { name: /^Company/ }).click();
+    await mobile.getByRole("link", { name: "Request a walkthrough" }).click();
+    await expect(page).toHaveURL(/\/contact$/);
+  });
 
   test("review selection and detection rules fit a single mobile column", async ({ page }) => {
     await signIn(page, USERS.physician);

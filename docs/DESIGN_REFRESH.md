@@ -130,3 +130,12 @@ Feedback: still "AI-looking"; replace the case-story hero with a simple explanat
 - **Motion:** `framer-motion` 14 with `LazyMotion`/`m`; page enter transitions via `template.tsx`; button press via CSS. Accessibility: a dimmed-opacity treatment for upcoming steps failed axe contrast in the animated state and was replaced with muted colors; e2e now scans the homepage both animated and with reduced motion.
 - Removed `@fontsource-variable/source-serif-4`.
 
+## Round 5 (Claude, 2026-10-17) — dropdown navigation and separate pages
+
+Product-owner request, with a reference site: dropdown menus with animation whose items open their own pages; keep the current hero (no stock photography).
+
+- New pages: `/product`, `/how-it-works`, `/safety`, `/about`, `/contact`; homepage trimmed to teasers that link to them; footer generated from the same nav config.
+- Desktop dropdowns: hover-intent open (60 ms) / close (140 ms), click toggle (ignored right after a hover-open), ArrowDown into the panel, Escape returns focus to the trigger, outside click closes. Panels fade/scale in with a 20 ms item stagger; chevrons rotate; a shared "pill" slides between top-level items (`layoutId`, which is why the motion provider now loads `domMax`). Mobile: accordion sections with height animation.
+- Pages reuse real data where possible (rule defaults, evaluation results) so marketing claims stay in sync with the product.
+- E2E: dropdown mouse/keyboard behavior, page titles, mobile accordion, axe on every new page and on an open dropdown, no horizontal scroll on every page at 390 px.
+

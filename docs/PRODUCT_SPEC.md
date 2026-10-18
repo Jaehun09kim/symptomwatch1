@@ -27,17 +27,15 @@ Round 4 (October 2026, product-owner direction: blue + green, less "AI-looking")
 
 ## 4. Public site (indexable)
 
-`/` homepage:
-1. Header: single-color shield + pulse mark, “SymptomWatch”, Product / How it works / Safety / Contact, Sign in, Try Demo.
-2. Hero: “Follow-up tracking for small primary care clinics.” A plain description of what SymptomWatch watches for and who acts on it; Try the demo / Create a demo account; animated fictional flag example (Flagged → Closed).
-3. What SymptomWatch looks for: the four rule types in plain language.
-4. How it works: bring in records → review what's flagged → close the loop.
-5. Full-width queue fragment using the existing synthetic preview counts and tasks; one fictional-data caption.
-6. Prose disclosure: fictional data only, not clinically validated, not HIPAA-compliant, no diagnosis/treatment/urgency ranking/care-plan changes, no patient contact, external AI disabled.
-7. Demo request form (same fields and behavior) with specific small-clinic copy and a clear no-email disclosure.
-8. Footer with existing prototype disclaimer.
+Site map (round 5): header with animated dropdown menus — **Product ▾** (`/product` + section links), **How it works** (`/how-it-works`), **Safety ▾** (`/safety`, `/safety#evaluation`, `/privacy`), **Company ▾** (`/about`, `/contact`) — plus Sign in and Try Demo. Dropdowns are disclosure buttons (`aria-expanded`), open on hover intent or click, support ArrowDown/Escape, and close on outside click; on mobile they become an animated accordion in a sheet.
 
-Also: `/demo` uses three divided role rows with existing actions; `/privacy` uses a ruled policy document layout. `robots.ts`, `sitemap.ts`, and Open Graph behavior are unchanged.
+`/` homepage: plain hero + animated flag example; what SymptomWatch looks for (links to the rules); how it works (links to `/how-it-works`); shared-list preview; short safety disclosure (links to `/safety`, `/privacy`); walkthrough call-to-action (links to `/contact`).
+
+- `/product` — explainable flags, follow-up queue, patient timeline, record import, detection rules (anchors `#flags`, `#queue`, `#timeline`, `#import`, `#rules`), each with a static product fragment built from the app's own badges.
+- `/how-it-works` — four steps; the four rules with their default thresholds (rendered from `DEFAULT_RULE_SETTINGS` + `describeRule`, so the page can't drift from the engine); what the rules deliberately don't flag; who does what.
+- `/safety` — fictional-data guard rails, clinic separation, readable detection, and `#evaluation`, which renders the latest evaluation numbers from `evaluation/results/latest.json` with the non-independence caveat.
+- `/about` — the problem, what we're building, where it stands. `/contact` — the walkthrough request form (moved from the homepage).
+- `/demo` (role picker), `/privacy` (prototype data policy), `robots.ts`, `sitemap.ts` (all public pages), Open Graph metadata.
 
 ## 5. Application (noindex, authenticated) — `/app/*`
 

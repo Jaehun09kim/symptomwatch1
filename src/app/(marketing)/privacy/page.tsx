@@ -15,8 +15,8 @@ const sections: { title: string; body: React.ReactNode }[] = [
           detail in it is fictional. <strong>Entering real patient information is prohibited.</strong>
         </p>
         <p>
-          Guard rails back this up: patient records can only be created from the synthetic dataset, there is no file
-          upload anywhere, phone numbers must use the fictional 555-01xx range, and free-text fields reject things that
+          Guard rails back this up: patient records can only be created from the synthetic dataset, CSV imports
+          accept only demo record numbers from the current clinic, phone numbers must use the fictional 555-01xx range, and free-text fields reject things that
           look like Social Security numbers, real phone numbers, email addresses, outside medical record numbers, dates
           of birth, or pasted clinical documents. These checks reduce risk; they cannot guarantee that text contains no
           real information, so the responsibility not to enter it remains yours.

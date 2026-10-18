@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { CalendarClock, FileSearch, FlaskConical, Repeat2 } from "lucide-react";
-import { DemoRequestForm } from "@/components/marketing/demo-request-form";
+import { ArrowRight, CalendarClock, FileSearch, FlaskConical, Repeat2 } from "lucide-react";
 import { Hero } from "@/components/marketing/hero";
+import { CtaBand } from "@/components/marketing/page-intro";
 import { DashboardPreview } from "@/components/marketing/product-preview";
 import { previewPatientName } from "@/components/marketing/preview-data";
 
@@ -23,10 +23,11 @@ export default function HomePage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <Hero patient={previewPatientName("hv-19")} />
 
-      <section id="how-it-works" className="scroll-mt-14 border-t border-border py-14 lg:py-20" aria-labelledby="watch-title">
+      <section id="what-it-looks-for" className="scroll-mt-14 border-t border-border py-14 lg:py-20" aria-labelledby="watch-title">
         <div className="max-w-2xl">
           <h2 id="watch-title" className="display-heading text-3xl sm:text-4xl">What SymptomWatch looks for</h2>
           <p className="mt-4 text-lg leading-relaxed text-body">Four kinds of follow-up that are easy to lose track of in a busy practice. The rules are simple and visible, so you can always see why something was flagged.</p>
+          <Link href="/how-it-works#rules" className="mt-4 inline-flex items-center gap-1 font-medium text-brand underline-offset-4 hover:underline">Read the rules <ArrowRight className="size-4" aria-hidden /></Link>
         </div>
         <ul className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
           {WATCHES.map(({ icon: Icon, title, body }) => (
@@ -41,7 +42,10 @@ export default function HomePage() {
         </ul>
 
         <div className="mt-16 rounded-2xl bg-surface p-6 sm:p-10">
-          <h2 className="display-heading text-2xl sm:text-3xl">How it works</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="display-heading text-2xl sm:text-3xl">How it works</h2>
+            <Link href="/how-it-works" className="inline-flex items-center gap-1 text-sm font-medium text-brand underline-offset-4 hover:underline">The full picture <ArrowRight className="size-4" aria-hidden /></Link>
+          </div>
           <ol className="mt-8 grid gap-8 md:grid-cols-3 md:gap-6">
             {STEPS.map((step, index) => (
               <li key={step.title} className="relative">
@@ -68,7 +72,10 @@ export default function HomePage() {
       <section id="safety" className="scroll-mt-14 grid gap-6 border-y border-border py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-10 lg:py-16" aria-labelledby="safety-title">
         <div>
           <h2 id="safety-title" className="display-heading text-3xl sm:text-4xl">Before you try it</h2>
-          <Link href="/privacy" className="mt-5 inline-block text-sm font-medium text-brand underline underline-offset-4">Privacy &amp; data policy</Link>
+          <div className="mt-5 flex flex-col gap-2 text-sm font-medium">
+            <Link href="/safety" className="text-brand underline underline-offset-4">Our safety approach</Link>
+            <Link href="/privacy" className="text-brand underline underline-offset-4">Privacy &amp; data policy</Link>
+          </div>
         </div>
         <div className="space-y-5 leading-relaxed">
           <p><strong className="font-semibold text-navy">This is a research and demonstration prototype.</strong> It uses fictional data only, is not clinically validated, and is not HIPAA-compliant. Do not enter real patient information. Input checks reduce risk; they cannot guarantee that free text contains no real information.</p>
@@ -77,15 +84,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="contact" className="scroll-mt-14 grid gap-8 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-10 lg:py-20" aria-labelledby="contact-title">
-        <div>
-          <h2 id="contact-title" className="display-heading text-3xl sm:text-4xl">Talk to us</h2>
-          <p className="mt-5 max-w-md leading-relaxed text-body">Running a small practice in Orange County? Tell us how follow-up works in your clinic today and what&rsquo;s hard to keep track of.</p>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">This prototype stores your request but doesn&rsquo;t send email. Please leave out patient information.</p>
-          <Link href="/demo" className="mt-6 inline-block text-sm font-medium text-brand underline underline-offset-4">Explore the demo first</Link>
-        </div>
-        <div className="min-w-0"><DemoRequestForm /></div>
-      </section>
+      <CtaBand
+        title="Want a walkthrough for your clinic?"
+        body="Tell us how follow-up works in your practice today, or explore the demo with fictional patients first."
+        primary={{ href: "/contact", label: "Request a walkthrough" }}
+        secondary={{ href: "/demo", label: "Try the demo" }}
+      />
     </div>
   );
 }

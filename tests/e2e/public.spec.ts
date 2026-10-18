@@ -19,8 +19,53 @@ test.describe("public website", () => {
     await expect(page.getByRole("link", { name: "Sign in" }).first()).toHaveAttribute("href", "/sign-in");
   });
 
+  test("dropdown menus open with the mouse or keyboard and lead to their own pages", async ({ page }) => {
+    await page.goto("/");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    const product = nav.getByRole("button", { name: /^Product/ });
+    await expect(product).toHaveAttribute("aria-expanded", "false");
+
+    await product.click();
+    await expect(product).toHaveAttribute("aria-expanded", "true");
+    await expect(nav.getByRole("link", { name: /Record import/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(product).toHaveAttribute("aria-expanded", "false");
+    await expect(product).toBeFocused();
+
+    await product.press("ArrowDown");
+    await expect(nav.getByRole("link", { name: /Explainable flags/ })).toBeFocused();
+    await page.keyboard.press("Escape");
+
+    await nav.getByRole("button", { name: /^Safety/ }).hover();
+    await nav.getByRole("link", { name: /How we measure accuracy/ }).click();
+    await expect(page).toHaveURL(/\/safety#evaluation$/);
+    await expect(page.getByRole("heading", { name: "How we measure accuracy" })).toBeVisible();
+
+    await nav.getByRole("link", { name: "How it works" }).click();
+    await expect(page).toHaveURL(/\/how-it-works$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("How SymptomWatch works");
+  });
+
+  test("each marketing page has one clear title and the demo banner", async ({ page }) => {
+    for (const [path, title] of <Array<[string, string | RegExp]>>[
+      ["/product", "One place for every follow-up"],
+      ["/how-it-works", "How SymptomWatch works"],
+      ["/safety", "Safety and privacy"],
+      ["/about", /Why we.re building SymptomWatch/],
+      ["/contact", "Request a walkthrough"],
+    ]) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+      await expect(page.getByText("Demo Only — No Real Patient Data.").first()).toBeVisible();
+    }
+    await page.goto("/safety");
+    for (const disclosure of ["not clinically validated", "not HIPAA-compliant", /Why these numbers aren.t proof/]) {
+      await expect(page.locator("main")).toContainText(disclosure);
+    }
+  });
+
   test("demo request form validates, blocks patient information, and saves", async ({ page }) => {
-    await page.goto("/#contact");
+    await page.goto("/contact");
     const form = page.locator("#contact form");
     await form.getByRole("button", { name: "Request a walkthrough" }).click();
     await expect(form.getByText("Enter your name")).toBeVisible();

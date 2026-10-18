@@ -12,7 +12,7 @@ test.describe("accessibility (axe, WCAG 2.2 AA)", () => {
   // Scan settled pages; the animated homepage is also scanned separately below.
   test.use({ reducedMotion: "reduce" });
 
-  for (const path of ["/", "/demo", "/privacy", "/sign-in", "/sign-up"]) {
+  for (const path of ["/", "/product", "/how-it-works", "/safety", "/about", "/contact", "/demo", "/privacy", "/sign-in", "/sign-up"]) {
     test(`public page ${path}`, async ({ page }) => {
       await page.goto(path);
       await expectNoSeriousViolations(page, path);
@@ -86,6 +86,13 @@ test.describe("motion", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.waitForTimeout(1500); // entrance animations finish within ~1s
     await expectNoSeriousViolations(page, "/ (animated)");
+  });
+
+  test("an open dropdown menu is accessible", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /^Product/ }).click();
+    await page.waitForTimeout(400);
+    await expectNoSeriousViolations(page, "/ (Product menu open)");
   });
 
   test("reduced motion shows the flag example complete and still", async ({ browser }) => {
