@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ImportWizard } from "@/components/app/import/import-wizard";
 import { PageHeader } from "@/components/app/primitives/layout";
 import { requirePermission } from "@/lib/auth/current";
+import { can } from "@/lib/authz/permissions";
 import { importKindLabel } from "@/lib/import/fields";
 import { listImportBatches } from "@/lib/services/imports";
 
@@ -47,14 +48,14 @@ async function History() {
 }
 
 async function ImportPage() {
-  await requirePermission("records.import");
+  const { session } = await requirePermission("records.import");
   return (
     <div className="space-y-10">
       <PageHeader
         title="Import records"
         description="Bring in lab orders and referrals from your EHR's report exports instead of re-typing them. SymptomWatch matches each row to a patient, shows exactly what will change, and re-checks for gaps after the import."
       />
-      <ImportWizard />
+      <ImportWizard canImportLabs={can(session.role, "lab.update_status")} />
       <section aria-labelledby="history-heading" className="space-y-3">
         <h2 id="history-heading" className="text-lg font-semibold text-navy">Recent imports</h2>
         <History />

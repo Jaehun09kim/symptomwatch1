@@ -31,16 +31,12 @@ ALTER TABLE referrals
 CREATE UNIQUE INDEX lab_orders_external_ref_idx ON lab_orders(clinic_id, external_ref) WHERE external_ref IS NOT NULL;
 CREATE UNIQUE INDEX referrals_external_ref_idx ON referrals(clinic_id, external_ref) WHERE external_ref IS NOT NULL;
 
--- Clinical roles may insert lab orders and referrals (import), and lab-status
--- updates are widened from physicians to clinical roles so an administrator can
--- run an import. Manual lab edits in the UI stay physician-only (lab.update_status).
+-- Clinical roles may insert lab orders and referrals (import). Lab-status
+-- updates stay physician-only: marking a result received closes a lab gap, so
+-- lab imports that update existing orders are a physician action.
 DROP POLICY lab_orders_insert ON lab_orders;
 CREATE POLICY lab_orders_insert ON lab_orders FOR INSERT TO sw_app WITH CHECK (
   clinic_id = app.current_clinic_id() AND app.is_active_member(clinic_id) AND app.current_role() IN ('clinic_admin', 'physician'));
-DROP POLICY lab_orders_update ON lab_orders;
-CREATE POLICY lab_orders_update ON lab_orders FOR UPDATE TO sw_app
-  USING (clinic_id = app.current_clinic_id() AND app.is_active_member(clinic_id) AND app.current_role() IN ('clinic_admin', 'physician'))
-  WITH CHECK (clinic_id = app.current_clinic_id() AND app.is_active_member(clinic_id) AND app.current_role() IN ('clinic_admin', 'physician'));
 DROP POLICY referrals_insert ON referrals;
 CREATE POLICY referrals_insert ON referrals FOR INSERT TO sw_app WITH CHECK (
   clinic_id = app.current_clinic_id() AND app.is_active_member(clinic_id) AND app.current_role() IN ('clinic_admin', 'physician'));

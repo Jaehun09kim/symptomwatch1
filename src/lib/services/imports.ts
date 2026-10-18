@@ -73,8 +73,10 @@ const atDay = (date: string) => `${date}T16:00:00.000Z`;
 const day = (timestamp: string | null) => (timestamp ? new Date(timestamp).toISOString().slice(0, 10) : null);
 const nameTokens = (value: string) => value.toLowerCase().replace(/['’]/g, "").split(/[^a-z]+/).filter(Boolean);
 
-function requireImport(ctx: AppContext): void {
+function requireImport(ctx: AppContext, kind?: ImportKind): void {
   if (!can(ctx.role, "records.import")) throw new ServiceError("You don't have permission to import records. Ask a clinic admin or physician.");
+  // Filing a lab result closes a lab gap, so lab imports are a clinical decision.
+  if (kind === "lab_orders" && !can(ctx.role, "lab.update_status")) throw new ServiceError("Only physicians can import lab orders, because recording results closes lab gaps.");
 }
 
 function patientLabel(patient: PatientRow | null): string | null {
@@ -248,14 +250,14 @@ function toPreview(input: z.output<typeof importRequestSchema>, planned: Planned
 }
 
 export async function previewImport(ctx: AppContext, raw: ImportRequest, database?: DatabaseHandle): Promise<ImportPreview> {
-  requireImport(ctx);
   const input = importRequestSchema.parse(raw);
+  requireImport(ctx, input.kind);
   return withTenant(ctx, async (tx) => toPreview(input, await plan(tx, ctx, input)), database);
 }
 
 export async function commitImport(ctx: AppContext, raw: ImportRequest, database?: DatabaseHandle): Promise<ImportResult> {
-  requireImport(ctx);
   const input = importRequestSchema.parse(raw);
+  requireImport(ctx, input.kind);
   return withTenant(ctx, async (tx) => {
     const planned = await plan(tx, ctx, input);
     const preview = toPreview(input, planned);
@@ -386,7 +388,7 @@ const REFERRAL_EXPORT_STATUS: Record<ReferralStatus, string> = {
  * and three rows contain the kinds of mistakes the preview should catch.
  */
 export async function buildSampleExport(ctx: AppContext, kind: ImportKind, database?: DatabaseHandle): Promise<{ filename: string; csv: string }> {
-  requireImport(ctx);
+  requireImport(ctx, kind);
   return withTenant(ctx, async (tx) => {
     const clinicPatients = await tx.select({ id: patients.id, demoMrn: patients.demoMrn, firstName: patients.firstName, lastName: patients.lastName })
       .from(patients).where(and(eq(patients.clinicId, ctx.clinicId), eq(patients.careStatus, "active"))).orderBy(patients.demoMrn);

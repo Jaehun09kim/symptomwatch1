@@ -26,8 +26,8 @@ const ACTION_STYLE: Record<RowAction, { label: string; icon: typeof PlusCircle; 
 
 const select = "h-9 w-full min-w-0 rounded-[5px] border border-input bg-card px-2 text-sm text-navy";
 
-export function ImportWizard() {
-  const [kind, setKind] = useState<ImportKind>("lab_orders");
+export function ImportWizard({ canImportLabs }: { canImportLabs: boolean }) {
+  const [kind, setKind] = useState<ImportKind>(canImportLabs ? "lab_orders" : "referrals");
   const [source, setSource] = useState<Source | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -129,11 +129,13 @@ export function ImportWizard() {
         <div role="radiogroup" aria-label="Record type" className="inline-flex rounded-[6px] border border-border bg-surface p-0.5">
           {(Object.keys(importKindLabel) as ImportKind[]).map((option) => (
             <button key={option} type="button" role="radio" aria-checked={kind === option} onClick={() => changeKind(option)}
-              className={cn("h-8 rounded-[5px] px-3.5 text-sm font-medium", kind === option ? "bg-card text-navy shadow-[0_0_0_1px_var(--border)]" : "text-slate-600 hover:text-navy")}>
+              disabled={option === "lab_orders" && !canImportLabs}
+              className={cn("h-8 rounded-[5px] px-3.5 text-sm font-medium disabled:cursor-not-allowed disabled:text-slate-400", kind === option ? "bg-card text-navy shadow-[0_0_0_1px_var(--border)]" : "text-slate-600 hover:text-navy")}>
               {importKindLabel[option]}
             </button>
           ))}
         </div>
+        {!canImportLabs ? <p className="text-sm text-slate-600">Lab orders are imported by physicians, because recording a result closes a lab gap.</p> : null}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-[5px] border border-input bg-card px-3.5 text-sm font-medium text-navy focus-within:ring-2 focus-within:ring-ring hover:bg-surface">
             <FileSpreadsheet className="size-4" aria-hidden /> Choose a CSV file
