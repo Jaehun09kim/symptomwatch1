@@ -160,7 +160,7 @@ export interface PatientRecord {
   }>;
   appointments: Array<typeof appointments.$inferSelect>;
   tasks: Array<typeof tasks.$inferSelect & { assigneeName: string | null }>;
-  flags: Array<typeof detectionFlags.$inferSelect>;
+  flags: Array<typeof detectionFlags.$inferSelect & { isSnoozed: boolean }>;
 }
 
 const recentViews = new Map<string, number>();
@@ -219,9 +219,11 @@ export async function getPatientRecord(
       labRows = await tx.select().from(labOrders)
         .where(and(eq(labOrders.clinicId, ctx.clinicId), eq(labOrders.patientId, patientId)))
         .orderBy(asc(labOrders.orderedAt));
-      flagRows = await tx.select().from(detectionFlags)
+      const now = Date.now();
+      flagRows = (await tx.select().from(detectionFlags)
         .where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.patientId, patientId)))
-        .orderBy(desc(detectionFlags.firstDetectedAt));
+        .orderBy(desc(detectionFlags.firstDetectedAt)))
+        .map((flag) => ({ ...flag, isSnoozed: flag.status === "open" && flag.snoozedUntil !== null && Date.parse(flag.snoozedUntil) > now }));
     }
 
     if (options.audit && shouldAuditView(ctx, patientId)) {

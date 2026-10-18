@@ -1,22 +1,23 @@
 "use client";
 
 import { useActionState } from "react";
-import { CheckCircle2, MessageSquareText, Play, XCircle } from "lucide-react";
+import { AlarmClock, AlarmClockOff, CheckCircle2, MessageSquareText, Play, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { confirmFlagAction, dismissFlagAction, flagFeedbackAction, runDetectionAction, type ActionResult } from "@/app/app/actions";
+import { confirmFlagAction, dismissFlagAction, flagFeedbackAction, runDetectionAction, snoozeFlagAction, unsnoozeFlagAction, type ActionResult } from "@/app/app/actions";
 import { ActionDialog } from "@/components/app/action-dialog";
 import type { AssigneeOption } from "@/components/app/record-dialogs";
 import { CheckboxField, SelectField, SubmitButton, TextAreaField, TextField } from "@/components/forms/fields";
-import { roleLabel, taskCategoryLabel, type FlagStatus, type TaskCategory } from "@/lib/labels";
+import { dismissReasonLabel, roleLabel, taskCategoryLabel, type DismissReason, type FlagStatus, type TaskCategory } from "@/lib/labels";
 
 const NO_PHI = "Fictional only — no real names, numbers, or clinical documents.";
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
-export function FlagReviewActions({ flagId, status, title, assignees }: {
+export function FlagReviewActions({ flagId, status, title, assignees, snoozed }: {
   flagId: string;
   status: FlagStatus;
   title: string;
   assignees: AssigneeOption[];
+  snoozed: boolean;
 }) {
   const reviewable = status === "open" || status === "confirmed";
   return (
@@ -51,18 +52,39 @@ export function FlagReviewActions({ flagId, status, title, assignees }: {
           )}
         </ActionDialog>
       ) : null}
-      {status !== "dismissed" && status !== "resolved_by_data" ? (
+      {status === "open" && !snoozed ? (
+        <ActionDialog
+          action={snoozeFlagAction}
+          trigger={<><AlarmClock aria-hidden /> Snooze</>}
+          title="Snooze this flag"
+          description="Hide it from the review queue until a date. It comes back sooner if the record changes."
+          submitLabel="Snooze"
+        >
+          {(errors) => (
+            <>
+              <input type="hidden" name="flagId" value={flagId} />
+              <TextField label="Return to the queue on" name="until" type="date" defaultValue={inDays(14)} min={inDays(1)} max={inDays(90)} required hint="Up to 90 days." error={errors.until} />
+              <TextAreaField label="Why wait? (optional)" name="note" rows={2} maxLength={300} hint={NO_PHI} error={errors.note} placeholder="e.g. Specialist office said the note is coming next week" />
+            </>
+          )}
+        </ActionDialog>
+      ) : null}
+      {snoozed ? <WakeButton flagId={flagId} /> : null}
+      {status === "open" || status === "confirmed" ? (
         <ActionDialog
           action={dismissFlagAction}
           trigger={<><XCircle aria-hidden /> Dismiss</>}
           title="Dismiss this flag"
-          description="Explain why this isn't a real gap. Dismissed flags stay dismissed unless the underlying record changes."
+          description="Dismissed flags stay dismissed unless the underlying record changes. Reasons are counted per rule to tune detection."
           submitLabel="Dismiss"
         >
           {(errors) => (
             <>
               <input type="hidden" name="flagId" value={flagId} />
-              <TextAreaField label="Reason" name="reason" rows={3} maxLength={500} required hint={NO_PHI} error={errors.reason} placeholder="e.g. Outcome documented in the June visit note" />
+              <SelectField label="Reason" name="reasonCode" defaultValue="expected" error={errors.reasonCode}>
+                {(Object.keys(dismissReasonLabel) as DismissReason[]).map((reason) => <option key={reason} value={reason}>{dismissReasonLabel[reason]}</option>)}
+              </SelectField>
+              <TextAreaField label="Note (required for “Other”)" name="reason" rows={2} maxLength={500} hint={NO_PHI} error={errors.reason} placeholder="e.g. Outcome documented in the June visit note" />
             </>
           )}
         </ActionDialog>
@@ -103,6 +125,22 @@ export function RunDetectionButton() {
   return (
     <form action={action}>
       <SubmitButton size="default" pendingLabel="Running…"><Play aria-hidden /> Run detection</SubmitButton>
+    </form>
+  );
+}
+
+function WakeButton({ flagId }: { flagId: string }) {
+  const [, action] = useActionState(async (previous: ActionResult | null, form: FormData) => {
+    void previous;
+    const result = await unsnoozeFlagAction(null, form);
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
+    return result;
+  }, null);
+  return (
+    <form action={action}>
+      <input type="hidden" name="flagId" value={flagId} />
+      <SubmitButton size="sm" variant="outline" pendingLabel="Waking…"><AlarmClockOff aria-hidden /> Wake now</SubmitButton>
     </form>
   );
 }

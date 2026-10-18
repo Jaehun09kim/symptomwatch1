@@ -11,6 +11,8 @@ import {
   Menu,
   ScrollText,
   Settings,
+  SlidersHorizontal,
+  Upload,
   UserCog,
   Users,
   type LucideIcon,
@@ -23,13 +25,15 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { roleLabel, type MemberRole } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
-export type NavKey = "dashboard" | "queue" | "review" | "patients" | "staff" | "audit" | "settings";
+export type NavKey = "dashboard" | "queue" | "review" | "rules" | "patients" | "import" | "staff" | "audit" | "settings";
 
 const NAV: Record<NavKey, { href: string; label: string; icon: LucideIcon }> = {
   dashboard: { href: "/app", label: "Dashboard", icon: LayoutDashboard },
   queue: { href: "/app/queue", label: "Follow-up queue", icon: ListChecks },
   review: { href: "/app/review", label: "Review flags", icon: ClipboardCheck },
+  rules: { href: "/app/rules", label: "Detection rules", icon: SlidersHorizontal },
   patients: { href: "/app/patients", label: "Patients", icon: Users },
+  import: { href: "/app/import", label: "Import records", icon: Upload },
   staff: { href: "/app/staff", label: "Staff", icon: UserCog },
   audit: { href: "/app/audit", label: "Audit log", icon: ScrollText },
   settings: { href: "/app/settings", label: "Settings", icon: Settings },

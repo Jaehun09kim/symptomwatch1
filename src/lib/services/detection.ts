@@ -60,6 +60,8 @@ export interface FlagListItem {
   reviewerName: string | null;
   reviewReason: DismissReason | null;
   snoozedUntil: string | null;
+  /** True while an open flag's snooze hasn't ended. */
+  isSnoozed: boolean;
   snoozeNote: string | null;
   snoozedByName: string | null;
 }
@@ -103,6 +105,7 @@ export async function listFlags(ctx: AppContext, query: FlagQuery = {}, database
         reviewerName: sql<string | null>`(select display_name from ${users} where ${users.id} = ${detectionFlags.reviewedBy})`,
         reviewReason: detectionFlags.reviewReason,
         snoozedUntil: detectionFlags.snoozedUntil,
+        isSnoozed: sql<boolean>`(${detectionFlags.status} = 'open' and coalesce(${detectionFlags.snoozedUntil} > now(), false))`,
         snoozeNote: detectionFlags.snoozeNote,
         snoozedByName: sql<string | null>`(select display_name from ${users} where ${users.id} = ${detectionFlags.snoozedBy})`,
       })

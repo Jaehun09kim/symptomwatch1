@@ -61,7 +61,7 @@ describe("patient timeline", () => {
         id: "f1", clinicId: "c", patientId: "p1", ruleId: "overdue-follow-up", ruleVersion: "1.0.0", fingerprint: "x", subjectType: "encounter", subjectId: "e1",
         title: "Follow-up visit appears overdue", rationale: "…", evidence: [{ kind: "encounter", id: "e1", date: iso("2026-01-10"), label: "Visit", role: "basis" }],
         missingInfo: [{ code: "no_completed_visit_after", description: "No completed visit after Jan 10", certainty: "not_documented" }],
-        evidenceHash: "h", status: "open", firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null, reviewReason: null, snoozedUntil: null, snoozedBy: null, snoozeNote: null,
+        evidenceHash: "h", status: "open", firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null, reviewReason: null, snoozedUntil: null, snoozedBy: null, snoozeNote: null, isSnoozed: false,
       }],
     }));
     expect(events.find((event) => event.kind === "visit")?.provenance).toBe("documented");
@@ -75,7 +75,7 @@ describe("patient timeline", () => {
     const base = buildTimeline(record({ flags: [{
       id: "f1", clinicId: "c", patientId: "p1", ruleId: "lab-result-missing", ruleVersion: "1.0.0", fingerprint: "x", subjectType: "lab_order", subjectId: "l1",
       title: "t", rationale: "r", evidence: [], missingInfo: [], evidenceHash: "h", status: "dismissed",
-      firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null, reviewReason: null, snoozedUntil: null, snoozedBy: null, snoozeNote: null,
+      firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null, reviewReason: null, snoozedUntil: null, snoozedBy: null, snoozeNote: null, isSnoozed: false,
     }] }));
     expect(base).toEqual([]);
   });

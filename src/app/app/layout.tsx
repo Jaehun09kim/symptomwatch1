@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
   const nav: NavKey[] = ["dashboard", "queue"];
-  if (can(session.role, "flag.read")) nav.push("review");
+  if (can(session.role, "flag.read")) nav.push("review", "rules");
   nav.push("patients");
   if (can(session.role, "staff.manage")) nav.push("staff");
   if (can(session.role, "audit.read")) nav.push("audit");

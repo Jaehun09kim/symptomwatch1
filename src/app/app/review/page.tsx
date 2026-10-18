@@ -10,9 +10,11 @@ import { FlagReviewActions, RunDetectionButton } from "@/components/app/review/f
 import { requirePermission } from "@/lib/auth/current";
 import { can } from "@/lib/authz/permissions";
 import { RULES_VERSION, type RuleId } from "@/lib/detection/types";
-import { flagStatusLabel, ruleLabel, ruleShortLabel, type FlagStatus } from "@/lib/labels";
-import { feedbackSummary, getFlagHistory, getLastRun, listFlags } from "@/lib/services/detection";
+import { dismissReasonShortLabel, flagStatusLabel, ruleLabel, ruleShortLabel, type FlagStatus } from "@/lib/labels";
+import { feedbackSummary, getFlagHistory, getLastRun, listFlags, type FlagQuery } from "@/lib/services/detection";
+import { getRuleSettings } from "@/lib/services/rule-settings";
 import { listMembers } from "@/lib/services/members";
+import { describeRule } from "@/lib/rule-descriptions";
 import { anchorFor } from "@/lib/timeline";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +22,9 @@ export const metadata: Metadata = { title: "Review flags" };
 
 type Params = Record<string, string | string[] | undefined>;
 const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
-const STATUSES: Array<FlagStatus | "all"> = ["open", "confirmed", "dismissed", "resolved_by_data", "all"];
+type StatusTab = NonNullable<FlagQuery["status"]>;
+const STATUSES: StatusTab[] = ["open", "snoozed", "confirmed", "dismissed", "resolved_by_data", "all"];
+const statusTabLabel = (value: StatusTab) => value === "all" ? "All" : value === "snoozed" ? "Snoozed" : flagStatusLabel[value];
 const RULE_IDS = Object.keys(ruleLabel) as RuleId[];
 
 const EVENT_LABEL: Record<string, string> = {
@@ -32,6 +36,9 @@ const EVENT_LABEL: Record<string, string> = {
   reopened_evidence_changed: "Reopened — record changed after dismissal",
   resolved_by_data: "Resolved by new documentation",
   feedback: "Feedback",
+  snoozed: "Snoozed",
+  unsnoozed: "Back in the queue",
+  suppressed: "Parked — rule turned off",
 };
 
 function href(params: Params, changes: Record<string, string | undefined>): string {
@@ -46,18 +53,20 @@ function href(params: Params, changes: Record<string, string | undefined>): stri
 
 async function Review({ searchParams }: { searchParams: Promise<Params> }) {
   const [{ ctx, session }, params] = await Promise.all([requirePermission("flag.read"), searchParams]);
-  const statusParam = one(params.status) as FlagStatus | "all" | undefined;
+  const statusParam = one(params.status) as StatusTab | undefined;
   const status = statusParam && STATUSES.includes(statusParam) ? statusParam : "open";
   const ruleParam = one(params.rule) as RuleId | undefined;
   const ruleId = ruleParam && RULE_IDS.includes(ruleParam) ? ruleParam : undefined;
   const canReview = can(session.role, "flag.review");
 
-  const [flags, lastRun, members, feedback] = await Promise.all([
+  const [flags, lastRun, members, feedback, settings] = await Promise.all([
     listFlags(ctx, { status, ruleId }),
     getLastRun(ctx),
     listMembers(ctx),
     feedbackSummary(ctx),
+    getRuleSettings(ctx),
   ]);
+  const off = new Set(settings.disabledRules);
   const history = await getFlagHistory(ctx, flags.map((flag) => flag.id));
   const assignees = members.filter((member) => member.status === "active").map(({ userId, displayName, role }) => ({ userId, displayName, role }));
   const feedbackByRule = RULE_IDS.map((rule) => ({
@@ -97,7 +106,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
               <li key={value}>
                 <Link href={href(params, { status: value === "open" ? undefined : value })} aria-current={status === value ? "page" : undefined}
                   className={cn("inline-flex h-9 items-center rounded-full px-3.5 text-sm font-medium", status === value ? "bg-navy text-white" : "text-slate-600 hover:bg-surface hover:text-navy")}>
-                  {value === "all" ? "All" : flagStatusLabel[value]}
+                  {statusTabLabel(value)}
                 </Link>
               </li>
             ))}
@@ -138,8 +147,13 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                 missing={flag.missingInfo}
                 footer={
                   <div className="space-y-3">
-                    {flag.reviewNote ? (
+                    {flag.status === "dismissed" && flag.reviewReason ? (
+                      <p className="text-sm text-body"><span className="font-medium text-navy">Dismissed:</span> {dismissReasonShortLabel[flag.reviewReason]}{flag.reviewNote ? ` — ${flag.reviewNote}` : ""}{flag.reviewerName ? ` (${flag.reviewerName})` : ""}</p>
+                    ) : flag.reviewNote ? (
                       <p className="text-sm text-body"><span className="font-medium text-navy">{flag.status === "dismissed" ? "Dismissal reason" : "Review note"}:</span> {flag.reviewNote}{flag.reviewerName ? ` — ${flag.reviewerName}` : ""}</p>
+                    ) : null}
+                    {flag.isSnoozed && flag.snoozedUntil ? (
+                      <p className="text-sm text-body"><span className="font-medium text-navy">Snoozed until {formatTimelineDate(flag.snoozedUntil)}</span>{flag.snoozedByName ? ` by ${flag.snoozedByName}` : ""}{flag.snoozeNote ? ` — ${flag.snoozeNote}` : ""}. Returns sooner if the record changes.</p>
                     ) : null}
                     {history[flag.id]?.length ? (
                       <details className="text-xs text-slate-600">
@@ -154,7 +168,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                         </ol>
                       </details>
                     ) : null}
-                    {canReview ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} assignees={assignees} /> : null}
+                    {canReview ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} assignees={assignees} snoozed={flag.isSnoozed} /> : null}
                   </div>
                 }
               />
@@ -165,11 +179,13 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
           <section className="rounded-xl border border-border bg-white p-4 shadow-soft">
             <h2 className="text-sm font-semibold">How the rules work</h2>
             <ul className="mt-2 space-y-2 text-sm text-body">
-              <li><strong className="text-navy">Overdue follow-up:</strong> a time-bound return was requested, the due date plus 14 days passed, and no later visit or upcoming follow-up is on file.</li>
-              <li><strong className="text-navy">Lab result:</strong> an order is past its expected turnaround plus 7 days with no result (and no lab draw booked).</li>
-              <li><strong className="text-navy">Referral outcome:</strong> no specialist appointment, or the visit passed 14+ days ago with no records.</li>
-              <li><strong className="text-navy">Recurring symptom:</strong> the same symptom at 2+ visits over 28+ days, still active, with no plan, work-up, or follow-up documented.</li>
+              {RULE_IDS.map((rule) => (
+                <li key={rule}>
+                  <strong className="text-navy">{ruleShortLabel[rule]}{off.has(rule) ? " (turned off)" : ""}:</strong> {describeRule(rule, settings)}
+                </li>
+              ))}
             </ul>
+            <p className="mt-3 text-sm"><Link href="/app/rules" className="font-medium text-brand hover:underline">{settings.isDefault ? "Default settings" : "This clinic's settings"} · adjust rules and see signal quality</Link></p>
             <p className="mt-3 text-xs text-slate-500">Known limits: free-text plans and differently worded symptoms aren&rsquo;t understood in v1.</p>
           </section>
           <section className="rounded-xl border border-border bg-white p-4 shadow-soft">
