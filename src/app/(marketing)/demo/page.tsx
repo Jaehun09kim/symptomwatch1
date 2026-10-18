@@ -46,7 +46,7 @@ export default function DemoPage(props: PageProps<"/demo">) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="max-w-2xl">
-        <h1 className="display-heading text-4xl sm:text-5xl">Pick a seat in the clinic</h1>
+        <h1 className="display-heading text-4xl sm:text-5xl">Choose a role to try</h1>
         <p className="mt-4 text-lg text-body">
           Explore a private sandbox of <strong className="text-navy">Harbor View Family Medicine</strong> with 30
           fictional patients, a live follow-up queue, and explainable flags. Switch roles any time from inside the app.

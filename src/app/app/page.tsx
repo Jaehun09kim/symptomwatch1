@@ -96,7 +96,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
             <HorizontalBarChart
               label="Open flags by rule"
               valueLabel="Open flags"
-              color="#39705c"
+              color="#1f5aa6"
               data={summary.openFlagsByRule.map((row) => ({ name: ruleLabel[row.ruleId], value: row.count })).sort((a, b) => b.value - a.value)}
             />
           ) : (

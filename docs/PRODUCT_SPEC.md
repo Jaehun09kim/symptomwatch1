@@ -16,24 +16,22 @@ It is a **documentation and coordination aid**. It surfaces *possible documentat
 
 ## 3. Design system
 
-Round 1 (October 2026): an editorial, clinical-instrument treatment. See `DESIGN_REFRESH.md` for palette contrast calculations, copy inventory, and verification limits.
+Round 4 (October 2026, product-owner direction: blue + green, less "AI-looking"). History in `DESIGN_REFRESH.md`.
 
-- Warm paper `#FBFAF7`, inset surface `#F0EFE9`, hairline borders `#D4D8D0`.
-- Deep ink `#20332F`, body `#3D4D46`, muted text `#59645F`.
-- Clinical teal `#17665B` for actions and focus; white button text. Amber `#85521E` on `#F6ECD6` for overdue administrative work / needs review; green `#35634C` on `#E9F0E7` for completion. Error red `#A5362B` never implies clinical urgency.
-- Source Serif 4 for marketing/auth display headings and dashboard numbers; Geist Sans for UI/body; Geist Mono and tabular numerals for identifiers, dates, counts. All fonts come from installed local packages. No Google Fonts requests.
-- Display sizes 36/48/60px, section headings 30/36px, body 16/18px, UI 12/14px. Display weight 400, UI emphasis 500/600. Display leading 1.08.
-- Radius tokens 4–6px. Static surfaces use dividers and borders without elevation. Legacy review/queue layouts inherit tokens; restructuring is deferred to round 2.
-- WCAG 2.2 AA contrast, visible focus rings, keyboard access, labelled scroll regions, and reduced-motion support remain required.
-- Provenance retains text and icons: **Documented**, **Not documented** (dashed), **Rule-inferred · needs review**. The timeline uses small rectangular labels; review components retain their existing markup.
+- Page `#F7F9FB`, cards white, surface `#EDF2F7`, borders `#D6DEE7`; ink `#0F2A43`, body `#36475A`, muted `#566577` (≥ 5.1:1 on every surface).
+- **Blue `#1F5AA6`** for actions, links, focus, and the brand mark (white text 6.8:1). **Green `#1D7350`** (text) / `#14855A` (chart marks) for completed and documented states and the "Watch" in the wordmark. Amber `#80500F` on `#FBEFD9` for overdue/attention; red `#B03A2E` only for errors, never clinical urgency.
+- Geist Sans throughout, semibold display headings with tight tracking; Geist Mono only for identifiers. No uppercase eyebrows, no mono step numbering, no serif/mono "editorial" pairing.
+- Radii 6–16px; soft shadows on elevated surfaces (cards, the hero example); dividers inside.
+- Motion (Framer Motion via `LazyMotion`): route enter transitions (`template.tsx` per route group; the app fades quickly), a staggered hero entrance, and one functional animation — a fictional flag moving Flagged → Reviewed → Followed up → Closed. Buttons press (`scale 0.97`). No scroll-triggered reveals. `MotionConfig reducedMotion="user"` plus explicit reduced-motion paths; e2e checks both the animated and reduced-motion homepage.
+- WCAG 2.2 AA, visible focus rings, keyboard access; provenance labels keep text + icon (**Documented**, **Not documented**, **Rule-inferred · needs review**).
 
 ## 4. Public site (indexable)
 
 `/` homepage:
 1. Header: single-color shield + pulse mark, “SymptomWatch”, Product / How it works / Safety / Contact, Sign in, Try Demo.
-2. Case-led hero: “The referral was sent. The consult note never arrived.” William Foster's fictional gastroenterology referral from the existing dataset, with Try Demo / Create Demo Account.
-3. Annotated “Anatomy of a flag”: evidence dates, missing records, referral rule/version, fixed snapshot date, physician review explanation. No simulated browser controls.
-4. Workflow as numbered rows: read evidence, make a review decision, assign follow-up work.
+2. Hero: “Follow-up tracking for small primary care clinics.” A plain description of what SymptomWatch watches for and who acts on it; Try the demo / Create a demo account; animated fictional flag example (Flagged → Closed).
+3. What SymptomWatch looks for: the four rule types in plain language.
+4. How it works: bring in records → review what's flagged → close the loop.
 5. Full-width queue fragment using the existing synthetic preview counts and tasks; one fictional-data caption.
 6. Prose disclosure: fictional data only, not clinically validated, not HIPAA-compliant, no diagnosis/treatment/urgency ranking/care-plan changes, no patient contact, external AI disabled.
 7. Demo request form (same fields and behavior) with specific small-clinic copy and a clear no-email disclosure.

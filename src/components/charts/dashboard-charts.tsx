@@ -15,11 +15,13 @@ import {
 } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
-// Distinct ink/teal series with a dashed completion line; tables remain available.
-const SERIES = { opened: "#20332f", completed: "#39705c" } as const;
-const GRID = "#e2e4dc";
-const AXIS_TEXT = "#59645f";
-const SURFACE = "#fbfaf7";
+// Blue = work opened, green = work completed (validated for CVD separation with
+// the dataviz palette checker); the completion line is also dashed. Tables remain available.
+const SERIES = { opened: "#1f5aa6", completed: "#14855a" } as const;
+const GRID = "#e3e9ef";
+const AXIS_TEXT = "#566577";
+const SURFACE = "#f7f9fb";
+const LABEL = "#0f2a43";
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null;
@@ -103,7 +105,7 @@ export function WeeklyTrendChart({ data }: { data: Array<{ weekStart: string; op
                     index === rows.length - 1 ? (
                       <g>
                         <circle cx={Number(x)} cy={Number(y)} r={4} fill={SERIES[key]} stroke={SURFACE} strokeWidth={1.5} />
-                        <text x={Number(x) + 9} y={Number(y) + 4} fontSize={12} fill="#20332f" fontWeight={500}>{value}</text>
+                        <text x={Number(x) + 9} y={Number(y) + 4} fontSize={12} fill={LABEL} fontWeight={500}>{value}</text>
                       </g>
                     ) : null
                   }
@@ -142,10 +144,10 @@ export function HorizontalBarChart({
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 36, bottom: 4, left: 4 }} barCategoryGap={8}>
             <CartesianGrid stroke={GRID} horizontal={false} />
             <XAxis type="number" allowDecimals={false} hide />
-            <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} tick={{ fill: "#3d4d46", fontSize: 12 }} />
+            <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} tick={{ fill: "#36475a", fontSize: 12 }} />
             <Tooltip content={ChartTooltip} cursor={{ fill: "rgb(23 102 91 / 0.06)" }} />
             <Bar dataKey="value" name={valueLabel} fill={color} maxBarSize={10} radius={[0, 1, 1, 0]} isAnimationActive={false}>
-              <LabelList dataKey="value" position="right" fill="#20332f" fontSize={12} fontWeight={500} />
+              <LabelList dataKey="value" position="right" fill={LABEL} fontSize={12} fontWeight={500} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>

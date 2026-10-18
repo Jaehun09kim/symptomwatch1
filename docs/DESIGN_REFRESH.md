@@ -119,3 +119,14 @@ Implemented on `design-refresh` against v0.2, October 17, 2026. The review flow 
 - Form-name/action-binding comparison against HEAD and `git diff --check`: passed. No changes to `src/lib/**`, `db/**`, server actions, dependencies, permissions, or import directories.
 - **Not run in this sandbox:** Playwright, rendered axe checks, screenshots, and browser visual/interaction verification. Claude should run desktop/mobile e2e and inspect 390px, 1279px, 1280px, and wider layouts, including action-driven selection fallback and the patient side panel. CSS compilation is not browser verification.
 - **No commit attempted:** the sandbox cannot write the parent repository's worktree Git metadata; Claude will verify and commit outside it.
+
+## Round 4 (Claude, 2026-10-17) — product-owner feedback
+
+Feedback: still "AI-looking"; replace the case-story hero with a simple explanation of what SymptomWatch is; blue + green theme; add page transitions and button feedback.
+
+- **Diagnosis of the remaining tells:** uppercase tracked eyebrow, mono "01 / Evidence" numbering, serif display paired with mono labels, warm paper. Removed all four.
+- **Palette:** clinical blue (actions/brand) + green (done/documented), cool neutrals; all text pairs computed ≥ 4.5:1; chart series validated with the dataviz palette checker (blue `#1F5AA6` vs green `#14855A`: CVD ΔE 19.4).
+- **Homepage:** plain hero, animated four-step flag example, the four things it looks for, how it works (blue → green steps), shared-list preview, disclosure, contact. Demo page headline and auth side panel rewritten in the same plain voice.
+- **Motion:** `framer-motion` 14 with `LazyMotion`/`m`; page enter transitions via `template.tsx`; button press via CSS. Accessibility: a dimmed-opacity treatment for upcoming steps failed axe contrast in the animated state and was replaced with muted colors; e2e now scans the homepage both animated and with reduced motion.
+- Removed `@fontsource-variable/source-serif-4`.
+

@@ -9,6 +9,9 @@ async function expectNoSeriousViolations(page: Page, label: string) {
 }
 
 test.describe("accessibility (axe, WCAG 2.2 AA)", () => {
+  // Scan settled pages; the animated homepage is also scanned separately below.
+  test.use({ reducedMotion: "reduce" });
+
   for (const path of ["/", "/demo", "/privacy", "/sign-in", "/sign-up"]) {
     test(`public page ${path}`, async ({ page }) => {
       await page.goto(path);
@@ -74,5 +77,25 @@ test.describe("accessibility (axe, WCAG 2.2 AA)", () => {
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+});
+
+test.describe("motion", () => {
+  test("the animated homepage settles into an accessible page", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await page.waitForTimeout(1500); // entrance animations finish within ~1s
+    await expectNoSeriousViolations(page, "/ (animated)");
+  });
+
+  test("reduced motion shows the flag example complete and still", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/");
+    const example = page.getByRole("figure", { name: /how one flag gets closed/ });
+    await expect(example).toContainText("Resolved by new data");
+    await page.waitForTimeout(2600);
+    await expect(example).toContainText("Resolved by new data");
+    await context.close();
   });
 });

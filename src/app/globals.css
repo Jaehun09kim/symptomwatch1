@@ -8,7 +8,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-source-serif), Georgia, serif;
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -39,74 +39,76 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 4px;
-  --radius-md: 4px;
+  --radius-sm: 5px;
+  --radius-md: 6px;
   --radius-lg: var(--radius);
-  --radius-xl: 6px;
-  --radius-2xl: 6px;
-  --radius-3xl: 6px;
-  --radius-4xl: 6px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 14px;
+  --radius-4xl: 16px;
 }
 
 :root {
-  /* SymptomWatch palette — light theme only (clinical clarity). */
-  --background: #fbfaf7;
-  --foreground: #20332f;
-  --card: #fbfaf7;
-  --card-foreground: #20332f;
-  --popover: #fbfaf7;
-  --popover-foreground: #20332f;
-  --primary: #17665b;
+  /* SymptomWatch palette — clinical blue for actions and identity, green for
+     documented/closed loops, cool neutrals. Light theme only. Every text pair
+     below is ≥ 4.5:1 (see docs/DESIGN_REFRESH.md, round 4). */
+  --background: #f7f9fb;
+  --foreground: #0f2a43;
+  --card: #ffffff;
+  --card-foreground: #0f2a43;
+  --popover: #ffffff;
+  --popover-foreground: #0f2a43;
+  --primary: #1f5aa6;
   --primary-foreground: #ffffff;
-  --secondary: #e7efeb;
-  --secondary-foreground: #20332f;
-  --muted: #f0efe9;
-  --muted-foreground: #59645f;
-  --accent: #e7efeb;
-  --accent-foreground: #20332f;
-  --destructive: #a5362b;
-  --border: #d4d8d0;
-  --input: #88948d;
-  --ring: #17665b;
-  --chart-1: #17665b;
-  --chart-2: #39705c;
-  --chart-3: #59645f;
-  --chart-4: #85521e;
-  --chart-5: #776348;
-  --radius: 0.375rem;
-  --sidebar: #f0efe9;
-  --sidebar-foreground: #20332f;
-  --sidebar-primary: #17665b;
+  --secondary: #e7effa;
+  --secondary-foreground: #0f2a43;
+  --muted: #edf2f7;
+  --muted-foreground: #566577;
+  --accent: #e7effa;
+  --accent-foreground: #0f2a43;
+  --destructive: #b03a2e;
+  --border: #d6dee7;
+  --input: #778698;
+  --ring: #1f5aa6;
+  --chart-1: #1f5aa6;
+  --chart-2: #1d7350;
+  --chart-3: #566577;
+  --chart-4: #80500f;
+  --chart-5: #6a5aa0;
+  --radius: 0.5rem;
+  --sidebar: #edf2f7;
+  --sidebar-foreground: #0f2a43;
+  --sidebar-primary: #1f5aa6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e7efeb;
-  --sidebar-accent-foreground: #20332f;
-  --sidebar-border: #d4d8d0;
-  --sidebar-ring: #17665b;
+  --sidebar-accent: #e7effa;
+  --sidebar-accent-foreground: #0f2a43;
+  --sidebar-border: #d6dee7;
+  --sidebar-ring: #1f5aa6;
 
-  --sw-navy: #20332f;
-  --sw-body: #3d4d46;
-  --sw-surface: #f0efe9;
-  --sw-blue: #17665b;
-  --sw-blue-hover: #104e46;
-  --sw-blue-soft: #e7efeb;
-  --sw-teal: #39705c;
-  --sw-teal-strong: #35634c;
-  --sw-teal-soft: #e9f0e7;
-  --sw-attention: #85521e;
-  --sw-attention-soft: #f6ecd6;
-  --sw-shadow-sm: none;
-  --sw-shadow-md: none;
-  --sw-shadow-lg: none;
+  --sw-navy: #0f2a43;
+  --sw-body: #36475a;
+  --sw-surface: #edf2f7;
+  --sw-blue: #1f5aa6;
+  --sw-blue-hover: #17467f;
+  --sw-blue-soft: #e7effa;
+  --sw-teal: #1d7350;
+  --sw-teal-strong: #155c3f;
+  --sw-teal-soft: #e4f2ea;
+  --sw-attention: #80500f;
+  --sw-attention-soft: #fbefd9;
+  --sw-shadow-sm: 0 1px 2px rgb(15 42 67 / 0.05);
+  --sw-shadow-md: 0 1px 2px rgb(15 42 67 / 0.05), 0 4px 16px -6px rgb(15 42 67 / 0.10);
+  --sw-shadow-lg: 0 2px 4px rgb(15 42 67 / 0.05), 0 18px 40px -16px rgb(15 42 67 / 0.22);
 }
 
 @theme inline {
-  /* Muted text stays above AA on paper, inset surfaces, and status tints. */
-  --color-slate-500: #59645f;
-  --color-slate-600: #4d5c55;
-  --color-slate-700: #3d4d46;
-  --color-slate-400: #64736b;
-  --color-slate-300: #b7c0b8;
-  --color-slate-100: #f0efe9;
+  /* Cool greys; muted text stays above AA on page, surface, and tints. */
+  --color-slate-500: #566577;
+  --color-slate-600: #4a5a6c;
+  --color-slate-700: #36475a;
+  --color-slate-400: #617082;
+  --color-slate-300: #b9c4d0;
+  --color-slate-100: #edf2f7;
   --color-navy: var(--sw-navy);
   --color-body: var(--sw-body);
   --color-surface: var(--sw-surface);
@@ -163,10 +165,10 @@
 }
 @layer components {
   .display-heading {
-    font-family: var(--font-source-serif), Georgia, serif;
-    font-weight: 400;
-    line-height: 1.08;
-    letter-spacing: -0.035em;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    line-height: 1.06;
+    letter-spacing: -0.032em;
   }
   .metric-strip {
     display: grid;

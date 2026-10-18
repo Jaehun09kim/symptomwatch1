@@ -74,7 +74,7 @@ export function SiteHeader() {
                   Try Demo
                 </Link>
                 <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "outline" })} onClick={() => setOpen(false)}>
-                  Create Demo Account
+                  Create a demo account
                 </Link>
                 <Link href="/sign-in" className={buttonVariants({ size: "lg", variant: "ghost" })} onClick={() => setOpen(false)}>
                   Sign in

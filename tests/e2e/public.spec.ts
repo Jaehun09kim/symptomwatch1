@@ -1,20 +1,21 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("public website", () => {
-  test("homepage presents the case, evidence, product, and calls to action", async ({ page }) => {
+  test("homepage says what SymptomWatch is, shows the product, and keeps every disclosure", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/SymptomWatch/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/The referral was sent\.\s*The consult note never arrived\./);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Follow-up tracking for small primary care clinics.");
     await expect(page.getByText("Demo Only — No Real Patient Data.").first()).toBeVisible();
-    for (const heading of [/A flag is a question\s*for the chart\./, /A working list for the people\s*who follow up\./, /Before you try it\./]) {
+    for (const heading of ["What SymptomWatch looks for", "How it works", "One shared list for the whole team", "Before you try it"]) {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
     for (const disclosure of ["not clinically validated", "not HIPAA-compliant", "fictional data only", "No patient contact.", "External AI is disabled."]) {
       await expect(page.locator("#safety")).toContainText(disclosure);
     }
+    await expect(page.getByRole("figure", { name: /how one flag gets closed/ })).toBeVisible();
     await expect(page.getByRole("figure", { name: /Preview of the SymptomWatch dashboard/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Try Demo/ }).first()).toHaveAttribute("href", "/demo");
-    await expect(page.getByRole("link", { name: "Create Demo Account" }).first()).toHaveAttribute("href", "/sign-up");
+    await expect(page.getByRole("link", { name: "Try the demo" }).first()).toHaveAttribute("href", "/demo");
+    await expect(page.getByRole("link", { name: "Create a demo account" }).first()).toHaveAttribute("href", "/sign-up");
     await expect(page.getByRole("link", { name: "Sign in" }).first()).toHaveAttribute("href", "/sign-in");
   });
 
