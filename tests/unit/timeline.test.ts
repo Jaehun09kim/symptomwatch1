@@ -38,7 +38,7 @@ describe("patient timeline", () => {
   it("keeps a visit before its same-day lab order in chronological order", () => {
     const events = buildTimeline(record({
       encounters: [encounter("e1", "2026-01-10", null)],
-      labs: [{ id: "l1", clinicId: "c", patientId: "p1", encounterId: "e1", testName: "TSH", orderedAt: iso("2026-01-10"), expectedWithinDays: 7, status: "ordered", collectedAt: null, resultedAt: null, resultSummary: null, statusReason: null, symptomCode: null, seedKey: null }],
+      labs: [{ id: "l1", clinicId: "c", patientId: "p1", encounterId: "e1", testName: "TSH", orderedAt: iso("2026-01-10"), expectedWithinDays: 7, status: "ordered", collectedAt: null, resultedAt: null, resultSummary: null, statusReason: null, symptomCode: null, seedKey: null, externalRef: null, importBatchId: null }],
     }));
     expect(sortTimeline(events, "asc").map((event) => event.kind)).toEqual(["visit", "lab"]);
   });

@@ -196,6 +196,25 @@ export const symptomObservations = pgTable("symptom_observations", {
   index("symptom_observations_patient_date_idx").on(t.clinicId, t.patientId, t.observedAt),
 ]).enableRLS();
 
+export const importBatches = pgTable("import_batches", {
+  id: id(),
+  clinicId: clinicId(),
+  kind: text("kind", { enum: ["lab_orders", "referrals"] }).notNull(),
+  filename: text("filename").notNull(),
+  rowCount: integer("row_count").notNull(),
+  createdCount: integer("created_count").notNull(),
+  updatedCount: integer("updated_count").notNull(),
+  unchangedCount: integer("unchanged_count").notNull(),
+  errorCount: integer("error_count").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: createdAt(),
+}, (t) => [
+  unique().on(t.clinicId, t.id),
+  check("import_batches_kind_check", sql`${t.kind} IN ('lab_orders', 'referrals')`),
+  foreignKey({ columns: [t.clinicId, t.createdBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
+  index("import_batches_clinic_date_idx").on(t.clinicId, t.createdAt),
+]).enableRLS();
+
 export const labOrders = pgTable("lab_orders", {
   id: id(),
   clinicId: clinicId(),
@@ -211,6 +230,8 @@ export const labOrders = pgTable("lab_orders", {
   statusReason: text("status_reason"),
   symptomCode: text("symptom_code"),
   seedKey: text("seed_key"),
+  externalRef: text("external_ref"),
+  importBatchId: uuid("import_batch_id"),
 }, (t) => [
   unique().on(t.clinicId, t.id), unique().on(t.clinicId, t.seedKey),
   check("lab_orders_expected_within_days_check", sql`${t.expectedWithinDays} >= 0`),
@@ -218,6 +239,8 @@ export const labOrders = pgTable("lab_orders", {
   foreignKey({ columns: [t.clinicId, t.patientId], foreignColumns: [patients.clinicId, patients.id] }).onDelete("cascade"),
   foreignKey({ columns: [t.clinicId, t.encounterId], foreignColumns: [encounters.clinicId, encounters.id] }),
   index("lab_orders_patient_idx").on(t.clinicId, t.patientId),
+  uniqueIndex("lab_orders_external_ref_idx").on(t.clinicId, t.externalRef).where(sql`${t.externalRef} IS NOT NULL`),
+  foreignKey({ name: "lab_orders_import_batch_fkey", columns: [t.clinicId, t.importBatchId], foreignColumns: [importBatches.clinicId, importBatches.id] }),
 ]).enableRLS();
 
 export const referrals = pgTable("referrals", {
@@ -236,6 +259,8 @@ export const referrals = pgTable("referrals", {
   statusReason: text("status_reason"),
   symptomCode: text("symptom_code"),
   seedKey: text("seed_key"),
+  externalRef: text("external_ref"),
+  importBatchId: uuid("import_batch_id"),
 }, (t) => [
   unique().on(t.clinicId, t.id), unique().on(t.clinicId, t.seedKey),
   check("referrals_expected_within_days_check", sql`${t.expectedWithinDays} >= 0`),
@@ -243,6 +268,8 @@ export const referrals = pgTable("referrals", {
   foreignKey({ columns: [t.clinicId, t.patientId], foreignColumns: [patients.clinicId, patients.id] }).onDelete("cascade"),
   foreignKey({ columns: [t.clinicId, t.encounterId], foreignColumns: [encounters.clinicId, encounters.id] }),
   index("referrals_patient_idx").on(t.clinicId, t.patientId),
+  uniqueIndex("referrals_external_ref_idx").on(t.clinicId, t.externalRef).where(sql`${t.externalRef} IS NOT NULL`),
+  foreignKey({ name: "referrals_import_batch_fkey", columns: [t.clinicId, t.importBatchId], foreignColumns: [importBatches.clinicId, importBatches.id] }),
 ]).enableRLS();
 
 export const detectionRuns = pgTable("detection_runs", {

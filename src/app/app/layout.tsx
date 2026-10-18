@@ -19,6 +19,7 @@ async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   const nav: NavKey[] = ["dashboard", "queue"];
   if (can(session.role, "flag.read")) nav.push("review", "rules");
   nav.push("patients");
+  if (can(session.role, "records.import")) nav.push("import");
   if (can(session.role, "staff.manage")) nav.push("staff");
   if (can(session.role, "audit.read")) nav.push("audit");
   nav.push("settings");
