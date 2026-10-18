@@ -103,6 +103,17 @@ describe("authentication and sessions", () => {
     expect((await signInWithPassword({ email: "avery@example.test", password: "a-new-strong-pass" }, {}, db)).ok).toBe(true);
   });
 
+  it("invalidates every other outstanding reset link once a password is reset", async () => {
+    await requestPasswordReset("avery@example.test", {}, db);
+    await requestPasswordReset("avery@example.test", {}, db);
+    const tokens = (await listOutbox(db))
+      .filter((entry) => entry.toEmail === "avery@example.test" && entry.kind === "password_reset")
+      .map((entry) => entry.body.match(/reset-password\/([\w-]+)/)![1]);
+    const [second, first] = tokens; // newest first
+    expect(await resetPassword({ token: second, password: "another-strong-pass" }, {}, db)).toEqual({ ok: true });
+    expect(await resetPassword({ token: first, password: "attacker-strong-pass" }, {}, db)).toMatchObject({ ok: false });
+  });
+
   it("lets an admin issue a reset link only for real members of their clinic", async () => {
     const admin = await contextFor(db, "hv-admin-shah");
     const physician = await contextFor(db, "hv-dr-rivera");
@@ -149,6 +160,22 @@ describe("invitations", () => {
     const accepted = await acceptInvitationAsUser(link.split("/invite/")[1], { id: userId, email: "physician@harborview.demo.test" }, {}, db);
     expect(accepted).toMatchObject({ ok: true, clinicId: ogAdmin.clinicId });
   });
+
+  it("refuses admin-issued reset links for people who belong to another clinic", async () => {
+    // Dr. Rivera now belongs to both clinics; a reset link would let one clinic's admin into the other.
+    const admin = await contextFor(db, "hv-admin-shah");
+    const rivera = (await userIdByEmail(db, "physician@harborview.demo.test"))!;
+    const result = await issueResetLinkForMember({ adminUserId: admin.userId, clinicId: admin.clinicId, memberUserId: rivera }, db);
+    expect(result).toMatchObject({ ok: false, error: expect.stringMatching(/another clinic/i) });
+  });
+
+  it("allows only one outstanding invitation per clinic and address", async () => {
+    const admin = await contextFor(db, "hv-admin-shah");
+    await inviteStaff(admin, { email: "twice@example.test", role: "staff" }, db);
+    await expect(withSystem((tx) => tx.execute(sql`
+      insert into invitations (clinic_id, email, role, token_hash, invited_by, expires_at)
+      values (${admin.clinicId}, 'twice@example.test', 'clinic_admin', 'forged-hash', ${admin.userId}, now() + interval '1 day')`), db)).rejects.toThrow();
+  });
 });
 
 describe("demo sandboxes and view-as", () => {
@@ -189,7 +216,13 @@ describe("demo sandboxes and view-as", () => {
     if (!viewing.ok) throw new Error(viewing.error);
     const viewingSession = (await resolveSession(viewing.token, db))!;
     expect(viewingSession).toMatchObject({ role: "physician", originalUserId: owner.userId });
-    const back = await returnToOwnAccount(viewingSession, {}, db);
+    // A view-as session lives only as long as the human behind it keeps admin access.
+    await withSystem((tx) => tx.update(memberships).set({ role: "staff" }).where(and(eq(memberships.userId, owner.userId), eq(memberships.clinicId, owner.clinicId))), db);
+    expect(await resolveSession(viewing.token, db)).toBeNull();
+    await withSystem((tx) => tx.update(memberships).set({ role: "clinic_admin" }).where(and(eq(memberships.userId, owner.userId), eq(memberships.clinicId, owner.clinicId))), db);
+    const again = await startViewAs(session, physician.userId, {}, db);
+    if (!again.ok) throw new Error(again.error);
+    const back = await returnToOwnAccount((await resolveSession(again.token, db))!, {}, db);
     if (!back.ok) throw new Error(back.error);
     expect(await resolveSession(back.token, db)).toMatchObject({ userId: owner.userId, role: "clinic_admin", originalUserId: null });
   });

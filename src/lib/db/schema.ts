@@ -102,6 +102,7 @@ export const invitations = pgTable("invitations", {
   unique().on(t.clinicId, t.id),
   check("invitations_role_check", sql`${t.role} IN ('clinic_admin', 'physician', 'staff')`),
   foreignKey({ columns: [t.clinicId, t.invitedBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
+  uniqueIndex("invitations_one_outstanding").on(t.clinicId, t.email).where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
 ]).enableRLS();
 
 export const patients = pgTable("patients", {

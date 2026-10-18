@@ -80,7 +80,12 @@ export async function resolveSession(token: string, database?: DatabaseHandle): 
       (row.clinicExpiresAt !== null && new Date(row.clinicExpiresAt).getTime() <= now) ||
       row.membershipStatus !== "active" ||
       row.role === null;
-    if (expired) {
+    // A "view as" session is only valid while the human behind it is still an active admin here.
+    const actorRevoked = row.originalUserId !== null && !(await tx.select({ id: memberships.id }).from(memberships).where(and(
+      eq(memberships.clinicId, row.clinicId), eq(memberships.userId, row.originalUserId),
+      eq(memberships.status, "active"), eq(memberships.role, "clinic_admin"),
+    )).limit(1)).length;
+    if (expired || actorRevoked) {
       await tx.delete(sessions).where(eq(sessions.id, row.sessionId));
       return null;
     }
