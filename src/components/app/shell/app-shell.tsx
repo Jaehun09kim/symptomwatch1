@@ -94,7 +94,7 @@ function ClinicBlock({ user }: { user: ShellUser }) {
 
 function SidebarContent({ user, nav, onNavigate }: { user: ShellUser; nav: NavKey[]; onNavigate?: () => void }) {
   return (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex min-h-full flex-col gap-6">
       <Link href="/app" onClick={onNavigate} className="flex items-center gap-2.5 rounded-md px-1" aria-label="SymptomWatch dashboard">
         <LogoMark className="size-7" />
         <span className="font-semibold tracking-tight text-navy">Symptom<span className="text-brand">Watch</span></span>
@@ -171,8 +171,10 @@ export function AppShell({ user, nav, viewAs, children }: { user: ShellUser; nav
   const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-1">
-      <aside className="sticky top-[33px] hidden h-[calc(100dvh-33px)] w-56 shrink-0 border-r border-border bg-surface p-4 lg:block">
-        <SidebarContent user={user} nav={nav} />
+      <aside className="hidden w-56 shrink-0 border-r border-border bg-surface lg:block">
+        <div className="sticky top-[33px] h-svh max-h-[calc(100svh-33px)] overflow-y-auto p-4 pb-12">
+          <SidebarContent user={user} nav={nav} />
+        </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 items-center gap-3 border-b border-border bg-background px-4 sm:px-6">
@@ -180,7 +182,7 @@ export function AppShell({ user, nav, viewAs, children }: { user: ShellUser; nav
             <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "lg:hidden")} aria-label="Open navigation">
               <Menu className="size-5" />
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 bg-surface p-4">
+            <SheetContent side="left" className="w-72 overflow-y-auto bg-surface p-4 pb-12">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <SidebarContent user={user} nav={nav} onNavigate={() => setOpen(false)} />
             </SheetContent>

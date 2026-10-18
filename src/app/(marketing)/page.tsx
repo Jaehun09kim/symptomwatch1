@@ -30,19 +30,19 @@ export default function HomePage() {
         <div className="lg:pt-10"><FlagPreview /></div>
       </section>
 
-      <section id="how-it-works" className="scroll-mt-14 border-t border-border py-12 lg:py-16" aria-labelledby="how-title">
-        <div className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:gap-16">
+      <section id="how-it-works" className="scroll-mt-14 border-t border-border py-9 lg:py-12" aria-labelledby="how-title">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-10">
           <h2 id="how-title" className="display-heading text-3xl sm:text-4xl">A flag is a question<br className="hidden lg:block" /> for the chart.</h2>
           <div>
             <p className="max-w-2xl text-lg leading-relaxed">A missing record does not tell you whether care happened. Each flag separates what is documented from what the rule cannot find. A clinician decides what it means.</p>
-            <ol className="mt-8 divide-y divide-border border-y border-border">
+            <ol className="mt-6 divide-y divide-border border-y border-border">
               {[
                 ["01", "Read the evidence", "Open the dated chart entries behind the flag. The rule and its version are shown alongside the missing information."],
                 ["02", "Make the review decision", "Confirm a possible gap and optionally create a task, or dismiss it with a reason. The review is recorded."],
                 ["03", "Give the work an owner", "Assign calls, appointment confirmations, and records requests to staff. Record an outcome when the task is complete."],
               ].map(([number, title, body]) => (
-                <li key={number} className="grid grid-cols-[2rem_1fr] gap-4 py-5 sm:grid-cols-[2rem_11rem_1fr]">
-                  <span className="pt-0.5 font-mono text-xs text-muted-foreground">{number}</span>
+                <li key={number} className="grid grid-cols-[2rem_1fr] gap-3 py-4 sm:grid-cols-[2rem_11rem_1fr]">
+                  <span className="pt-0.5 tabular-nums text-xs text-muted-foreground">{number}</span>
                   <h3 className="font-medium">{title}</h3>
                   <p className="col-start-2 text-sm leading-relaxed text-body sm:col-start-auto">{body}</p>
                 </li>
@@ -52,15 +52,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="product" className="scroll-mt-14 border-t border-border py-12 lg:py-16" aria-labelledby="product-title">
-        <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <h2 id="product-title" className="display-heading max-w-xl text-3xl sm:text-4xl">A working list for the people<br className="hidden sm:block" /> who follow up.</h2>
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">Front-desk staff see administrative work. Physicians can inspect clinical detail and review flags. Clinic administrators manage access and review the audit log.</p>
+      <section id="product" className="scroll-mt-14 border-t border-border py-9 lg:py-12" aria-labelledby="product-title">
+        <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-10">
+          <h2 id="product-title" className="display-heading text-3xl sm:text-4xl">A working list for the people who follow up.</h2>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">Front-desk staff see administrative work. Physicians can inspect clinical detail and review flags. Clinic administrators manage access and review the audit log.</p>
         </div>
         <DashboardPreview />
       </section>
 
-      <section id="safety" className="scroll-mt-14 grid gap-8 border-y border-border py-12 lg:grid-cols-[1fr_2fr] lg:gap-16 lg:py-16" aria-labelledby="safety-title">
+      <section id="safety" className="scroll-mt-14 grid gap-6 border-y border-border py-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-10 lg:py-12" aria-labelledby="safety-title">
         <div>
           <h2 id="safety-title" className="display-heading text-3xl sm:text-4xl">Before you try it.</h2>
           <Link href="/privacy" className="mt-5 inline-block text-sm font-medium text-brand underline underline-offset-4">Privacy &amp; data policy</Link>
@@ -72,14 +72,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="contact" className="scroll-mt-14 grid gap-10 py-12 lg:grid-cols-[1fr_1.3fr] lg:gap-20 lg:py-20" aria-labelledby="contact-title">
+      <section id="contact" className="scroll-mt-14 grid gap-6 py-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-10 lg:py-14" aria-labelledby="contact-title">
         <div>
           <h2 id="contact-title" className="display-heading text-3xl sm:text-4xl">Show us how your clinic<br className="hidden lg:block" /> handles follow-up.</h2>
           <p className="mt-5 max-w-md leading-relaxed">Running a small practice in Orange County? Tell us where follow-up work lives today and what is hard to keep track of.</p>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">Request a walkthrough using the form. This prototype stores your request but does not send email. Please leave out patient information.</p>
           <Link href="/demo" className="mt-6 inline-block text-sm font-medium text-brand underline underline-offset-4">Explore the demo first</Link>
         </div>
-        <div className="border-l-2 border-border pl-5 sm:pl-8"><DemoRequestForm /></div>
+        <div className="min-w-0"><DemoRequestForm /></div>
       </section>
     </div>
   );

@@ -98,7 +98,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
           </div>
           <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-body">
             <div className="flex gap-1.5"><dt className="text-slate-500">Demo MRN</dt><dd className="font-mono text-xs">{header.demoMrn}</dd></div>
-            <div className="flex gap-1.5"><dt className="text-slate-500">Age</dt><dd>{ageFrom(header.dateOfBirth, now)}</dd></div>
+            <div className="flex gap-1.5"><dt className="text-slate-500">Age</dt><dd className="tabular-nums">{ageFrom(header.dateOfBirth, now)}</dd></div>
             <div className="flex gap-1.5"><dt className="text-slate-500">Sex</dt><dd>{header.sex === "female" ? "Female" : "Male"}</dd></div>
             <div className="flex gap-1.5"><dt className="text-slate-500">Phone</dt><dd className="tabular-nums">{header.phone}</dd></div>
             <div className="flex gap-1.5"><dt className="text-slate-500">Primary physician</dt><dd>{header.physicianName ?? "—"}</dd></div>
@@ -146,7 +146,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                 {openTasks.map((task) => (
                   <li key={task.id} className="border-b border-border py-3">
                     <p className="text-sm font-medium text-navy">{task.title}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs tabular-nums text-slate-500">
                       {taskCategoryLabel[task.category]} · due {formatTimelineDate(task.dueDate)}{task.assigneeName ? ` · ${task.assigneeName}` : " · unassigned"}
                     </p>
                     <div className="mt-2 flex items-center justify-between gap-2">
@@ -169,7 +169,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                 {record.referrals.map((referral) => (
                   <li key={referral.id} className="border-b border-border py-3">
                     <p className="text-sm font-medium text-navy">{referral.specialty}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">Referred {formatTimelineDate(referral.referredAt)} · {referralStatusLabel[referral.status]}</p>
+                    <p className="mt-0.5 text-xs tabular-nums text-slate-500">Referred {formatTimelineDate(referral.referredAt)} · {referralStatusLabel[referral.status]}</p>
                     {activeReferrals.includes(referral) && can(session.role, "referral.update_admin_status") ? (
                       <div className="mt-2"><UpdateReferralDialog referral={referral} /></div>
                     ) : null}
@@ -188,7 +188,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                   <li key={appointment.id} className="flex items-start justify-between gap-2 border-b border-border py-3">
                     <div>
                       <p className="text-sm font-medium text-navy">{appointmentPurposeLabel[appointment.purpose]}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{formatTimelineDate(appointment.scheduledFor)} · {appointmentStatusLabel[appointment.status]}</p>
+                      <p className="mt-0.5 text-xs tabular-nums text-slate-500">{formatTimelineDate(appointment.scheduledFor)} · {appointmentStatusLabel[appointment.status]}</p>
                     </div>
                     <UpdateAppointmentDialog appointment={appointment} />
                   </li>
@@ -207,7 +207,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                     <li key={lab.id} className="flex items-start justify-between gap-2 border-b border-border py-3">
                       <div>
                         <p className="text-sm font-medium text-navy">{lab.testName}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">Ordered {formatTimelineDate(lab.orderedAt)} · {labStatusLabel[lab.status]}</p>
+                        <p className="mt-0.5 text-xs tabular-nums text-slate-500">Ordered {formatTimelineDate(lab.orderedAt)} · {labStatusLabel[lab.status]}</p>
                       </div>
                       {can(session.role, "lab.update_status") ? <UpdateLabDialog lab={lab} /> : null}
                     </li>

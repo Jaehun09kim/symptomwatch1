@@ -21,7 +21,7 @@ export function StatCard({ label, value, hint, tone, href, locked, className }: 
       {locked ? (
         <p className="mt-2 flex items-start gap-2 text-xs text-muted-foreground"><Lock className="size-3.5 shrink-0" aria-hidden />{locked}</p>
       ) : (
-        <p className={cn("mt-2 font-display text-4xl leading-none tabular-nums", tone === "attention" ? "text-attention" : tone === "teal" ? "text-teal-strong" : "text-navy")}>{value}</p>
+        <p className={cn("mt-2 font-sans text-4xl leading-none tabular-nums", tone === "attention" ? "text-attention" : tone === "teal" ? "text-teal-strong" : "text-navy")}>{value}</p>
       )}
       {hint && !locked ? <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{hint}</p> : null}
     </>

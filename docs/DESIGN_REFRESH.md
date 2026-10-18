@@ -68,3 +68,15 @@ Suggested logical commits when Git metadata is writable:
 2. `Prioritize follow-up work in dashboard and patient records` — shell, metric strip, charts, patient list/detail/timeline, locked-metric test update, and project documentation.
 
 End each commit message with `Co-Authored-By: Codex <noreply@openai.com>`.
+
+## Round 2
+
+- **Sidebar:** a full-page background column now contains sticky, independently scrolling `h-svh` content, capped below the demo banner. Extra bottom padding keeps the disclosure clear of the development indicator.
+- **Timeline and typography:** event toggles distinguish visible types with checkmarks and teal borders; hidden types have empty indicators and paper backgrounds. Existing multi-select behavior and `aria-pressed` remain. Dates and metric counts use Geist Sans with tabular numerals; Mono is reserved for MRNs and rule versions.
+- **Homepage:** below 640px, the working-list preview stacks each task, category, patient, and status. The fixed minimum table width is removed. Below-hero spacing is reduced by 25% (30% for the desktop contact section), with a consistent 1:2 column grid and smaller gutters. The case-led hero, flag anatomy, KPI strip, disclosures, and local fonts remain.
+- **Queue:** replaces the card frame with dividers, wraps view tabs, simplifies status badges, and uses one fictional-record caption. Overdue dates have an amber-token label with a clock icon and “Overdue” text. All views, filters, links, permissions, dialogs, and action logic are retained.
+- **Scope:** no route, data, dependency, or business-logic changes. Review source directories are untouched. No staging or commit attempted; changes are ready for Claude to commit.
+
+Verification: `npm run typecheck` and `npm run lint` passed. `npm test` finished with 17 files / 150 tests passing; the wire-protocol suite failed setup with `listen EPERM` on localhost, leaving its 3 tests skipped. Direct Tailwind / Lightning CSS compilation and `git diff --check` passed. Calculated changed-state contrast meets AA: selected text 8.16:1, unselected text 8.57:1, control boundary 3.02:1, and overdue text 5.55:1.
+
+Browser verification remains outstanding: the sandbox rejected the dev server's localhost port, and a separate Playwright Chromium launch failed with a macOS permission error. Actual 390px rendering (including hero/anatomy fit and absence of horizontal scroll), long-page sidebar scrolling, and rendered axe checks could not be verified here.

@@ -72,7 +72,7 @@ export function TimelineItem({ id, kind, date, title, meta, provenance, highligh
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <time className="font-mono tabular-nums text-xs text-slate-500" dateTime={date}>
+          <time className="font-sans tabular-nums text-xs text-slate-500" dateTime={date}>
             {formatTimelineDate(date)}
           </time>
           <ProvenanceBadge kind={provenance} className="rounded-sm" />

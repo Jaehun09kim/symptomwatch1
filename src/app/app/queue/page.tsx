@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BellOff, Inbox } from "lucide-react";
-import { FictionalTag, StatusBadge } from "@/components/app/primitives/badges";
+import { BellOff, Clock3, Inbox } from "lucide-react";
+import { StatusBadge } from "@/components/app/primitives/badges";
 import { EmptyState, PageHeader } from "@/components/app/primitives/layout";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import { QueueFilters } from "@/components/app/queue/queue-filters";
@@ -70,20 +70,20 @@ async function Queue({ searchParams }: { searchParams: Promise<Params> }) {
         description="Calls, confirmations, and records requests for your team. Assign, track, and record outcomes."
         actions={<CreateTaskDialog assignees={assignees} patients={patients} categories={categories} />}
       />
-      <p className="flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-body">
+      <p className="flex items-start gap-2 border-y border-border py-3 text-sm text-body">
         <BellOff className="size-4 shrink-0 text-slate-500" aria-hidden />
         Prototype — no calls, emails, or texts are sent to patients. Record the outcome of outreach your team does.
       </p>
-      <nav aria-label="Task views" className="-mx-1 overflow-x-auto">
-        <ul className="flex min-w-max gap-1 px-1">
+      <nav aria-label="Task views">
+        <ul className="flex flex-wrap gap-1">
           {views.map((key) => (
             <li key={key}>
               <Link
                 href={viewHref(params, key)}
                 aria-current={view === key ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-9 items-center rounded-full px-3.5 text-sm font-medium transition",
-                  view === key ? "bg-navy text-white" : "text-slate-600 hover:bg-surface hover:text-navy",
+                  "inline-flex min-h-11 items-center rounded-sm border-b-2 px-3 text-sm font-medium transition",
+                  view === key ? "border-brand bg-brand-soft text-brand-hover" : "border-transparent text-slate-600 hover:bg-surface hover:text-navy",
                 )}
               >
                 {VIEW_LABELS[key]}
@@ -92,10 +92,10 @@ async function Queue({ searchParams }: { searchParams: Promise<Params> }) {
           ))}
         </ul>
       </nav>
-      <section aria-label={`${VIEW_LABELS[view]} tasks`} className="rounded-xl border border-border bg-white shadow-soft">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+      <section aria-label={`${VIEW_LABELS[view]} tasks`} className="min-w-0 border-y border-border">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
           <QueueFilters assignees={assignees} />
-          <p className="text-sm text-slate-500">{tasks.length} task{tasks.length === 1 ? "" : "s"}</p>
+          <p className="text-sm tabular-nums text-slate-500">{tasks.length} task{tasks.length === 1 ? "" : "s"} · All records fictional</p>
         </div>
         {tasks.length === 0 ? (
           <EmptyState className="m-4 border-0" icon={Inbox} title="Nothing here" description="No tasks match these filters." />
@@ -125,17 +125,15 @@ async function Queue({ searchParams }: { searchParams: Promise<Params> }) {
                       </td>
                       <td className="px-4 py-3">
                         {task.patientId ? (
-                          <span className="flex flex-wrap items-center gap-1.5">
-                            <Link href={`/app/patients/${task.patientId}`} className="text-brand hover:underline">{task.patientName}</Link>
-                            <FictionalTag />
-                          </span>
+                          <Link href={`/app/patients/${task.patientId}`} className="text-brand hover:underline">{task.patientName}</Link>
                         ) : <span className="text-slate-500">—</span>}
                       </td>
                       <td className="px-4 py-3 text-body">{task.assigneeName ?? <span className="text-slate-500">Unassigned</span>}</td>
-                      <td className={cn("px-4 py-3 tabular-nums", overdue ? "font-medium text-attention" : "text-body")}>
-                        {formatTimelineDate(task.dueDate)}{overdue ? <span className="block text-xs">Overdue</span> : null}
+                      <td className="px-4 py-3 font-sans tabular-nums text-body">
+                        <time dateTime={task.dueDate} className="whitespace-nowrap">{formatTimelineDate(task.dueDate)}</time>
+                        {overdue ? <span className="mt-1 flex w-fit items-center gap-1 rounded-sm bg-attention-soft px-1.5 py-0.5 text-xs font-medium text-attention"><Clock3 className="size-3.5 shrink-0" aria-hidden />Overdue</span> : null}
                       </td>
-                      <td className="px-4 py-3"><StatusBadge status={task.status} /></td>
+                      <td className="px-4 py-3"><StatusBadge status={task.status} className="rounded-sm border-0 bg-transparent px-0" /></td>
                       <td className="px-4 py-3 text-right">
                         {task.category !== "clinical_review" || clinicalAllowed ? <UpdateTaskDialog task={task} assignees={assignees} /> : null}
                       </td>
