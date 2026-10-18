@@ -47,3 +47,6 @@ next-env.d.ts
 /playwright-report/
 /evaluation/results/*.tmp.json
 __pycache__/
+
+# git worktrees
+.worktrees/
