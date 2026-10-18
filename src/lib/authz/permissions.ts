@@ -17,6 +17,7 @@ export const PERMISSIONS = [
   "flag.read",
   "flag.review",
   "detection.run",
+  "detection.configure",
   "staff.manage",
   "audit.read",
   "demo.reset",
@@ -50,6 +51,7 @@ const matrix: Record<MemberRole, ReadonlySet<Permission>> = {
     "flag.read",
     "flag.review",
     "detection.run",
+    "detection.configure",
   ]),
   staff: new Set<Permission>([
     "patient.read_demographics",

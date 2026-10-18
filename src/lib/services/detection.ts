@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { AppContext } from "@/lib/authz/context";
 import { can } from "@/lib/authz/permissions";
@@ -8,7 +8,8 @@ import type { DatabaseHandle } from "@/lib/db/types";
 import { applyDetectionRun, type DetectionRunSummary } from "@/lib/detection/persistence";
 import type { RuleId } from "@/lib/detection/types";
 import { getEnv } from "@/lib/env";
-import type { FlagStatus } from "@/lib/labels";
+import { dismissReasonShortLabel, type DismissReason, type FlagStatus } from "@/lib/labels";
+import { RULE_IDS } from "@/lib/detection/clinic-config";
 import { checkFreeText, describePhiFailure } from "@/lib/validation/phi-guard";
 import { recordAudit } from "./audit";
 import { ServiceError } from "./errors";
@@ -57,10 +58,15 @@ export interface FlagListItem {
   reviewedAt: string | null;
   reviewNote: string | null;
   reviewerName: string | null;
+  reviewReason: DismissReason | null;
+  snoozedUntil: string | null;
+  snoozeNote: string | null;
+  snoozedByName: string | null;
 }
 
 export interface FlagQuery {
-  status?: FlagStatus | "all";
+  /** `open` excludes snoozed flags; `snoozed` lists open flags whose snooze hasn't ended. */
+  status?: FlagStatus | "snoozed" | "all";
   ruleId?: RuleId;
   physicianId?: string;
 }
@@ -71,7 +77,10 @@ export async function listFlags(ctx: AppContext, query: FlagQuery = {}, database
   return withTenant(ctx, async (tx) => {
     const filters: SQL[] = [eq(detectionFlags.clinicId, ctx.clinicId)];
     const status = query.status ?? "open";
-    if (status !== "all") filters.push(eq(detectionFlags.status, status));
+    const now = sql`now()`;
+    if (status === "open") filters.push(eq(detectionFlags.status, "open"), or(isNull(detectionFlags.snoozedUntil), lte(detectionFlags.snoozedUntil, now))!);
+    else if (status === "snoozed") filters.push(eq(detectionFlags.status, "open"), gt(detectionFlags.snoozedUntil, now));
+    else if (status !== "all") filters.push(eq(detectionFlags.status, status));
     if (query.ruleId) filters.push(eq(detectionFlags.ruleId, query.ruleId));
     if (query.physicianId) filters.push(eq(patients.primaryPhysicianId, query.physicianId));
     return tx
@@ -92,6 +101,10 @@ export async function listFlags(ctx: AppContext, query: FlagQuery = {}, database
         reviewedAt: detectionFlags.reviewedAt,
         reviewNote: detectionFlags.reviewNote,
         reviewerName: sql<string | null>`(select display_name from ${users} where ${users.id} = ${detectionFlags.reviewedBy})`,
+        reviewReason: detectionFlags.reviewReason,
+        snoozedUntil: detectionFlags.snoozedUntil,
+        snoozeNote: detectionFlags.snoozeNote,
+        snoozedByName: sql<string | null>`(select display_name from ${users} where ${users.id} = ${detectionFlags.snoozedBy})`,
       })
       .from(detectionFlags)
       .innerJoin(patients, eq(patients.id, detectionFlags.patientId))
@@ -159,7 +172,7 @@ export async function confirmFlag(ctx: AppContext, raw: z.input<typeof confirmFl
     // Re-confirming keeps the original review; it only allows adding the follow-up task.
     if (flag.status === "open") {
       await tx.update(detectionFlags)
-        .set({ status: "confirmed", reviewedBy: ctx.userId, reviewedAt: sql`now()` as unknown as string, reviewNote: input.note || null })
+        .set({ status: "confirmed", reviewedBy: ctx.userId, reviewedAt: sql`now()` as unknown as string, reviewNote: input.note || null, ...CLEAR_SNOOZE })
         .where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, flag.id)));
       await tx.insert(flagEvents).values({ clinicId: ctx.clinicId, flagId: flag.id, eventType: "confirmed", actorUserId: ctx.userId, note: input.note || null });
     }
@@ -188,9 +201,15 @@ export async function confirmFlag(ctx: AppContext, raw: z.input<typeof confirmFl
   }, database);
 }
 
+const CLEAR_SNOOZE = { snoozedUntil: null, snoozedBy: null, snoozeNote: null };
+
 export const dismissFlagSchema = z.object({
   flagId: z.uuid(),
-  reason: z.string().trim().min(3, "Give a short reason for dismissing").max(500),
+  reasonCode: z.enum(["expected", "addressed_elsewhere", "not_clinically_relevant", "data_error", "other"]).default("other"),
+  reason: z.string().trim().max(500).optional().default(""),
+}).refine((input) => input.reasonCode !== "other" || input.reason.length >= 3, {
+  path: ["reason"],
+  message: "Give a short reason for dismissing",
 });
 
 export async function dismissFlag(ctx: AppContext, raw: z.input<typeof dismissFlagSchema>, database?: DatabaseHandle): Promise<void> {
@@ -202,10 +221,58 @@ export async function dismissFlag(ctx: AppContext, raw: z.input<typeof dismissFl
     if (!flag) throw new ServiceError("Flag not found.");
     if (flag.status === "dismissed") throw new ServiceError("This flag is already dismissed.");
     await tx.update(detectionFlags)
-      .set({ status: "dismissed", reviewedBy: ctx.userId, reviewedAt: sql`now()` as unknown as string, reviewNote: input.reason })
+      .set({ status: "dismissed", reviewedBy: ctx.userId, reviewedAt: sql`now()` as unknown as string, reviewNote: input.reason || null, reviewReason: input.reasonCode, ...CLEAR_SNOOZE })
       .where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, flag.id)));
-    await tx.insert(flagEvents).values({ clinicId: ctx.clinicId, flagId: flag.id, eventType: "dismissed", actorUserId: ctx.userId, note: input.reason });
-    await recordAudit(tx, ctx, "flag.dismissed", { type: "detection_flag", id: flag.id }, { ruleId: flag.ruleId });
+    const note = `${dismissReasonShortLabel[input.reasonCode]}${input.reason ? ` — ${input.reason}` : ""}`;
+    await tx.insert(flagEvents).values({ clinicId: ctx.clinicId, flagId: flag.id, eventType: "dismissed", actorUserId: ctx.userId, note });
+    await recordAudit(tx, ctx, "flag.dismissed", { type: "detection_flag", id: flag.id }, { ruleId: flag.ruleId, reasonCode: input.reasonCode });
+  }, database);
+}
+
+export const MAX_SNOOZE_DAYS = 90;
+const DAY_MS = 86_400_000;
+
+export const snoozeFlagSchema = z.object({
+  flagId: z.uuid(),
+  until: z.iso.date("Choose a date"),
+  note: z.string().trim().max(300).optional().default(""),
+});
+
+/** Hides an open flag from the review queue until a date. New evidence wakes it early. */
+export async function snoozeFlag(ctx: AppContext, raw: z.input<typeof snoozeFlagSchema>, database?: DatabaseHandle): Promise<void> {
+  require(ctx, "flag.review");
+  const input = snoozeFlagSchema.parse(raw);
+  assertNoPhi("Note", input.note);
+  const today = Date.parse(new Date().toISOString().slice(0, 10));
+  const days = (Date.parse(input.until) - today) / DAY_MS;
+  if (days < 1) throw new ServiceError("Choose a date in the future.");
+  if (days > MAX_SNOOZE_DAYS) throw new ServiceError(`Snooze for ${MAX_SNOOZE_DAYS} days or less.`);
+  await withTenant(ctx, async (tx) => {
+    const [flag] = await tx.select().from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, input.flagId)));
+    if (!flag) throw new ServiceError("Flag not found.");
+    if (flag.status !== "open") throw new ServiceError("Only flags awaiting review can be snoozed.");
+    const until = `${input.until}T16:00:00.000Z`;
+    await tx.update(detectionFlags)
+      .set({ snoozedUntil: until, snoozedBy: ctx.userId, snoozeNote: input.note || null })
+      .where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, flag.id)));
+    await tx.insert(flagEvents).values({
+      clinicId: ctx.clinicId, flagId: flag.id, eventType: "snoozed", actorUserId: ctx.userId,
+      note: `Until ${input.until}${input.note ? ` — ${input.note}` : ""}`,
+    });
+    await recordAudit(tx, ctx, "flag.snoozed", { type: "detection_flag", id: flag.id }, { ruleId: flag.ruleId, days: Math.round(days) });
+  }, database);
+}
+
+export async function unsnoozeFlag(ctx: AppContext, raw: { flagId: string }, database?: DatabaseHandle): Promise<void> {
+  require(ctx, "flag.review");
+  const { flagId } = z.object({ flagId: z.uuid() }).parse(raw);
+  await withTenant(ctx, async (tx) => {
+    const [flag] = await tx.select().from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, flagId)));
+    if (!flag) throw new ServiceError("Flag not found.");
+    if (!flag.snoozedUntil) throw new ServiceError("This flag isn't snoozed.");
+    await tx.update(detectionFlags).set(CLEAR_SNOOZE).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, flag.id)));
+    await tx.insert(flagEvents).values({ clinicId: ctx.clinicId, flagId: flag.id, eventType: "unsnoozed", actorUserId: ctx.userId, note: "Snooze ended early" });
+    await recordAudit(tx, ctx, "flag.unsnoozed", { type: "detection_flag", id: flag.id }, { ruleId: flag.ruleId });
   }, database);
 }
 
@@ -238,4 +305,54 @@ export async function feedbackSummary(ctx: AppContext, database?: DatabaseHandle
     .innerJoin(detectionFlags, eq(detectionFlags.id, flagFeedback.flagId))
     .where(eq(flagFeedback.clinicId, ctx.clinicId))
     .groupBy(detectionFlags.ruleId, flagFeedback.verdict), database);
+}
+
+export interface RuleSignal {
+  ruleId: RuleId;
+  total: number;
+  open: number;
+  snoozed: number;
+  confirmed: number;
+  dismissed: number;
+  resolved: number;
+  suppressed: number;
+  dismissReasons: Record<DismissReason, number>;
+  /** Confirmed ÷ (confirmed + dismissed); null until a physician has reviewed one. */
+  confirmRate: number | null;
+}
+
+/** Per-rule outcomes: how often physicians confirm vs. dismiss, and why. Counts, not urgency. */
+export async function signalQuality(ctx: AppContext, database?: DatabaseHandle): Promise<RuleSignal[]> {
+  require(ctx, "flag.read");
+  const rows = await withTenant(ctx, (tx) => tx
+    .select({
+      ruleId: detectionFlags.ruleId,
+      status: detectionFlags.status,
+      reason: detectionFlags.reviewReason,
+      snoozed: sql<boolean>`(${detectionFlags.snoozedUntil} is not null and ${detectionFlags.snoozedUntil} > now())`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(detectionFlags)
+    .where(eq(detectionFlags.clinicId, ctx.clinicId))
+    .groupBy(detectionFlags.ruleId, detectionFlags.status, detectionFlags.reviewReason, sql`4`), database);
+  return RULE_IDS.map((ruleId) => {
+    const signal: RuleSignal = {
+      ruleId, total: 0, open: 0, snoozed: 0, confirmed: 0, dismissed: 0, resolved: 0, suppressed: 0,
+      dismissReasons: { expected: 0, addressed_elsewhere: 0, not_clinically_relevant: 0, data_error: 0, other: 0 },
+      confirmRate: null,
+    };
+    for (const row of rows.filter((item) => item.ruleId === ruleId)) {
+      signal.total += row.count;
+      if (row.status === "open") signal[row.snoozed ? "snoozed" : "open"] += row.count;
+      else if (row.status === "confirmed") signal.confirmed += row.count;
+      else if (row.status === "dismissed") {
+        signal.dismissed += row.count;
+        signal.dismissReasons[row.reason ?? "other"] += row.count;
+      } else if (row.status === "resolved_by_data") signal.resolved += row.count;
+      else signal.suppressed += row.count;
+    }
+    const reviewed = signal.confirmed + signal.dismissed;
+    signal.confirmRate = reviewed ? signal.confirmed / reviewed : null;
+    return signal;
+  });
 }

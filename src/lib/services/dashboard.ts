@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { AppContext } from "@/lib/authz/context";
 import { can } from "@/lib/authz/permissions";
 import { detectionFlags, labOrders, patients, referrals, tasks } from "@/lib/db/schema";
@@ -59,11 +59,16 @@ export async function getDashboardSummary(ctx: AppContext, now = new Date(), dat
     let patientsNeedingReview: number | null = null;
     let openFlagsByRule: DashboardSummary["openFlagsByRule"] = null;
     if (flags) {
+      // Snoozed flags are parked until their date; they don't need attention today.
+      const awaitingReview = and(
+        eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.status, "open"),
+        or(isNull(detectionFlags.snoozedUntil), lte(detectionFlags.snoozedUntil, sql`now()`)),
+      );
       [{ value: patientsNeedingReview }] = await tx.select({ value: sql<number>`count(distinct ${detectionFlags.patientId})::int` })
-        .from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.status, "open")));
+        .from(detectionFlags).where(awaitingReview);
       openFlagsByRule = await tx.select({ ruleId: detectionFlags.ruleId, count })
         .from(detectionFlags)
-        .where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.status, "open")))
+        .where(awaitingReview)
         .groupBy(detectionFlags.ruleId);
     }
 

@@ -1,14 +1,4 @@
-import {
-  CheckCircle2,
-  CircleDashed,
-  CircleDot,
-  CircleHelp,
-  Clock3,
-  Eye,
-  ScanSearch,
-  XCircle,
-  type LucideIcon,
-} from "lucide-react";
+import { CheckCircle2, CircleDashed, CircleDot, CircleHelp, CirclePause, Clock3, Eye, ScanSearch, XCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { flagStatusLabel, taskStatusLabel, type FlagStatus, type TaskStatus } from "@/lib/labels";
 
@@ -64,6 +54,7 @@ const flagStatusStyle: Record<FlagStatus, { icon: LucideIcon; className: string 
   confirmed: { icon: CheckCircle2, className: "border-amber-300 bg-attention-soft text-attention" },
   dismissed: { icon: XCircle, className: "border-slate-300 bg-white text-slate-600" },
   resolved_by_data: { icon: CheckCircle2, className: "border-teal/30 bg-teal-soft text-teal-strong" },
+  suppressed: { icon: CirclePause, className: "border-slate-300 bg-surface text-slate-600" },
 };
 
 export function FlagStatusBadge({ status, className }: { status: FlagStatus; className?: string }) {

@@ -191,3 +191,20 @@ describe("engine-wide behavior", () => {
     expect(getDetectionProvider("rules", false).sendsDataExternally).toBe(false);
   });
 });
+
+describe("per-clinic rule configuration", () => {
+  const overdue = patient({ encounters: [visit("e1", -120, interval(30))] });
+  const lateLab = patient({ labOrders: [lab("l1", -20, "ordered")] });
+
+  it("skips rules the clinic has turned off", () => {
+    expect(runRules([overdue, lateLab], ctx)).toHaveLength(2);
+    const findings = runRules([overdue, lateLab], { ...ctx, disabledRules: ["overdue-follow-up"] });
+    expect(findings.map((finding) => finding.ruleId)).toEqual(["lab-result-missing"]);
+  });
+
+  it("applies a clinic's grace periods instead of the defaults", () => {
+    // Ordered 20 days ago, 7-day turnaround: past the default 7-day grace, inside a 14-day grace.
+    const config = { ...DEFAULT_RULE_CONFIG, labResultMissing: { graceDays: 14 } };
+    expect(runRules([lateLab], { ...ctx, config })).toEqual([]);
+  });
+});
