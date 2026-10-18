@@ -44,6 +44,11 @@ function completedEncounters(patient: PatientSnapshot, asOf: string): EncounterS
     .sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt));
 }
 
+/** The ordering/referring visit, only if it is part of the snapshot (dated on/before `asOf`). */
+function linkedEncounter(patient: PatientSnapshot, encounterId: string | null, asOf: string): EncounterSnapshot | undefined {
+  return patient.encounters.find((item) => item.id === encounterId && isOnOrBefore(item.occurredAt, asOf));
+}
+
 const isFutureBooking = (appointment: AppointmentSnapshot, asOf: string) =>
   (appointment.status === "scheduled" || appointment.status === "confirmed") && Date.parse(appointment.scheduledFor) > Date.parse(asOf);
 
@@ -114,8 +119,8 @@ export const labResultMissing: Rule = (patient, { asOf, config }) => {
     const window = lab.expectedWithinDays + config.labResultMissing.graceDays;
     if (!windowPassed(lab.orderedAt, asOf, window)) continue;
 
-    const encounter = patient.encounters.find((item) => item.id === lab.encounterId);
-    const collected = lab.status === "collected" && lab.collectedAt;
+    const encounter = linkedEncounter(patient, lab.encounterId, asOf);
+    const collected = lab.status === "collected";
     findings.push(finding("lab-result-missing", patient, { type: "lab_order", id: lab.id }, {
       title: `${lab.testName} ordered ${formatDay(lab.orderedAt)} has no documented ${collected ? "result" : "collection or result"}`,
       rationale: `Results were expected within ${lab.expectedWithinDays} day${lab.expectedWithinDays === 1 ? "" : "s"}. More than ${window} days (expected turnaround plus ${config.labResultMissing.graceDays}-day grace) have passed${collected ? " since the order, and the specimen was collected" : ""} without a result on file.`,
@@ -124,7 +129,7 @@ export const labResultMissing: Rule = (patient, { asOf, config }) => {
         ...(encounter ? [encounterEvidence(encounter, "supporting", "ordering visit")] : []),
       ],
       missingInfo: [collected
-        ? { code: "no_result_after_collection", description: `Specimen collected ${formatDay(lab.collectedAt!)}; no result documented`, certainty: "not_documented" }
+        ? { code: "no_result_after_collection", description: `Specimen collected${lab.collectedAt ? ` ${formatDay(lab.collectedAt)}` : " (date not recorded)"}; no result documented`, certainty: "not_documented" }
         : { code: "no_collection_or_result", description: "No specimen collection or result documented", certainty: "not_documented" }],
     }));
   }
@@ -138,7 +143,9 @@ export const referralOutcomeMissing: Rule = (patient, { asOf, config }) => {
   for (const referral of patient.referrals) {
     if (referral.status !== "sent" && referral.status !== "scheduled" && referral.status !== "seen") continue;
     if (!isOnOrBefore(referral.referredAt, asOf)) continue;
-    const encounter = patient.encounters.find((item) => item.id === referral.encounterId);
+    // Records documented as received (on/before the snapshot) close the loop whatever the status says.
+    if (referral.recordsReceivedAt && isOnOrBefore(referral.recordsReceivedAt, asOf)) continue;
+    const encounter = linkedEncounter(patient, referral.encounterId, asOf);
     const evidence: EvidenceRef[] = [
       { kind: "referral", id: referral.id, date: referral.referredAt, label: `Referral to ${referral.specialty} — ${referral.status}`, role: "basis" },
       ...(encounter ? [encounterEvidence(encounter, "supporting", "referring visit")] : []),

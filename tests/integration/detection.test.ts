@@ -114,6 +114,15 @@ describe("stored detection and review workflow", () => {
     expect(summary).toContainEqual({ ruleId: "referral-outcome-missing", verdict: "accurate", count: 1 });
   });
 
+  it("updates the rule version of a dismissed flag without reopening it", async () => {
+    const flag = (await flagFor(db, physician, "hv-05", "lab-result-missing")) ?? (await listFlags(physician, {}, db))[0];
+    await dismissFlag(physician, { flagId: flag.id, reasonCode: "expected" }, db);
+    await withSystem((tx) => tx.update(detectionFlags).set({ ruleVersion: "0.9.0" }).where(eq(detectionFlags.id, flag.id)), db);
+    await runDetectionForClinic(physician, db);
+    const [row] = await withSystem((tx) => tx.select().from(detectionFlags).where(eq(detectionFlags.id, flag.id)), db);
+    expect(row).toMatchObject({ status: "dismissed", ruleVersion: "1.0.0", reviewReason: "expected" });
+  });
+
   it("never flags the care-transferred patient", async () => {
     const id = await patientId(db, "hv-14");
     const rows = await withSystem((tx) => tx.select().from(detectionFlags).where(eq(detectionFlags.patientId, id)), db);

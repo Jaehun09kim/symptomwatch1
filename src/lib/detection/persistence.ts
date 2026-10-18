@@ -23,6 +23,14 @@ export interface DetectionRunSummary {
   suppressed: number;
 }
 
+/**
+ * Serializes everything that changes flag state in a clinic — detection runs and
+ * physician reviews — so a run can't overwrite a review it read before commit.
+ */
+export async function lockClinicFlags(tx: DbTransaction, clinicId: string): Promise<void> {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`detection:${clinicId}`}))`);
+}
+
 export function evidenceHash(finding: Pick<Finding, "evidence" | "missingInfo">): string {
   const parts = [
     ...finding.evidence.map((item) => `${item.kind}:${item.id}`).sort(),
@@ -50,8 +58,7 @@ export async function applyDetectionRun(
   },
 ): Promise<DetectionRunSummary> {
   const { clinicId, actorUserId } = input;
-  // Serialize runs per clinic so concurrent refreshes can't interleave lifecycle transitions.
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`detection:${clinicId}`}))`);
+  await lockClinicFlags(tx, clinicId);
 
   const provider = getDetectionProvider("rules", input.externalAiEnabled ?? false);
   const settings = await readRuleSettings(tx, clinicId);
@@ -112,8 +119,15 @@ export async function applyDetectionRun(
       eventType = "reopened_evidence_changed";
     }
     if (status !== current.status) summary.reopened += 1;
-    // A dismissed flag with unchanged evidence keeps its stored evidence as reviewed.
-    if (current.status === "dismissed" && !changed) continue;
+    // A dismissed flag with unchanged evidence keeps its stored evidence as reviewed;
+    // only its rule version is kept current (§6.6).
+    if (current.status === "dismissed" && !changed) {
+      if (current.ruleVersion !== found.ruleVersion) {
+        await tx.update(detectionFlags).set({ ruleVersion: found.ruleVersion })
+          .where(and(eq(detectionFlags.clinicId, clinicId), eq(detectionFlags.id, current.id)));
+      }
+      continue;
+    }
     // New documentation wakes a snoozed flag early.
     const wake = changed && current.snoozedUntil !== null;
     await tx.update(detectionFlags).set({ ...detectionFields, status, ...(wake ? CLEAR_SNOOZE : {}) })

@@ -5,7 +5,7 @@ import { can } from "@/lib/authz/permissions";
 import { detectionFlags, detectionRuns, flagEvents, flagFeedback, patients, tasks, users } from "@/lib/db/schema";
 import { withTenant } from "@/lib/db/tenant";
 import type { DatabaseHandle } from "@/lib/db/types";
-import { applyDetectionRun, type DetectionRunSummary } from "@/lib/detection/persistence";
+import { applyDetectionRun, lockClinicFlags, type DetectionRunSummary } from "@/lib/detection/persistence";
 import type { RuleId } from "@/lib/detection/types";
 import { getEnv } from "@/lib/env";
 import { dismissReasonShortLabel, type DismissReason, type FlagStatus } from "@/lib/labels";
@@ -166,6 +166,7 @@ export async function confirmFlag(ctx: AppContext, raw: z.input<typeof confirmFl
   assertNoPhi("Note", input.note);
   assertNoPhi("Task title", input.taskTitle);
   await withTenant(ctx, async (tx) => {
+    await lockClinicFlags(tx, ctx.clinicId);
     const [flag] = await tx.select().from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, input.flagId)));
     if (!flag) throw new ServiceError("Flag not found.");
     if (flag.status !== "open" && flag.status !== "confirmed") throw new ServiceError("Only open flags can be confirmed.");
@@ -217,6 +218,7 @@ export async function dismissFlag(ctx: AppContext, raw: z.input<typeof dismissFl
   const input = dismissFlagSchema.parse(raw);
   assertNoPhi("Reason", input.reason);
   await withTenant(ctx, async (tx) => {
+    await lockClinicFlags(tx, ctx.clinicId);
     const [flag] = await tx.select().from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, input.flagId)));
     if (!flag) throw new ServiceError("Flag not found.");
     if (flag.status === "dismissed") throw new ServiceError("This flag is already dismissed.");
@@ -248,6 +250,7 @@ export async function snoozeFlag(ctx: AppContext, raw: z.input<typeof snoozeFlag
   if (days < 1) throw new ServiceError("Choose a date in the future.");
   if (days > MAX_SNOOZE_DAYS) throw new ServiceError(`Snooze for ${MAX_SNOOZE_DAYS} days or less.`);
   await withTenant(ctx, async (tx) => {
+    await lockClinicFlags(tx, ctx.clinicId);
     const [flag] = await tx.select().from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, input.flagId)));
     if (!flag) throw new ServiceError("Flag not found.");
     if (flag.status !== "open") throw new ServiceError("Only flags awaiting review can be snoozed.");
@@ -267,6 +270,7 @@ export async function unsnoozeFlag(ctx: AppContext, raw: { flagId: string }, dat
   require(ctx, "flag.review");
   const { flagId } = z.object({ flagId: z.uuid() }).parse(raw);
   await withTenant(ctx, async (tx) => {
+    await lockClinicFlags(tx, ctx.clinicId);
     const [flag] = await tx.select().from(detectionFlags).where(and(eq(detectionFlags.clinicId, ctx.clinicId), eq(detectionFlags.id, flagId)));
     if (!flag) throw new ServiceError("Flag not found.");
     if (!flag.snoozedUntil) throw new ServiceError("This flag isn't snoozed.");
