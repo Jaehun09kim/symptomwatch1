@@ -68,7 +68,7 @@ export function LoopDemo({ patient }: { patient: string }) {
           <span className="invisible">Resolved by new data</span>
         </span>
       </div>
-      <p className="mt-4 text-lg font-semibold leading-snug text-navy">Vitamin D test has no result on file</p>
+      <p className="mt-4 text-lg font-semibold leading-snug text-navy">{done ? "Vitamin D result filed" : "Vitamin D test has no result on file"}</p>
 
       <ol className="relative mt-5 space-y-1">
         {STEPS.map((item, index) => {
