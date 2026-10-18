@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     "test-results/**",
     "coverage/**",
     ".data/**",
+    // Local git worktrees (parallel branches checked out inside the repo)
+    ".worktrees/**",
     "src/lib/db/migrations.generated.ts",
   ]),
 ]);

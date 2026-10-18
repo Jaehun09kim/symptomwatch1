@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { MailWarning } from "lucide-react";
 import { AcceptInvitationForm, SignUpForm } from "@/components/auth/auth-forms";
 import { getInvitationPreview } from "@/lib/auth/accounts";
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: "Join a demo clinic", robots: { index
 
 async function InviteContent({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  await connection(); // invitation expiry is checked against the clock: request time only
   const [invitation, session] = await Promise.all([getInvitationPreview(token), getCurrentSession()]);
   if (!invitation) {
     return (
