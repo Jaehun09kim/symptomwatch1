@@ -16,7 +16,7 @@ export interface RuleRow {
   fields: Array<{ key: NumberKey; label: string; unit: string; min: number; max: number; defaultValue: number }>;
 }
 
-const control = "h-9 w-20 rounded-[5px] border border-input bg-card px-2 text-right text-sm tabular-nums text-navy disabled:bg-surface disabled:text-slate-500";
+const control = "h-11 w-24 rounded-md border border-input bg-card px-2 text-right text-sm tabular-nums text-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand aria-invalid:border-destructive disabled:bg-surface disabled:text-slate-500";
 
 export function RuleSettingsForm({ rows, values, editable }: { rows: RuleRow[]; values: RuleSettingsValues; editable: boolean }) {
   const [state, onSubmit, pending] = useFormAction(async (previous: ActionResult | null, form: FormData) => {
@@ -32,15 +32,15 @@ export function RuleSettingsForm({ rows, values, editable }: { rows: RuleRow[]; 
       <fieldset disabled={!editable || pending} className="divide-y divide-border border-y border-border">
         <legend className="sr-only">Detection rules</legend>
         {rows.map(({ rule, description, fields }) => (
-          <div key={rule} className="grid gap-4 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+          <div key={rule} className="grid gap-5 py-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
             <div className="min-w-0">
-              <label className="flex items-center gap-2.5 text-[15px] font-semibold text-navy">
-                <input type="checkbox" name={`enabled:${rule}`} defaultChecked={!values.disabledRules.includes(rule)} className="size-4 accent-brand" />
+              <label className="flex min-h-11 items-center gap-3 text-base font-medium text-navy">
+                <input type="checkbox" name={`enabled:${rule}`} defaultChecked={!values.disabledRules.includes(rule)} aria-describedby={`${rule}-description`} className="size-5 shrink-0 rounded-sm border-input accent-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" />
                 {ruleLabel[rule]}
               </label>
-              <p className="mt-1.5 pl-[26px] text-sm text-body">{description}</p>
+              <p id={`${rule}-description`} className="mt-1 pl-8 text-sm leading-relaxed text-body">{description}</p>
             </div>
-            <div className="flex flex-wrap gap-x-5 gap-y-3 pl-[26px] md:justify-end md:pl-0">
+            <div className="grid grid-cols-1 gap-4 pl-8 sm:grid-cols-2 xl:pl-0">
               {fields.map((field) => (
                 <div key={field.key} className="space-y-1">
                   <label htmlFor={field.key} className="block text-xs font-medium text-slate-600">{field.label}</label>
@@ -49,7 +49,7 @@ export function RuleSettingsForm({ rows, values, editable }: { rows: RuleRow[]; 
                       defaultValue={values[field.key]} aria-invalid={Boolean(errors[field.key])} aria-describedby={`${field.key}-range`} className={control} />
                     <span className="text-xs text-slate-500">{field.unit}</span>
                   </div>
-                  <p id={`${field.key}-range`} className="text-[11px] text-slate-500">
+                  <p id={`${field.key}-range`} className="text-xs text-slate-500">
                     {errors[field.key] ?? `${field.min}–${field.max} · default ${field.defaultValue}`}
                   </p>
                 </div>
@@ -60,9 +60,9 @@ export function RuleSettingsForm({ rows, values, editable }: { rows: RuleRow[]; 
       </fieldset>
       {state && !state.ok ? <FormMessage status="error" message={state.message} /> : null}
       {editable ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col items-start gap-3">
           <SubmitButton size="default" pending={pending} pendingLabel="Saving and re-running…">Save and re-run detection</SubmitButton>
-          <p className="text-xs text-slate-500">Saving re-runs detection now. Flags that no longer qualify are closed with a note; turning a rule off parks its flags until it&rsquo;s turned back on.</p>
+          <p className="max-w-3xl text-xs leading-relaxed text-slate-500">Saving re-runs detection now. Flags that no longer qualify are closed with a note; turning a rule off parks its flags until it&rsquo;s turned back on.</p>
         </div>
       ) : (
         <p className="text-sm text-slate-600">Only physicians can change detection rules. Changes are recorded in the audit log.</p>

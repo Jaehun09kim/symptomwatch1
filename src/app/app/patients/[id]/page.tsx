@@ -124,6 +124,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                       compact
                       className="rounded-none border-x-0 border-t-0 bg-transparent px-0 shadow-none"
                       status={flag.status}
+                      snoozedUntil={flag.isSnoozed && flag.snoozedUntil ? formatTimelineDate(flag.snoozedUntil) : undefined}
                       ruleLabel={ruleShortLabel[flag.ruleId]}
                       ruleVersion={flag.ruleVersion}
                       title={flag.title}

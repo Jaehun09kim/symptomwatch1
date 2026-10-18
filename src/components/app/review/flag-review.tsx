@@ -21,7 +21,7 @@ export function FlagReviewActions({ flagId, status, title, assignees, snoozed }:
 }) {
   const reviewable = status === "open" || status === "confirmed";
   return (
-    <div className="flex flex-wrap gap-2">
+    <div role="group" aria-label="Flag actions" className="flex flex-wrap gap-2 [&_button]:min-h-11">
       {reviewable ? (
         <ActionDialog
           action={confirmFlagAction}
@@ -34,16 +34,16 @@ export function FlagReviewActions({ flagId, status, title, assignees, snoozed }:
           {(errors) => (
             <>
               <input type="hidden" name="flagId" value={flagId} />
-              {status === "open" ? <TextAreaField label="Review note (optional)" name="note" rows={2} maxLength={500} hint={NO_PHI} error={errors.note} /> : null}
+              {status === "open" ? <TextAreaField className="rounded-md bg-card shadow-none" label="Review note (optional)" name="note" rows={2} maxLength={500} hint={NO_PHI} error={errors.note} /> : null}
               <CheckboxField name="createTask" defaultChecked label="Create a follow-up task for the team" />
-              <TextField label="Task title (optional)" name="taskTitle" maxLength={160} placeholder="Defaults to the flag title" error={errors.taskTitle} />
+              <TextField className="rounded-md bg-card shadow-none" label="Task title (optional)" name="taskTitle" maxLength={160} placeholder="Defaults to the flag title" error={errors.taskTitle} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Task type" name="taskCategory" defaultValue="request_records" error={errors.taskCategory}>
+                <SelectField className="rounded-md bg-card shadow-none" label="Task type" name="taskCategory" defaultValue="request_records" error={errors.taskCategory}>
                   {(Object.keys(taskCategoryLabel) as TaskCategory[]).map((category) => <option key={category} value={category}>{taskCategoryLabel[category]}</option>)}
                 </SelectField>
-                <TextField label="Due date" name="dueDate" type="date" defaultValue={inDays(7)} error={errors.dueDate} />
+                <TextField className="rounded-md bg-card shadow-none" label="Due date" name="dueDate" type="date" defaultValue={inDays(7)} error={errors.dueDate} />
               </div>
-              <SelectField label="Assign to" name="assigneeId" defaultValue="" error={errors.assigneeId}>
+              <SelectField className="rounded-md bg-card shadow-none" label="Assign to" name="assigneeId" defaultValue="" error={errors.assigneeId}>
                 <option value="">Unassigned</option>
                 {assignees.map((person) => <option key={person.userId} value={person.userId}>{person.displayName} · {roleLabel[person.role]}</option>)}
               </SelectField>
@@ -63,8 +63,8 @@ export function FlagReviewActions({ flagId, status, title, assignees, snoozed }:
           {(errors) => (
             <>
               <input type="hidden" name="flagId" value={flagId} />
-              <TextField label="Return to the queue on" name="until" type="date" defaultValue={inDays(14)} min={inDays(1)} max={inDays(90)} required hint="Up to 90 days." error={errors.until} />
-              <TextAreaField label="Why wait? (optional)" name="note" rows={2} maxLength={300} hint={NO_PHI} error={errors.note} placeholder="e.g. Specialist office said the note is coming next week" />
+              <TextField className="rounded-md bg-card shadow-none" label="Return to the queue on" name="until" type="date" defaultValue={inDays(14)} min={inDays(1)} max={inDays(90)} required hint="Up to 90 days." error={errors.until} />
+              <TextAreaField className="rounded-md bg-card shadow-none" label="Why wait? (optional)" name="note" rows={2} maxLength={300} hint={NO_PHI} error={errors.note} placeholder="e.g. Specialist office said the note is coming next week" />
             </>
           )}
         </ActionDialog>
@@ -81,10 +81,10 @@ export function FlagReviewActions({ flagId, status, title, assignees, snoozed }:
           {(errors) => (
             <>
               <input type="hidden" name="flagId" value={flagId} />
-              <SelectField label="Reason" name="reasonCode" defaultValue="expected" error={errors.reasonCode}>
+              <SelectField className="rounded-md bg-card shadow-none" label="Reason" name="reasonCode" defaultValue="expected" error={errors.reasonCode}>
                 {(Object.keys(dismissReasonLabel) as DismissReason[]).map((reason) => <option key={reason} value={reason}>{dismissReasonLabel[reason]}</option>)}
               </SelectField>
-              <TextAreaField label="Note (required for “Other”)" name="reason" rows={2} maxLength={500} hint={NO_PHI} error={errors.reason} placeholder="e.g. Outcome documented in the June visit note" />
+              <TextAreaField className="rounded-md bg-card shadow-none" label="Note (required for “Other”)" name="reason" rows={2} maxLength={500} hint={NO_PHI} error={errors.reason} placeholder="e.g. Outcome documented in the June visit note" />
             </>
           )}
         </ActionDialog>
@@ -100,13 +100,13 @@ export function FlagReviewActions({ flagId, status, title, assignees, snoozed }:
         {(errors) => (
           <>
             <input type="hidden" name="flagId" value={flagId} />
-            <SelectField label="Verdict" name="verdict" defaultValue="accurate" error={errors.verdict}>
+            <SelectField className="rounded-md bg-card shadow-none" label="Verdict" name="verdict" defaultValue="accurate" error={errors.verdict}>
               <option value="accurate">Accurate — a real documentation gap</option>
               <option value="false_positive">False positive — not a gap</option>
               <option value="already_addressed">Already addressed elsewhere</option>
               <option value="not_useful">Accurate but not useful</option>
             </SelectField>
-            <TextAreaField label="Comment (optional)" name="comment" rows={2} maxLength={500} hint={NO_PHI} error={errors.comment} />
+            <TextAreaField className="rounded-md bg-card shadow-none" label="Comment (optional)" name="comment" rows={2} maxLength={500} hint={NO_PHI} error={errors.comment} />
           </>
         )}
       </ActionDialog>

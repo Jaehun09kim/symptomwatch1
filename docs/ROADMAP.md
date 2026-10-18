@@ -34,3 +34,9 @@ Typecheck and lint pass. Vitest: 150 passing tests; the three wire-protocol test
 - Rule limitations: R2 has no order-level linkage, and R1 accepts any later encounter (`PRODUCT_SPEC.md` §6.5).
 - Undecided: whether to keep built-in auth or adopt Supabase Auth. Recommendation: keep built-in auth until real pilots require MFA or SSO.
 - The two stray `# symptomwatch1` lines at the end of `README.md` need removing.
+
+## Design refresh, round 3 (2026-10-17)
+
+Implemented the v0.2 review workspace on `design-refresh`: compact list plus selected detail at ≥1280px, detail above list on smaller screens, URL selection/history, quiet filters and status markers, and matching Detection rules and patient flag styling. Existing clinical actions, settings fields, permissions, and data flow are preserved. Import work is untouched. E2e coverage now includes selection/history, structured dismissal, snooze/wake, administrator restrictions, rule-page axe coverage, and mobile layout.
+
+Typecheck and lint pass. Vitest: 168 tests pass; the three wire-protocol tests cannot start because the sandbox denies localhost binding. Direct Tailwind/Lightning CSS compilation and diff checks pass. Playwright, axe, screenshots, and commit remain for Claude outside the sandbox; this round is implemented but awaiting browser verification. File inventory and handoff: `DESIGN_REFRESH.md` §Round 3.

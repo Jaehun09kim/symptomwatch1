@@ -39,10 +39,10 @@ const provenanceStyle: Record<Provenance, { icon: LucideIcon; label: string; cla
 };
 
 /** Distinguishes charted facts, missing expected records, and engine inferences — never by color alone. */
-export function ProvenanceBadge({ kind, className }: { kind: Provenance; className?: string }) {
+export function ProvenanceBadge({ kind, className, plain = false }: { kind: Provenance; className?: string; plain?: boolean }) {
   const { icon: Icon, label, className: tone } = provenanceStyle[kind];
   return (
-    <span className={cn(pill, tone, className)}>
+    <span className={cn(pill, tone, plain && "h-auto whitespace-normal rounded-none border-0 bg-transparent px-0", className)}>
       <Icon aria-hidden />
       {label}
     </span>
@@ -50,19 +50,20 @@ export function ProvenanceBadge({ kind, className }: { kind: Provenance; classNa
 }
 
 const flagStatusStyle: Record<FlagStatus, { icon: LucideIcon; className: string }> = {
-  open: { icon: CircleDot, className: "border-brand/30 bg-brand-soft text-brand-hover" },
-  confirmed: { icon: CheckCircle2, className: "border-amber-300 bg-attention-soft text-attention" },
-  dismissed: { icon: XCircle, className: "border-slate-300 bg-white text-slate-600" },
-  resolved_by_data: { icon: CheckCircle2, className: "border-teal/30 bg-teal-soft text-teal-strong" },
-  suppressed: { icon: CirclePause, className: "border-slate-300 bg-surface text-slate-600" },
+  open: { icon: CircleDot, className: "text-brand-hover" },
+  confirmed: { icon: CheckCircle2, className: "text-attention" },
+  dismissed: { icon: XCircle, className: "text-slate-600" },
+  resolved_by_data: { icon: CheckCircle2, className: "text-teal-strong" },
+  suppressed: { icon: CirclePause, className: "text-slate-600" },
 };
 
-export function FlagStatusBadge({ status, className }: { status: FlagStatus; className?: string }) {
-  const { icon: Icon, className: tone } = flagStatusStyle[status];
+/** A single text-and-icon marker; snooze replaces the underlying open status. */
+export function FlagStatusBadge({ status, className, snoozedUntil }: { status: FlagStatus; className?: string; snoozedUntil?: string }) {
+  const { icon: Icon, className: tone } = snoozedUntil ? { icon: Clock3, className: "text-slate-600" } : flagStatusStyle[status];
   return (
-    <span className={cn(pill, tone, className)}>
+    <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium [&_svg]:size-3.5 [&_svg]:shrink-0", tone, className)}>
       <Icon aria-hidden />
-      {flagStatusLabel[status]}
+      {snoozedUntil ? `Snoozed until ${snoozedUntil}` : flagStatusLabel[status]}
     </span>
   );
 }

@@ -39,7 +39,7 @@ async function Rules() {
 
       <section aria-labelledby="settings-heading" className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="settings-heading" className="text-lg font-semibold text-navy">Rule settings</h2>
+          <h2 id="settings-heading" className="font-display text-3xl font-normal text-navy">Rule settings</h2>
           <p className="text-xs text-slate-500">
             {settings.isDefault
               ? "Using SymptomWatch defaults."
@@ -51,43 +51,44 @@ async function Rules() {
 
       <section aria-labelledby="signal-heading" className="space-y-3">
         <div>
-          <h2 id="signal-heading" className="text-lg font-semibold text-navy">Signal quality</h2>
+          <h2 id="signal-heading" className="font-display text-3xl font-normal text-navy">Signal quality</h2>
           <p className="mt-1 max-w-3xl text-sm text-body">
             What physicians decided about each rule&rsquo;s flags in this clinic. A low confirm rate or many &ldquo;expected&rdquo; dismissals suggests a rule needs a longer grace period. These are review outcomes, not a clinical validation of the rules.
           </p>
         </div>
-        <div className="overflow-x-auto border-y border-border" tabIndex={0} role="region" aria-label="Signal quality by rule">
+        <div className="overflow-x-auto border-y border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" tabIndex={0} role="region" aria-label="Signal quality by rule">
           <table className="w-full min-w-[46rem] text-sm">
+            <caption className="sr-only">Flag counts and physician review outcomes by detection rule</caption>
             <thead className="bg-surface text-left text-xs font-medium text-slate-600">
               <tr>
-                <th scope="col" className="px-3 py-2.5">Rule</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Raised</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Awaiting</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Snoozed</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Confirmed</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Dismissed</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Resolved by data</th>
-                <th scope="col" className="px-3 py-2.5 text-right">Confirm rate</th>
-                <th scope="col" className="px-3 py-2.5">Top dismissal reason</th>
+                <th scope="col" className="px-3 py-3">Rule</th>
+                <th scope="col" className="px-3 py-3 text-right">Raised</th>
+                <th scope="col" className="px-3 py-3 text-right">Awaiting</th>
+                <th scope="col" className="px-3 py-3 text-right">Snoozed</th>
+                <th scope="col" className="px-3 py-3 text-right">Confirmed</th>
+                <th scope="col" className="px-3 py-3 text-right">Dismissed</th>
+                <th scope="col" className="px-3 py-3 text-right">Resolved by data</th>
+                <th scope="col" className="px-3 py-3 text-right">Confirm rate</th>
+                <th scope="col" className="px-3 py-3">Top dismissal reason</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border tabular-nums">
               {signals.map((signal) => {
                 const [topReason, topCount] = (Object.entries(signal.dismissReasons) as Array<[DismissReason, number]>).sort((a, b) => b[1] - a[1])[0];
                 return (
-                  <tr key={signal.ruleId}>
-                    <th scope="row" className="px-3 py-2.5 text-left font-medium text-navy">
+                  <tr key={signal.ruleId} className="hover:bg-surface">
+                    <th scope="row" className="px-3 py-3 text-left font-medium text-navy">
                       {ruleShortLabel[signal.ruleId]}
                       {settings.disabledRules.includes(signal.ruleId) ? <span className="ml-2 text-xs font-normal text-slate-500">(off · {signal.suppressed} parked)</span> : null}
                     </th>
-                    <td className="px-3 py-2.5 text-right">{signal.total}</td>
-                    <td className="px-3 py-2.5 text-right">{signal.open}</td>
-                    <td className="px-3 py-2.5 text-right">{signal.snoozed}</td>
-                    <td className="px-3 py-2.5 text-right">{signal.confirmed}</td>
-                    <td className="px-3 py-2.5 text-right">{signal.dismissed}</td>
-                    <td className="px-3 py-2.5 text-right">{signal.resolved}</td>
-                    <td className="px-3 py-2.5 text-right">{percent(signal.confirmRate)}</td>
-                    <td className="px-3 py-2.5 text-body">{topCount ? `${dismissReasonShortLabel[topReason]} (${topCount})` : "—"}</td>
+                    <td className="px-3 py-3 text-right">{signal.total}</td>
+                    <td className="px-3 py-3 text-right">{signal.open}</td>
+                    <td className="px-3 py-3 text-right">{signal.snoozed}</td>
+                    <td className="px-3 py-3 text-right">{signal.confirmed}</td>
+                    <td className="px-3 py-3 text-right">{signal.dismissed}</td>
+                    <td className="px-3 py-3 text-right">{signal.resolved}</td>
+                    <td className="px-3 py-3 text-right">{percent(signal.confirmRate)}</td>
+                    <td className="px-3 py-3 text-body">{topCount ? `${dismissReasonShortLabel[topReason]} (${topCount})` : "—"}</td>
                   </tr>
                 );
               })}
