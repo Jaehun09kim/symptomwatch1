@@ -9,6 +9,7 @@ import { dismissReasonShortLabel, ruleShortLabel, type DismissReason } from "@/l
 import { describeRule } from "@/lib/rule-descriptions";
 import { signalQuality } from "@/lib/services/detection";
 import { getRuleSettings, RULE_SETTING_BOUNDS } from "@/lib/services/rule-settings";
+import type { RuleImpactCounts } from "@/lib/rule-change-preview";
 
 export const metadata: Metadata = { title: "Detection rules" };
 
@@ -23,12 +24,13 @@ const FIELDS: Record<(typeof RULE_IDS)[number], RuleRow["fields"]> = {
   "persistent-symptom-unresolved": [field("symptomMinEncounters", "Minimum visits", "visits"), field("symptomMinSpanDays", "Minimum span", "days")],
 };
 
-const percent = (value: number | null) => (value === null ? "—" : `${Math.round(value * 100)}%`);
+const percent = (value: number | null) => (value === null ? "No reviewed flags yet" : `${Math.round(value * 100)}%`);
 
 async function Rules() {
   const { ctx, session } = await requirePermission("flag.read");
   const [settings, signals] = await Promise.all([getRuleSettings(ctx), signalQuality(ctx)]);
   const rows: RuleRow[] = RULE_IDS.map((rule) => ({ rule, description: describeRule(rule, settings), fields: FIELDS[rule] }));
+  const impactCounts: RuleImpactCounts = Object.fromEntries(signals.map(({ ruleId, open, snoozed, confirmed }) => [ruleId, { open, snoozed, confirmed }]));
 
   return (
     <div className="space-y-10">
@@ -40,13 +42,13 @@ async function Rules() {
       <section aria-labelledby="settings-heading" className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="settings-heading" className="font-display text-3xl font-normal text-navy">Rule settings</h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-body">
             {settings.isDefault
               ? "Using SymptomWatch defaults."
               : `Last changed ${new Date(settings.updatedAt!).toLocaleDateString("en-US", { dateStyle: "medium" })}${settings.updatedByName ? ` by ${settings.updatedByName}` : ""}.`}
           </p>
         </div>
-        <RuleSettingsForm rows={rows} values={settings} editable={can(session.role, "detection.configure")} />
+        <RuleSettingsForm key={settings.updatedAt ?? "defaults"} rows={rows} values={settings} editable={can(session.role, "detection.configure")} impactCounts={impactCounts} />
       </section>
 
       <section aria-labelledby="signal-heading" className="space-y-3">
@@ -59,7 +61,7 @@ async function Rules() {
         <div className="overflow-x-auto border-y border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" tabIndex={0} role="region" aria-label="Signal quality by rule">
           <table className="w-full min-w-[46rem] text-sm">
             <caption className="sr-only">Flag counts and physician review outcomes by detection rule</caption>
-            <thead className="bg-surface text-left text-xs font-medium text-slate-600">
+            <thead className="bg-surface text-left text-xs font-medium text-body">
               <tr>
                 <th scope="col" className="px-3 py-3">Rule</th>
                 <th scope="col" className="px-3 py-3 text-right">Raised</th>
@@ -79,7 +81,7 @@ async function Rules() {
                   <tr key={signal.ruleId} className="hover:bg-surface">
                     <th scope="row" className="px-3 py-3 text-left font-medium text-navy">
                       {ruleShortLabel[signal.ruleId]}
-                      {settings.disabledRules.includes(signal.ruleId) ? <span className="ml-2 text-xs font-normal text-slate-500">(off · {signal.suppressed} parked)</span> : null}
+                      {settings.disabledRules.includes(signal.ruleId) ? <span className="ml-2 text-xs font-normal text-body">(off · {signal.suppressed} parked)</span> : null}
                     </th>
                     <td className="px-3 py-3 text-right">{signal.total}</td>
                     <td className="px-3 py-3 text-right">{signal.open}</td>
@@ -88,7 +90,7 @@ async function Rules() {
                     <td className="px-3 py-3 text-right">{signal.dismissed}</td>
                     <td className="px-3 py-3 text-right">{signal.resolved}</td>
                     <td className="px-3 py-3 text-right">{percent(signal.confirmRate)}</td>
-                    <td className="px-3 py-3 text-body">{topCount ? `${dismissReasonShortLabel[topReason]} (${topCount})` : "—"}</td>
+                    <td className="px-3 py-3 text-body">{topCount ? `${dismissReasonShortLabel[topReason]} (${topCount})` : signal.confirmRate === null ? "No reviewed flags yet" : "No dismissals yet"}</td>
                   </tr>
                 );
               })}

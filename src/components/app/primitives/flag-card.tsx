@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CircleHelp, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FlagStatus } from "@/lib/labels";
 import { FlagStatusBadge, ProvenanceBadge } from "./badges";
@@ -21,6 +21,7 @@ export interface FlagCardProps {
   rationale: string;
   evidence: FlagEvidence[];
   missing: FlagMissing[];
+  expectedBy?: string;
   status: FlagStatus;
   showStatus?: boolean;
   /** Formatted return date, when this flag is currently snoozed. */
@@ -37,6 +38,7 @@ export function FlagCard({
   rationale,
   evidence,
   missing,
+  expectedBy,
   status,
   showStatus = true,
   snoozedUntil,
@@ -50,29 +52,31 @@ export function FlagCard({
     <article className={cn("rounded-md border border-border bg-card", className)}>
       <header className={cn("space-y-2 px-4 pt-4", compact && "px-0")}>
         <ProvenanceBadge kind="rule_inferred" plain />
-        <p className="text-xs text-slate-500">
-          {ruleLabel} · <span className="font-mono">v{ruleVersion}</span>
-        </p>
       </header>
       <div className={cn("space-y-5 p-4", compact && "space-y-4 px-0")}>
         <div>
-          <h3 className={cn("text-xl font-medium leading-snug", compact && "text-base")}>{title}</h3>
+          <h3 className={cn("text-xl font-medium leading-snug text-navy", compact && "text-base")}>{title}</h3>
           {showStatus || snoozedUntil ? <FlagStatusBadge status={status} snoozedUntil={snoozedUntil} className="mt-2" /> : null}
-          <p className="mt-3 text-sm leading-relaxed text-body">
-            <span className="font-medium text-navy">Why flagged: </span>
-            {rationale}
-          </p>
+          {expectedBy ? <p className="mt-2 text-sm text-body"><span className="font-medium text-navy">Expected by:</span> <time dateTime={expectedBy}>{formatTimelineDate(expectedBy)}</time></p> : null}
         </div>
+        {missing.length ? (
+          <section aria-label="Missing or uncertain information" className="border-l-2 border-border bg-surface p-3">
+            <h4 className="text-xs font-semibold text-navy">What&rsquo;s missing</h4>
+            <ul className="mt-2 space-y-1.5 text-sm text-body">
+              {missing.map((item) => <li key={item.description}>{item.description}{item.certainty === "uncertain" ? " (uncertain)" : ""}</li>)}
+            </ul>
+          </section>
+        ) : null}
         <section aria-label="Supporting record entries">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Supporting entries</h4>
+          <h4 className="text-xs font-semibold text-navy">Source records</h4>
           <ul className="mt-2 divide-y divide-border">
             {evidence.map((item) => (
               <li key={`${item.date}-${item.label}`} className="flex items-start gap-2 py-2 text-sm">
                 <FileText className="mt-0.5 size-4 shrink-0 text-teal" aria-hidden />
                 <span className="min-w-0">
-                  <span className="tabular text-slate-500">{formatTimelineDate(item.date)} · </span>
+                  <span className="tabular text-body">{formatTimelineDate(item.date)} · </span>
                   {item.href ? (
-                    <a href={item.href} className="text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">
+                    <a href={item.href} className="inline-flex min-h-10 items-center text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">
                       {item.label}
                     </a>
                   ) : (
@@ -83,22 +87,11 @@ export function FlagCard({
             ))}
           </ul>
         </section>
-        {missing.length ? (
-          <section aria-label="Missing or uncertain information" className="border-l-2 border-input bg-surface p-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Missing or uncertain</h4>
-            <ul className="mt-2 space-y-1.5">
-              {missing.map((item) => (
-                <li key={item.description} className="flex items-start gap-2 text-sm text-body">
-                  <CircleHelp className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
-                  <span>
-                    {item.description}
-                    {item.certainty === "uncertain" ? <span className="text-slate-500"> (uncertain)</span> : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        <details className="text-sm text-body">
+          <summary className="min-h-10 cursor-pointer content-center rounded-sm font-medium text-navy focus-visible:outline-2 focus-visible:outline-brand">Why this was flagged</summary>
+          <p className="mt-2 leading-relaxed">{rationale}</p>
+          <p className="mt-2 text-xs">{ruleLabel} · <span className="font-mono">v{ruleVersion}</span></p>
+        </details>
       </div>
       {footer ? <footer className={cn("border-t border-border px-4 py-4", compact && "px-0")}>{footer}</footer> : null}
     </article>

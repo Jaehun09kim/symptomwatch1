@@ -31,6 +31,8 @@ import {
 import { listMembers } from "@/lib/services/members";
 import { ServiceError } from "@/lib/services/errors";
 import { getPatientRecord } from "@/lib/services/patients";
+import { getRuleSettings } from "@/lib/services/rule-settings";
+import { flagExpectedDate } from "@/lib/flag-expected-date";
 import { anchorFor, buildTimeline } from "@/lib/timeline";
 
 export const metadata: Metadata = { title: "Patient timeline" };
@@ -77,6 +79,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
   const pendingLabs = record.labs.filter((lab) => lab.status === "ordered" || lab.status === "collected");
   const upcomingAppointments = record.appointments.filter((item) => new Date(item.scheduledFor) > now || ["scheduled", "confirmed"].includes(item.status));
   const reviewFlags = record.flags.filter((flag) => flag.status === "open" || flag.status === "confirmed");
+  const ruleSettings = record.clinical ? await getRuleSettings(ctx) : null;
   const categories: TaskCategory[] = (Object.keys(taskCategoryLabel) as TaskCategory[]).filter(
     (category) => category !== "clinical_review" || can(session.role, "task.manage_clinical"),
   );
@@ -119,20 +122,25 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
               {reviewFlags.length ? (
                 <div className="space-y-0">
                   {reviewFlags.map((flag) => (
-                    <FlagCard
-                      key={flag.id}
-                      compact
-                      className="rounded-none border-x-0 border-t-0 bg-transparent px-0 shadow-none"
-                      status={flag.status}
-                      snoozedUntil={flag.isSnoozed && flag.snoozedUntil ? formatTimelineDate(flag.snoozedUntil) : undefined}
-                      ruleLabel={ruleShortLabel[flag.ruleId]}
-                      ruleVersion={flag.ruleVersion}
-                      title={flag.title}
-                      rationale={flag.rationale}
-                      evidence={flag.evidence.map((item) => ({ label: item.label, date: item.date, href: `#${anchorFor(item.kind, item.id)}` }))}
-                      missing={flag.missingInfo}
-                      footer={can(session.role, "flag.review") ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} ruleId={flag.ruleId} reviewerId={ctx.userId} assignees={assignees} snoozed={flag.isSnoozed} /> : undefined}
-                    />
+                    <details key={flag.id} name="patient-gaps" className="group border-b border-border">
+                      <summary className="min-h-11 cursor-pointer content-center rounded-sm py-2 text-sm font-medium text-navy focus-visible:outline-2 focus-visible:outline-brand" title={flag.title}>
+                        <span className="inline-block max-w-[calc(100%_-_1.5rem)] truncate align-middle">{flag.title}</span>
+                      </summary>
+                      <FlagCard
+                        compact
+                        className="rounded-none border-x-0 border-t-0 bg-transparent px-0 shadow-none"
+                        status={flag.status}
+                        snoozedUntil={flag.isSnoozed && flag.snoozedUntil ? formatTimelineDate(flag.snoozedUntil) : undefined}
+                        ruleLabel={ruleShortLabel[flag.ruleId]}
+                        ruleVersion={flag.ruleVersion}
+                        title={flag.title}
+                        rationale={flag.rationale}
+                        evidence={flag.evidence.map((item) => ({ label: item.label, date: item.date, href: `#${anchorFor(item.kind, item.id)}` }))}
+                        missing={flag.missingInfo}
+                        expectedBy={ruleSettings ? flagExpectedDate(flag, record, ruleSettings) : undefined}
+                        footer={can(session.role, "flag.review") ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} ruleId={flag.ruleId} reviewerId={ctx.userId} assignees={assignees} snoozed={flag.isSnoozed} /> : undefined}
+                      />
+                    </details>
                   ))}
                 </div>
               ) : (
@@ -227,7 +235,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
 
 export default function PatientPage(props: PageProps<"/app/patients/[id]">) {
   return (
-    <Suspense fallback={<div className="space-y-4"><div className="h-28 animate-pulse rounded-xl bg-surface" /><div className="h-96 animate-pulse rounded-xl bg-surface" /></div>}>
+    <Suspense fallback={<div className="space-y-4"><div className="h-28 animate-pulse rounded-lg bg-surface" /><div className="h-96 animate-pulse rounded-lg bg-surface" /></div>}>
       <PatientView params={props.params} />
     </Suspense>
   );

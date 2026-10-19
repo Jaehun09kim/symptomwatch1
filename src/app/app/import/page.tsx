@@ -12,11 +12,11 @@ export const metadata: Metadata = { title: "Import records" };
 async function History() {
   const { ctx } = await requirePermission("records.import");
   const batches = await listImportBatches(ctx);
-  if (!batches.length) return <p className="text-sm text-slate-500">No imports yet.</p>;
+  if (!batches.length) return <p className="text-sm text-body">No imports yet. Start with a fictional sample above to try mapping, previewing, and importing. Completed imports will appear here.</p>;
   return (
     <div className="overflow-x-auto border-y border-border" tabIndex={0} role="region" aria-label="Recent imports">
       <table className="w-full min-w-[40rem] text-sm">
-        <thead className="bg-surface text-left text-xs font-medium text-slate-600">
+        <thead className="bg-surface text-left text-xs font-medium text-body">
           <tr>
             <th scope="col" className="px-3 py-2">When</th>
             <th scope="col" className="px-3 py-2">File</th>
