@@ -36,6 +36,8 @@ test.describe("public website", () => {
     await expect(nav.getByRole("link", { name: /Explainable flags/ })).toBeFocused();
     await page.keyboard.press("Escape");
 
+    // Escape keeps the menu closed while the pointer rests on the trigger; hover intent needs a fresh entry.
+    await nav.getByRole("link", { name: "How it works" }).hover();
     await nav.getByRole("button", { name: /^Product/ }).hover();
     await nav.getByRole("link", { name: /Follow-up queue/ }).click();
     await expect(page).toHaveURL(/\/product#queue$/);

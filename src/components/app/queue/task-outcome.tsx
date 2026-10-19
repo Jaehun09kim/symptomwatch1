@@ -9,7 +9,7 @@ import { taskOutcomeChoices } from "@/lib/task-outcomes";
 
 export function TaskOutcomeDialog({ task }: { task: { id: string; title: string; patientName: string | null; category: TaskCategory } }) {
   return (
-    <ActionDialog action={recordTaskOutcomeAction} trigger="Record outcome" triggerVariant="default" triggerSize="default"
+    <ActionDialog action={recordTaskOutcomeAction} trigger="Record outcome" triggerVariant="outline" triggerSize="default"
       triggerLabel={`Record outcome for ${task.patientName ?? "the team"}: ${task.title}`} title="Record follow-up outcome" description={task.title} submitLabel="Save outcome">
       {(errors) => <OutcomeFields task={task} errors={errors} />}
     </ActionDialog>

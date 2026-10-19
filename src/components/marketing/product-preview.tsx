@@ -1,6 +1,10 @@
 import { StatusBadge } from "@/components/app/primitives/badges";
 import { taskCategoryLabel } from "@/lib/labels";
+import { sampleFlags } from "./hero-data";
 import { previewQueue, previewStats } from "./preview-data";
+
+/** Same definition as the dashboard: open lab-result flags from the real rule output. */
+const labGaps = sampleFlags.filter((flag) => flag.ruleId === "lab-result-missing").length;
 
 /** A product fragment using the demo dataset, without simulated browser controls. */
 export function DashboardPreview() {
@@ -14,8 +18,8 @@ export function DashboardPreview() {
         {[
           ["Demo patients", previewStats.patients],
           ["Open follow-ups", previewStats.openTasks],
-          ["Pending labs", previewStats.pendingLabs],
-          ["Pending records", previewStats.pendingRecords],
+          ["Lab gaps awaiting review", labGaps],
+          ["Open records requests", previewStats.openRecordRequests],
         ].map(([label, value]) => (
           <div key={label} className="border-border px-5 py-5 [&:nth-child(odd)]:border-r sm:border-r sm:last:border-r-0 [&:nth-child(-n+2)]:border-b sm:[&:nth-child(-n+2)]:border-b-0">
             <dt className="text-[0.8125rem] text-muted-foreground">{label}</dt>

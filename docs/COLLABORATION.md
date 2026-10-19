@@ -65,3 +65,9 @@ Entries are appended as work proceeds.
 - **Codex (refinement pass, main tree):** spacing rhythm, tablet layouts, focus and target sizes, LoopDemo pause/replay, six interaction tests. Claude reversed two removals that contradicted explicit owner asks (hero tilt, track line draw) and restored a short dropdown fade.
 - **Joint review for round 7:** Codex did a blind read-only review from 28 screenshots plus source; Claude did web research on small-practice adoption barriers and loop-closure evidence. Agreed findings and owner decisions are in `ROADMAP.md`.
 - **Owner direction:** published SymptomWatch will hold real clinic data (CSV uploads), so publishing is gated on the clinical deployment checklist; native apps come later. Not ready to publish; refinement continues.
+
+### 2026-10-19 — Round 7 (Claude + Codex in parallel)
+
+- **Claude:** web research (adoption barriers; verified the Casalino 2009 loop-closure figure via NCBI); site batch A and accessibility batch C; reviewed and merged Codex's branch; fixed the confirm-gap default owner; aligned marketing metrics with the new dashboard definitions; ran full check and e2e.
+- **Codex:** blind design review (top-12 ranked findings), then app batch B in `.worktrees/app-workflow` (35 files, unit/integration/e2e coverage). Its sandbox can't run Playwright or the Postgres wire tests; Claude ran both.
+- **Mistakes caught:** Claude's own copy overstated in-app recording and understated storage (fixed before commit); Codex's default owner put front-desk work on physicians (fixed); stale dev-server CSS cache after an e2e build (restart with `.next/dev` cleared).

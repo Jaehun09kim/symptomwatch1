@@ -146,7 +146,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
           action={!hasPatients ? <Link href="/app/import" className="inline-flex min-h-11 items-center text-brand underline">Import records</Link> : lastRun && filtered ? <Link href="/app/review" className="inline-flex min-h-11 items-center text-brand underline">Clear filters</Link> : <RunDetectionButton />} />
       ) : (
         <div className="grid items-start gap-6 md:grid-cols-[minmax(14rem,2fr)_minmax(0,3fr)] [&>*]:min-w-0">
-          <section id="flag-detail" aria-label="Selected flag" tabIndex={-1} className="scroll-mt-16 rounded-lg border border-border bg-card md:sticky md:top-12 md:col-start-2 md:row-start-1 md:max-h-[calc(100vh-4rem)] md:overflow-y-auto">
+          <section id="flag-detail" aria-label="Selected flag" tabIndex={-1} className="scroll-mt-16 rounded-lg border border-border bg-card md:sticky md:top-[calc(var(--banner-h,2rem)+1rem)] md:col-start-2 md:row-start-1 md:max-h-[calc(100vh-var(--banner-h,2rem)-2rem)] md:overflow-y-auto">
             <div key={selected.id}>
               <nav aria-label="Review position" className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-1 text-sm text-body">
                 {previous ? <Link href={`${href(params, { flag: previous.id })}#flag-detail`} className="inline-flex min-h-11 items-center text-brand underline">Previous</Link> : <span className="text-body" aria-disabled="true">Previous</span>}

@@ -8,18 +8,13 @@ import { dateAtOffset } from "@/lib/demo/dates";
 const clinic = "harbor-view" as const;
 const clinicPatients = patients.filter((patient) => patient.clinic === clinic);
 const clinicTasks = tasks.filter((task) => task.clinic === clinic);
-// The dashboard counts pending labs and records for patients still in active care only.
-const activePatients = clinicPatients.filter((patient) => patient.careStatus === "active");
 
 export const previewStats = {
   patients: clinicPatients.length,
   openTasks: clinicTasks.filter((task) => task.status !== "completed").length,
-  pendingLabs: activePatients.flatMap((patient) => patient.labs ?? []).filter((lab) => lab.status === "ordered" || lab.status === "collected").length,
-  pendingRecords: activePatients
-    .flatMap((patient) => patient.referrals ?? [])
-    .filter((referral) => ["sent", "scheduled", "seen"].includes(referral.status)).length,
+  // Same definition as the dashboard's "Open records requests".
+  openRecordRequests: clinicTasks.filter((task) => task.category === "request_records" && task.status !== "completed").length,
 };
-
 /** Dates in previews are anchored to the fixed evaluation reference date. */
 export const previewDate = (offset: number) => dateAtOffset(EVALUATION_REFERENCE_DATE, offset);
 

@@ -42,7 +42,7 @@ Site map (round 5): header with animated dropdown menus — **Product ▾** (`/p
 Shell: left sidebar (collapsible to sheet on mobile), clinic name + DEMO badge, role badge, user menu (sign out), sticky demo banner, “View as” switcher in sandbox clinics.
 
 ### 5.1 Dashboard `/app`
-Compact metric strip (each unlocked cell retains its destination): Total demo patients · Open follow-ups (open tasks) · Patients needing review (patients with ≥1 open flag; physician/admin only) · Overdue administrative tasks (due date < today, not completed) · Pending lab follow-ups · Pending specialist records · Tasks completed this week.
+Leads with a work list: **Review next** (oldest open flags; flag readers) or **Due next** (tasks; front desk). Then four headline metrics, each linking to exactly the set it counts (round 7): Overdue administrative tasks (due date < today, not completed, excluding clinical review) · Patients needing review (patients with ≥1 open, un-snoozed flag; physician/admin only) · Lab gaps awaiting review (open, un-snoozed lab-result flags; physician/admin only) · Open records requests (records-request tasks not completed). Context line: open follow-ups · tasks completed this week · demo patients. The patients panel is collapsed below.
 Front-desk staff see the cards they are permitted to see; clinical counts are replaced with a lock-state cell explaining the permission.
 The patient worklist precedes historical charts. Charts: tasks opened vs. completed per week (last 8 weeks, line); open tasks by category (bar); open flags by rule (bar, clinical roles).
 Patient table: search (name, demo MRN), filters (status: needs review / open tasks / no open items; primary physician), sortable columns, pagination; row click → timeline.

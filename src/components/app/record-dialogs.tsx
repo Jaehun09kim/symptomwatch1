@@ -103,6 +103,7 @@ export function UpdateTaskDialog({ task, assignees }: {
       action={updateTaskAction}
       trigger={<><Pencil aria-hidden /> Update follow-up</>}
       triggerLabel={`Update follow-up for ${task.patientName ?? "the team"}: ${task.title}`}
+      triggerVariant="ghost"
       triggerSize="default"
       title="Update task"
       description={task.title}

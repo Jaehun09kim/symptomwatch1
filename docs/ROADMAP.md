@@ -22,11 +22,11 @@ SymptomWatch helps 1–5-physician primary-care clinics catch follow-up loops th
 | 1 | Hardening: CI, blind Codex review + fixes, README cleanup | ✅ Done (CI runs once pushed) |
 | 2 | Data on-ramp: CSV import (lab orders, referrals) | ✅ Done. Appointments import deferred until clinics ask for it |
 | 3 | Alert-fatigue controls: snooze, structured dismissals, per-clinic rule settings, signal quality | ✅ Done |
-| — | Design refresh with Codex (product owner request) | 🔄 Round 6 done on branch `design-round-5` (dark Linear-style site, light app). Round 7 agreed 2026-10-19 — see below |
+| — | Design refresh with Codex (product owner request) | 🔄 Rounds 6–7 done on branch `design-round-5` (local, not pushed). Pending owner input: founder details, pricing wording, walkthrough reply promise, Orange County wording |
 | 4 | Hosted demo (Vercel + demo-only Supabase) | ⏸ Needs approval and the product owner's accounts |
 | 5 | Customer discovery (interview guide + demo script for 5–10 clinics) | ⏸ Product owner-led; `DEMO_SCRIPT.md` updated for v0.2 |
 
-## Round 7 (agreed 2026-10-19, from a joint Claude + Codex review)
+## Round 7 (agreed and done 2026-10-19, from a joint Claude + Codex review)
 
 Owner decisions: keep the site dark but warmer (fewer mono labels/numbering, plainer language); hero shows the real light app on the dark page; About will name the real founders (owner to supply details); Claude builds the site, Codex builds the app workflow in parallel, Claude verifies and merges.
 

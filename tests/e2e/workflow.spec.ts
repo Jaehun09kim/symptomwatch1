@@ -34,7 +34,9 @@ test.describe("follow-up workflows", () => {
     await card.getByRole("button", { name: "Confirm gap" }).click();
     await expect(page.getByRole("dialog").getByLabel("Task type")).toHaveValue("lab_follow_up");
     await expect(page.getByRole("dialog").getByLabel("Task title (optional)")).toHaveValue(/Check lab status/);
-    await expect(page.getByRole("dialog").getByLabel("Assign to")).not.toHaveValue("");
+    // Two front-desk staff in the demo clinic: front-desk work starts explicitly unassigned, never on the physician.
+    await expect(page.getByRole("dialog").getByLabel("Assign to")).toHaveValue("");
+    await expect(page.getByRole("dialog").getByText(/^Lab follow-up · Unassigned — team must claim · due /)).toBeVisible();
     await page.getByLabel("Review note (optional)").fill("Confirmed in e2e");
     await page.getByLabel("Task title (optional)").fill("Review confirmation follow-up (fictional)");
     await page.getByRole("dialog").getByRole("button", { name: "Confirm", exact: true }).click();

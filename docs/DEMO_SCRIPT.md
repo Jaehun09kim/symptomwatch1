@@ -15,7 +15,7 @@ Say up front: *"Everything you'll see is fictional — invented patients, invent
 
 ## 2. The physician's morning (3 min)
 1. Sign in as **Dr. Maya Rivera** — `physician@harborview.demo.test` / `SymptomWatch-Demo-2026` (or click **Use** next to her name).
-2. **Dashboard:** read the cards — open follow-ups, patients needing review, overdue admin tasks, pending labs, pending specialist records. Note the throughput chart and *"Show data table"*.
+2. **Dashboard:** start with *Review next* (the oldest open flags), then the four cards — overdue admin tasks, patients needing review, lab gaps awaiting review, open records requests; each opens exactly what it counts. Note the throughput chart and *"Show data table"*.
 3. Open **Review flags**. *"These aren't diagnoses or urgency scores — they're documentation questions, listed by when they were found."*
 4. Open the **Rachel Kim** flag (*No documented follow-up visit…*). Walk through **Why flagged**, **Supporting entries**, and **Missing or uncertain**.
 5. Click a supporting entry → the patient timeline opens with that entry highlighted. Point out the three labels: **Documented**, **Not documented**, **Rule-inferred · needs review**.
