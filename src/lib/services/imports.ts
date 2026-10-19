@@ -16,6 +16,7 @@ import type { DatabaseHandle, DbTransaction } from "@/lib/db/types";
 import { applyDetectionRun, type DetectionRunSummary } from "@/lib/detection/persistence";
 import { getEnv } from "@/lib/env";
 import { CsvError, parseCsv } from "@/lib/import/csv";
+import { buildCsv } from "@/lib/import/export";
 import { IMPORT_FIELDS, type ColumnMapping, type ImportKind } from "@/lib/import/fields";
 import { normalizeRow, type ImportRow, type LabImportRow, type LabStatus, type ReferralImportRow, type ReferralStatus } from "@/lib/import/normalize";
 import { labStatusLabel, referralStatusLabel } from "@/lib/labels";
@@ -349,30 +350,42 @@ export interface ImportBatchView {
   createdByName: string | null;
 }
 
+const batchFields = {
+  id: importBatches.id,
+  kind: importBatches.kind,
+  filename: importBatches.filename,
+  rowCount: importBatches.rowCount,
+  createdCount: importBatches.createdCount,
+  updatedCount: importBatches.updatedCount,
+  unchangedCount: importBatches.unchangedCount,
+  errorCount: importBatches.errorCount,
+  createdAt: importBatches.createdAt,
+  createdByName: sql<string | null>`(select display_name from ${users} where ${users.id} = ${importBatches.createdBy})`,
+};
+
 export async function listImportBatches(ctx: AppContext, database?: DatabaseHandle): Promise<ImportBatchView[]> {
   requireImport(ctx);
   return withTenant(ctx, (tx) => tx
-    .select({
-      id: importBatches.id,
-      kind: importBatches.kind,
-      filename: importBatches.filename,
-      rowCount: importBatches.rowCount,
-      createdCount: importBatches.createdCount,
-      updatedCount: importBatches.updatedCount,
-      unchangedCount: importBatches.unchangedCount,
-      errorCount: importBatches.errorCount,
-      createdAt: importBatches.createdAt,
-      createdByName: sql<string | null>`(select display_name from ${users} where ${users.id} = ${importBatches.createdBy})`,
-    })
+    .select(batchFields)
     .from(importBatches)
     .where(eq(importBatches.clinicId, ctx.clinicId))
     .orderBy(desc(importBatches.createdAt))
     .limit(10), database);
 }
 
+/** Batches are committed atomically with their records; failed imports leave no batch. */
+export async function getLastSuccessfulImport(ctx: AppContext, database?: DatabaseHandle): Promise<ImportBatchView | null> {
+  requireImport(ctx);
+  return withTenant(ctx, async (tx) => {
+    const [batch] = await tx.select(batchFields).from(importBatches)
+      .where(eq(importBatches.clinicId, ctx.clinicId))
+      .orderBy(desc(importBatches.createdAt), desc(importBatches.id)).limit(1);
+    return batch ?? null;
+  }, database);
+}
+
 // ---------------------------------------------------------------- sample export
 
-const csvCell = (value: string) => (/[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
 const usDate = (iso: string | null) => (iso ? `${iso.slice(5, 7)}/${iso.slice(8, 10)}/${iso.slice(0, 4)}` : "");
 const isoDaysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 const refFor = (prefix: string, id: string) => `${prefix}-${id.slice(0, 8).toUpperCase()}`;
@@ -391,7 +404,7 @@ export async function buildSampleExport(ctx: AppContext, kind: ImportKind, datab
   requireImport(ctx, kind);
   return withTenant(ctx, async (tx) => {
     const clinicPatients = await tx.select({ id: patients.id, demoMrn: patients.demoMrn, firstName: patients.firstName, lastName: patients.lastName })
-      .from(patients).where(and(eq(patients.clinicId, ctx.clinicId), eq(patients.careStatus, "active"))).orderBy(patients.demoMrn);
+      .from(patients).where(and(eq(patients.clinicId, ctx.clinicId), eq(patients.careStatus, "active"), eq(patients.isSynthetic, true), sql`${patients.demoMrn} ~ '^DEMO-[0-9]{5}$'`)).orderBy(patients.demoMrn);
     if (clinicPatients.length < 2) throw new ServiceError("This clinic needs at least two patients to build a sample export.");
     const byId = new Map(clinicPatients.map((patient) => [patient.id, patient]));
     const name = (patient: PatientRow) => `${patient.lastName}, ${patient.firstName}`;
@@ -416,7 +429,7 @@ export async function buildSampleExport(ctx: AppContext, kind: ImportKind, datab
       });
       lines.push(["LAB-90001", first.demoMrn, name(first), "Lipid panel", usDate(isoDaysAgo(3)), "Pending", "", "", ""]);
       lines.push(["LAB-90002", second.demoMrn, name(second), "TSH", usDate(isoDaysAgo(40)), "Pending", "", "", ""]);
-      lines.push(["LAB-90003", "DEMO-99999", "Doe, Jordan", "CBC with differential", usDate(isoDaysAgo(2)), "Pending", "", "", ""]);
+      lines.push(["LAB-90001", first.demoMrn, name(first), "Lipid panel", usDate(isoDaysAgo(3)), "Pending", "", "", ""]);
       lines.push(["LAB-90004", first.demoMrn, name(first), "Vitamin B12", "13/45/2026", "Pending", "", "", ""]);
       lines.push(["LAB-90005", second.demoMrn, "Nobody, Wrong", "Ferritin", usDate(isoDaysAgo(6)), "Pending", "", "", ""]);
     } else {
@@ -437,11 +450,11 @@ export async function buildSampleExport(ctx: AppContext, kind: ImportKind, datab
       });
       lines.push(["REF-90001", first.demoMrn, name(first), "Dermatology", "Changing mole (fictional)", usDate(isoDaysAgo(5)), "Referred", "", ""]);
       lines.push(["REF-90002", second.demoMrn, name(second), "Cardiology", "Exertional chest discomfort (fictional)", usDate(isoDaysAgo(60)), "Referred", "", ""]);
-      lines.push(["REF-90003", "DEMO-99999", "Doe, Jordan", "Orthopedics", "Knee pain (fictional)", usDate(isoDaysAgo(9)), "Referred", "", ""]);
+      lines.push(["REF-90001", first.demoMrn, name(first), "Dermatology", "Changing mole (fictional)", usDate(isoDaysAgo(5)), "Referred", "", ""]);
       lines.push(["REF-90004", first.demoMrn, name(first), "Neurology", "Headaches (fictional)", usDate(isoDaysAgo(20)), "Lost in transit", "", ""]);
       lines.push(["REF-90005", second.demoMrn, "Nobody, Wrong", "Gastroenterology", "Reflux (fictional)", usDate(isoDaysAgo(15)), "Referred", "", ""]);
     }
-    const csv = lines.map((line) => line.map(csvCell).join(",")).join("\r\n") + "\r\n";
-    return { filename: `ehr-${kind === "lab_orders" ? "lab-orders" : "referrals"}-export-${new Date().toISOString().slice(0, 10)}.csv`, csv };
+    const csv = buildCsv(lines);
+    return { filename: `fictional-${kind === "lab_orders" ? "lab-orders" : "referrals"}-sample-${new Date().toISOString().slice(0, 10)}.csv`, csv };
   }, database);
 }

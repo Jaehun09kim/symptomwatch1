@@ -23,6 +23,9 @@ test.describe("role-based access", () => {
     await openPatient(page, "Foster", "William");
     await expect(page.getByText("Office visit — Change in bowel habits")).toBeVisible();
     await expect(page.getByText("Possible gaps for review")).toBeVisible();
+    const gaps = page.locator('details[name="patient-gaps"]');
+    await expect(gaps.first()).not.toHaveAttribute("open", "");
+    await gaps.first().locator("summary").first().click();
     await expect(page.getByText("Rule-inferred · needs review").first()).toBeVisible();
   });
 

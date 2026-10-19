@@ -5,6 +5,8 @@ import { HorizontalBarChart, WeeklyTrendChart } from "@/components/charts/dashbo
 import { PatientsPanel } from "@/components/app/patients/patients-panel";
 import { EmptyState, PageHeader } from "@/components/app/primitives/layout";
 import { StatCard } from "@/components/app/primitives/stat-card";
+import { DataFreshness } from "@/components/app/primitives/data-freshness";
+import { getLastSuccessfulImport } from "@/lib/services/imports";
 import { requireSession, toAppContext } from "@/lib/auth/current";
 import { can } from "@/lib/authz/permissions";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
@@ -35,11 +37,12 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
   const [session, params] = await Promise.all([requireSession(), searchParams]);
   const ctx = toAppContext(session);
   const clinical = can(session.role, "flag.read");
-  const [summary, flags, dueTasks, lastRun] = await Promise.all([
+  const [summary, flags, dueTasks, lastRun, lastImport] = await Promise.all([
     getDashboardSummary(ctx),
     clinical ? listFlags(ctx) : Promise.resolve([]),
     clinical ? Promise.resolve([]) : listTasks(ctx),
     clinical ? getLastRun(ctx) : Promise.resolve(null),
+    clinical ? getLastSuccessfulImport(ctx) : Promise.resolve(null),
   ]);
   const locked = "Visible to clinical roles";
   const welcomeMessage = typeof params.welcome === "string" ? welcome[params.welcome] : undefined;
@@ -53,6 +56,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
       {welcomeMessage ? (
         <p role="status" className="rounded-md border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
       ) : null}
+      {clinical ? <DataFreshness lastImport={lastImport} lastRun={lastRun} /> : null}
 
       <section aria-labelledby="next-work" className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

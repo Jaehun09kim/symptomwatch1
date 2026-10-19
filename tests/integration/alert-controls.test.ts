@@ -15,6 +15,7 @@ import {
 } from "@/lib/services/detection";
 import { getRuleSettings, updateRuleSettings } from "@/lib/services/rule-settings";
 import { getDashboardSummary } from "@/lib/services/dashboard";
+import { ruleChangePreview } from "@/lib/rule-change-preview";
 import { contextFor, createSeededDatabase, patientId } from "../helpers/seeded";
 
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
@@ -121,8 +122,16 @@ describe("alert-fatigue controls", () => {
     it("suppresses a turned-off rule's flags and restores them when it is turned back on", async () => {
       const before = (await listFlags(physician, { ruleId: "lab-result-missing" }, db)).length;
       expect(before).toBeGreaterThan(0);
+      const settings = await getRuleSettings(physician, db);
+      const signals = await signalQuality(physician, db);
+      const counts = Object.fromEntries(signals.map((signal) => [signal.ruleId, signal]));
+      const preview = ruleChangePreview(settings, { ...settings, disabledRules: ["lab-result-missing"] }, counts);
+      expect(preview[0].effect).toContain(`parks ${before} open or confirmed flags`);
+      const other = await contextFor(db, "og-dr-brooks");
+      const otherBefore = await signalQuality(other, db);
       const summary = await updateRuleSettings(physician, { disabledRules: ["lab-result-missing"] }, db);
       expect(summary.suppressed).toBe(before);
+      expect(await signalQuality(other, db)).toEqual(otherBefore);
       expect(await listFlags(physician, { ruleId: "lab-result-missing" }, db)).toEqual([]);
       expect((await listFlags(physician, { ruleId: "lab-result-missing", status: "suppressed" }, db))).toHaveLength(before);
 

@@ -7,7 +7,9 @@ import type { DatabaseHandle } from "@/lib/db/types";
 import { guessMapping } from "@/lib/import/fields";
 import { parseCsv } from "@/lib/import/csv";
 import { listFlags } from "@/lib/services/detection";
-import { buildSampleExport, commitImport, listImportBatches, previewImport } from "@/lib/services/imports";
+import { buildSampleExport, commitImport, getLastSuccessfulImport, listImportBatches, previewImport } from "@/lib/services/imports";
+import { withTenant } from "@/lib/db/tenant";
+import { buildCorrectionCsv } from "@/lib/import/export";
 import { contextFor, createSeededDatabase } from "../helpers/seeded";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -55,10 +57,35 @@ describe("CSV import of EHR exports", () => {
     expect(preview.counts.unchanged).toBeGreaterThan(0);
     expect(preview.counts.error).toBe(3);
     const errors = preview.rows.filter((row) => row.action === "error").flatMap((row) => row.messages).join(" ");
-    expect(errors).toMatch(/No patient with DEMO-99999/);
+    expect(errors).toMatch(/Same order as row/);
     expect(errors).toMatch(/isn't a date/);
     expect(errors).toMatch(/doesn't match/i);
     expect(await labCount()).toBe(before);
+  });
+
+  it("builds both samples using only fictional MRNs from the current clinic", async () => {
+    const other = await contextFor(db, "og-dr-brooks");
+    for (const ctx of [physician, other]) {
+      const clinicPatients = await withTenant(ctx, (tx) => tx.select({ mrn: patients.demoMrn }).from(patients), db);
+      for (const kind of ["lab_orders", "referrals"] as const) {
+        const sample = await buildSampleExport(ctx, kind, db);
+        const parsed = parseCsv(sample.csv);
+        const mrnIndex = parsed.headers.indexOf("MRN");
+        expect(sample.filename).toMatch(/^fictional-/);
+        expect(parsed.rows.length).toBeGreaterThan(4);
+        for (const row of parsed.rows) {
+          expect(row[mrnIndex]).toMatch(/^DEMO-\d{5}$/);
+          expect(clinicPatients.map((patient) => patient.mrn)).toContain(row[mrnIndex]);
+        }
+      }
+    }
+  });
+
+  it("reports no successful import before a commit, including after rejected imports", async () => {
+    expect(await getLastSuccessfulImport(physician, db)).toBeNull();
+    await expect(commitImport(physician, request("lab_orders", "MRN,Test,Order Date,Status\nDEMO-00001,CBC,bad,Pending"), db)).rejects.toThrow(/No rows can be imported/);
+    expect(await getLastSuccessfulImport(physician, db)).toBeNull();
+    await expect(getLastSuccessfulImport(staff, db)).rejects.toThrow(/permission/i);
   });
 
   it("imports the sample export: resolves gaps it documents, raises new ones, records the batch, and audits", async () => {
@@ -76,6 +103,9 @@ describe("CSV import of EHR exports", () => {
 
     const [batch] = await listImportBatches(physician, db);
     expect(batch).toMatchObject({ id: result.batchId, kind: "lab_orders", filename, createdCount: 2, errorCount: 3 });
+    expect(await getLastSuccessfulImport(admin, db)).toEqual(batch);
+    expect(batch.createdByName).toBeTruthy();
+    expect(parseCsv(buildCorrectionCsv(csv, result.rows)).rows).toHaveLength(3);
     const audit = await withSystem((tx) => tx.select().from(auditLogs).where(and(eq(auditLogs.action, "records.imported"), eq(auditLogs.entityId, result.batchId))), db);
     expect(audit).toHaveLength(1);
     const imported = await withSystem((tx) => tx.select().from(labOrders).where(eq(labOrders.importBatchId, result.batchId)), db);
@@ -123,5 +153,17 @@ describe("CSV import of EHR exports", () => {
     await expect(listImportBatches(staff, db)).rejects.toThrow();
     const batches = await withSystem((tx) => tx.select().from(importBatches).where(eq(importBatches.clinicId, admin.clinicId)), db);
     expect(batches.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("returns the latest committed batch without leaking another clinic or trusting a forged role", async () => {
+    const other = await contextFor(db, "og-dr-brooks");
+    expect(await getLastSuccessfulImport(other, db)).toBeNull();
+    const latest = await getLastSuccessfulImport(physician, db);
+    const { csv, filename } = await buildSampleExport(other, "lab_orders", db);
+    const result = await commitImport(other, request("lab_orders", csv, filename), db);
+    expect(await getLastSuccessfulImport(other, db)).toMatchObject({ id: result.batchId, kind: "lab_orders", rowCount: result.totalRows, errorCount: result.counts.error });
+    expect(await getLastSuccessfulImport(physician, db)).toEqual(latest);
+    expect(await getLastSuccessfulImport({ ...staff, role: "physician" }, db)).toBeNull();
+    expect(await getLastSuccessfulImport({ ...physician, clinicId: other.clinicId }, db)).toBeNull();
   });
 });

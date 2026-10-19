@@ -5,10 +5,13 @@ import { redirect } from "next/navigation";
 import { ClipboardCheck, Info } from "lucide-react";
 import { FlagStatusBadge } from "@/components/app/primitives/badges";
 import { FlagCard } from "@/components/app/primitives/flag-card";
+import { DataFreshness } from "@/components/app/primitives/data-freshness";
+import { getLastSuccessfulImport } from "@/lib/services/imports";
 import { EmptyState, PageHeader } from "@/components/app/primitives/layout";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import { MobileReviewFilters } from "@/components/app/review/mobile-filters";
-import { listPatients } from "@/lib/services/patients";
+import { getPatientRecord, listPatients } from "@/lib/services/patients";
+import { flagExpectedDate } from "@/lib/flag-expected-date";
 import { FlagReviewActions, RunDetectionButton } from "@/components/app/review/flag-review";
 import { requirePermission } from "@/lib/auth/current";
 import { can } from "@/lib/authz/permissions";
@@ -62,12 +65,13 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
   const ruleId = ruleParam && RULE_IDS.includes(ruleParam) ? ruleParam : undefined;
   const canReview = can(session.role, "flag.review");
 
-  const [flags, lastRun, members, feedback, settings] = await Promise.all([
+  const [flags, lastRun, members, feedback, settings, lastImport] = await Promise.all([
     listFlags(ctx, { status, ruleId }),
     getLastRun(ctx),
     listMembers(ctx),
     feedbackSummary(ctx),
     getRuleSettings(ctx),
+    getLastSuccessfulImport(ctx),
   ]);
   const off = new Set(settings.disabledRules);
   const selected = flags.find((flag) => flag.id === one(params.flag)) ?? flags[0];
@@ -78,7 +82,10 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
   const next = flags[selectedIndex + 1];
   const hasPatients = Boolean(selected) || (await listPatients(ctx)).total > 0;
   const filtered = status !== "open" || Boolean(ruleId);
-  const history = await getFlagHistory(ctx, selected ? [selected.id] : []);
+  const [history, selectedRecord] = await Promise.all([
+    getFlagHistory(ctx, selected ? [selected.id] : []),
+    selected ? getPatientRecord(ctx, selected.patientId) : Promise.resolve(null),
+  ]);
   const assignees = members.filter((member) => member.status === "active").map(({ userId, displayName, role }) => ({ userId, displayName, role }));
   const feedbackByRule = RULE_IDS.map((rule) => ({
     rule,
@@ -98,12 +105,10 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
           <span>Listed by when first detected — <strong className="text-navy">not by urgency</strong>. Flags are documentation questions, not diagnoses, and never change care plans or contact patients.</span>
         </p>
         <p className="shrink-0 text-xs text-body">
-          {lastRun
-            ? `Last run ${new Date(lastRun.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} · ${lastRun.patientsEvaluated} patient${lastRun.patientsEvaluated === 1 ? "" : "s"} · ${lastRun.findingsCount} finding${lastRun.findingsCount === 1 ? "" : "s"}`
-            : "Not run yet"}
-          {` · rules v${RULES_VERSION} · external AI off`}
+          {`Rules v${RULES_VERSION} · external AI off`}
         </p>
       </div>
+      <DataFreshness lastImport={lastImport} lastRun={lastRun} />
       {!canReview ? (
         <p className="border-l-2 border-brand bg-brand-soft px-4 py-2.5 text-sm text-brand-hover">
           You can view flags and run detection. Confirming, dismissing, and feedback are reserved for physicians.
@@ -171,6 +176,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                 rationale={selected.rationale}
                 evidence={selected.evidence.map((item) => ({ label: item.label, date: item.date, href: `/app/patients/${selected.patientId}#${anchorFor(item.kind, item.id)}` }))}
                 missing={selected.missingInfo}
+                expectedBy={selectedRecord ? flagExpectedDate(selected, selectedRecord, settings) : undefined}
                 footer={
                   <div className="space-y-3">
                     {selected.status === "dismissed" && selected.reviewReason ? (
@@ -183,7 +189,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                     ) : null}
                     {history[selected.id]?.length ? (
                       <details className="text-xs text-body">
-                        <summary className="cursor-pointer select-none py-2 font-medium text-navy">Review history ({history[selected.id].length})</summary>
+                        <summary className="min-h-10 cursor-pointer content-center select-none py-2 font-medium text-navy">Review history ({history[selected.id].length})</summary>
                         <ol className="mt-2 space-y-1 border-l border-border pl-3">
                           {history[selected.id].map((entry, index) => (
                             <li key={index}>
