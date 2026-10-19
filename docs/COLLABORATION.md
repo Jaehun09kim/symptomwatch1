@@ -71,3 +71,10 @@ Entries are appended as work proceeds.
 - **Claude:** web research (adoption barriers; verified the Casalino 2009 loop-closure figure via NCBI); site batch A and accessibility batch C; reviewed and merged Codex's branch; fixed the confirm-gap default owner; aligned marketing metrics with the new dashboard definitions; ran full check and e2e.
 - **Codex:** blind design review (top-12 ranked findings), then app batch B in `.worktrees/app-workflow` (35 files, unit/integration/e2e coverage). Its sandbox can't run Playwright or the Postgres wire tests; Claude ran both.
 - **Mistakes caught:** Claude's own copy overstated in-app recording and understated storage (fixed before commit); Codex's default owner put front-desk work on physicians (fixed); stale dev-server CSS cache after an e2e build (restart with `.next/dev` cleared).
+
+### 2026-10-19 — Batch D and the onboarding design
+
+- **Codex:** batch D app polish in the worktree; hit its usage limit after the code and tests were complete (no report written). Claude verified tenant safety, ran the full suite (240 + e2e 50/50) and merged.
+- **Claude:** site items (privacy wording, contact inputs, full-size link); wrote the clinic-onboarding design from the owner's idea.
+- **Codex (read-only):** security review of the design — found an existing risk (manager-issued password resets would let a non-clinical manager take over a physician account) and gaps in RLS replacement, approval atomicity, pending sessions, OIDC binding and the last-manager guard. All folded into the design before owner approval.
+- **Owner decisions:** code + one-click approval; job role separate from manager; manager can grant physician access alone (visible to physicians); verify applicants both in person and by email (dev outbox); revoking a code declines pending requests; Google sign-in and `oauth4webapi` approved.

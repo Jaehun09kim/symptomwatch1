@@ -34,6 +34,14 @@ Owner decisions: keep the site dark but warmer (fewer mono labels/numbering, pla
 - **B — App workflow (Codex):** rule-aware "Confirm gap" defaults with explicit owner; queue quick views (Mine / Due today / Unassigned), one-tap outcomes, mobile cards, larger targets; dashboard "Review next" and metrics that link to exactly what they count; specific empty states; timeline provenance separated from event outcome; mobile review as a decision workspace.
 - **C — Accessibility (Claude):** demo banner grows with text size (fixed height was a round-6 regression).
 
+## Batch D (done 2026-10-19)
+
+Import onboarding (steps, field guide, sample CSV, correction report), data freshness on dashboard and Review, collapsible flag rationale, rule-change preview (Codex, finished before its usage limit; verified by Claude); privacy retention wording, stronger contact inputs, full-size demo link (Claude). Check 240 + e2e 50/50.
+
+## Next milestone: clinic onboarding (approved 2026-10-19)
+
+Design: `docs/superpowers/specs/2026-10-19-clinic-onboarding-design.md`. Start-or-join sign-up, role codes with one-click manager approval, job role separate from "manages the clinic", email verification via dev outbox, Continue with Google (mocked provider until the owner creates the OAuth client). Four milestones: role split → codes and approvals → sign-up flow → Google. Includes an existing-risk fix: manager-issued password resets become sandbox-only.
+
 ## Later (owner direction, 2026-10-19)
 
 - **Publishing = real clinics with real data.** Requires the clinical deployment checklist first (BAAs, MFA, pen test, backups, legal review) and a data-minimization design (dates/statuses only; consider SMART on FHIR embedding).
