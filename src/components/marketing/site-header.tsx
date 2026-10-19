@@ -225,7 +225,7 @@ function MobileNav() {
           </ul>
           <div className="mt-6 grid gap-2">
             <Link href="/demo" className={buttonVariants({ size: "lg" })} onClick={close}>Try the demo</Link>
-            <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "outline" })} onClick={close}>Create a demo account</Link>
+            <Link href="/contact" className={buttonVariants({ size: "lg", variant: "outline" })} onClick={close}>Request a walkthrough</Link>
             <Link href="/sign-in" className={buttonVariants({ size: "lg", variant: "ghost" })} onClick={close}>Sign in</Link>
           </div>
         </nav>
@@ -236,7 +236,7 @@ function MobileNav() {
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-8 z-40 border-b border-border bg-background">
+    <header className="sticky top-[var(--banner-h,2rem)] z-40 border-b border-border bg-background">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="shrink-0 rounded-md lg:w-44" aria-label="SymptomWatch home">
           <Logo markClassName="size-6" />

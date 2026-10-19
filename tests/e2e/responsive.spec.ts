@@ -13,9 +13,9 @@ test.describe("mobile layout", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Open menu" }).click();
     const mobile = page.getByRole("navigation", { name: "Mobile" });
-    await mobile.getByRole("button", { name: /^Company/ }).click();
-    await mobile.getByRole("link", { name: "Request a walkthrough" }).click();
-    await expect(page).toHaveURL(/\/contact$/);
+    await mobile.getByRole("button", { name: /^Product/ }).click();
+    await mobile.getByRole("link", { name: "Record import" }).click();
+    await expect(page).toHaveURL(/\/product#import$/);
   });
 
   test("review selection and detection rules fit a single mobile column", async ({ page }) => {

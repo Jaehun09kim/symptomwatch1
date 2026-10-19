@@ -46,7 +46,6 @@ export default function DemoPage(props: PageProps<"/demo">) {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:px-8">
       <div className="max-w-2xl">
-        <p className="meta-label mb-5">Demo · private sandbox</p>
         <h1 className="display-heading text-[2.6rem] sm:text-6xl">Choose a role to try</h1>
         <p className="lead mt-6">
           Explore a private sandbox of <strong className="font-medium text-navy">Harbor View Family Medicine</strong> with 30

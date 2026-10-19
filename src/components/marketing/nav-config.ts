@@ -1,13 +1,8 @@
 import {
-  Gauge,
   History,
-  Info,
   ListChecks,
-  MessageSquareText,
   ScanSearch,
-  ShieldCheck,
   SlidersHorizontal,
-  FileLock2,
   Upload,
   type LucideIcon,
 } from "lucide-react";
@@ -41,25 +36,8 @@ export const MARKETING_NAV: NavGroup[] = [
     ],
   },
   { label: "How it works", href: "/how-it-works" },
-  {
-    label: "Safety",
-    href: "/safety",
-    overview: "Our safety approach",
-    items: [
-      { href: "/safety#data", title: "Fictional data, enforced", body: "Guard rails that keep real patient information out.", icon: ShieldCheck },
-      { href: "/safety#evaluation", title: "How we measure accuracy", body: "Our numbers, and why they aren't proof yet.", icon: Gauge },
-      { href: "/privacy", title: "Privacy & data policy", body: "What the prototype stores and for how long.", icon: FileLock2 },
-    ],
-  },
-  {
-    label: "Company",
-    href: "/about",
-    overview: "About SymptomWatch",
-    items: [
-      { href: "/about", title: "Why we're building this", body: "The problem, who it's for, and where we stand.", icon: Info },
-      { href: "/contact", title: "Request a walkthrough", body: "Tell us how follow-up works in your clinic.", icon: MessageSquareText },
-    ],
-  },
+  { label: "Safety", href: "/safety" },
+  { label: "About", href: "/about" },
 ];
 
 export function isActive(pathname: string, href: string): boolean {

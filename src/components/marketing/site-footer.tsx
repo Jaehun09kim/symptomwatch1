@@ -2,6 +2,23 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { MARKETING_NAV } from "./nav-config";
 
+const product = MARKETING_NAV.find((group) => group.label === "Product")!;
+
+const COLUMNS = [
+  { label: "Product", links: [{ href: product.href, title: product.overview! }, ...product.items!.map(({ href, title }) => ({ href, title }))] },
+  { label: "Trust", links: [
+    { href: "/safety", title: "Safety approach" },
+    { href: "/safety#stores", title: "What we store" },
+    { href: "/safety#evaluation", title: "How we measure accuracy" },
+    { href: "/privacy", title: "Privacy & data policy" },
+  ] },
+  { label: "Company", links: [
+    { href: "/about", title: "About SymptomWatch" },
+    { href: "/how-it-works#setup", title: "What setup involves" },
+    { href: "/contact", title: "Request a walkthrough" },
+  ] },
+];
+
 const link = "inline-flex min-h-7 items-center rounded-sm text-slate-500 underline-offset-4 transition-colors duration-150 hover:text-navy hover:underline focus-visible:text-navy";
 
 export function SiteFooter() {
@@ -21,12 +38,11 @@ export function SiteFooter() {
             <Link className={link} href="/sign-in">Sign in</Link>
           </div>
         </div>
-        {MARKETING_NAV.filter((group) => group.items).map((group) => (
-          <nav key={group.label} aria-label={group.label}>
-            <p className="text-[0.8125rem] font-medium text-navy">{group.label}</p>
+        {COLUMNS.map((column) => (
+          <nav key={column.label} aria-label={column.label}>
+            <p className="text-[0.8125rem] font-medium text-navy">{column.label}</p>
             <ul className="mt-3 space-y-1 text-[0.8125rem]">
-              <li><Link className={link} href={group.href}>{group.overview}</Link></li>
-              {group.items!.map((item) => <li key={item.href}><Link className={link} href={item.href}>{item.title}</Link></li>)}
+              {column.links.map((item) => <li key={item.href}><Link className={link} href={item.href}>{item.title}</Link></li>)}
             </ul>
           </nav>
         ))}
@@ -34,7 +50,7 @@ export function SiteFooter() {
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-5 sm:px-6 lg:px-8">
           <p className="meta-label">© 2026 SymptomWatch (prototype). All patients, clinics, and staff shown are fictional.</p>
-          <p className="meta-label">Rules-based · external AI off</p>
+          <p className="meta-label">Rule-based detection · external AI off</p>
         </div>
       </div>
     </footer>

@@ -178,7 +178,7 @@ export function AppShell({ user, nav, viewAs, children }: { user: ShellUser; nav
   return (
     <div className="flex flex-1">
       <aside className="hidden w-60 shrink-0 border-r border-border bg-sidebar lg:block">
-        <div className="sticky top-8 h-svh max-h-[calc(100svh-2rem)] overflow-y-auto p-4 pb-8">
+        <div className="sticky top-[var(--banner-h,2rem)] h-svh max-h-[calc(100svh-var(--banner-h,2rem))] overflow-y-auto p-4 pb-8">
           <SidebarContent user={user} nav={nav} />
         </div>
       </aside>

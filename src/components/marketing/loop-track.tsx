@@ -28,7 +28,7 @@ export function LoopTrack({ steps }: { steps: TrackStep[] }) {
         return (
           <li key={step.title} className="relative border-l border-border pl-6 md:border-l-0 md:border-t md:pl-0 md:pr-8 md:pt-6 md:last:pr-0">
             <span aria-hidden className={cn("absolute -left-[4.5px] top-1 z-[2] size-2 rounded-full border bg-background md:left-0 md:top-[-4.5px]", last ? "border-teal bg-teal" : "border-brand")} />
-            <p className="meta-label">{String(index + 1).padStart(2, "0")} · {step.who}</p>
+            <p className="meta-label">Step {index + 1} · {step.who}</p>
             <h3 className="mt-2 text-[1.05rem] font-medium tracking-[-0.015em] text-navy">{step.title}</h3>
             <p className="mt-2 max-w-xs text-[0.9375rem] leading-relaxed text-body">{step.body}</p>
           </li>

@@ -15,7 +15,7 @@ test.describe("public website", () => {
     await expect(page.getByRole("figure", { name: /how one flag gets closed/ })).toBeVisible();
     await expect(page.getByRole("figure", { name: /Preview of the SymptomWatch dashboard/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "Try the demo" }).first()).toHaveAttribute("href", "/demo");
-    await expect(page.getByRole("link", { name: "Create a demo account" }).first()).toHaveAttribute("href", "/sign-up");
+    await expect(page.getByRole("link", { name: "Request a walkthrough" }).first()).toHaveAttribute("href", "/contact");
     await expect(page.getByRole("link", { name: "Sign in" }).first()).toHaveAttribute("href", "/sign-in");
   });
 
@@ -36,10 +36,13 @@ test.describe("public website", () => {
     await expect(nav.getByRole("link", { name: /Explainable flags/ })).toBeFocused();
     await page.keyboard.press("Escape");
 
-    await nav.getByRole("button", { name: /^Safety/ }).hover();
-    await nav.getByRole("link", { name: /How we measure accuracy/ }).click();
-    await expect(page).toHaveURL(/\/safety#evaluation$/);
-    await expect(page.getByRole("heading", { name: "How we measure accuracy" })).toBeVisible();
+    await nav.getByRole("button", { name: /^Product/ }).hover();
+    await nav.getByRole("link", { name: /Follow-up queue/ }).click();
+    await expect(page).toHaveURL(/\/product#queue$/);
+    await expect(page.getByRole("heading", { name: "A follow-up queue with owners" })).toBeVisible();
+
+    await nav.getByRole("link", { name: "Safety" }).click();
+    await expect(page).toHaveURL(/\/safety$/);
 
     await nav.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/\/how-it-works$/);

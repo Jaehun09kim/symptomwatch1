@@ -15,7 +15,7 @@ export function FlagFragment() {
       <div className="border-b border-border px-5 py-4">
         <ProvenanceBadge kind="rule_inferred" />
         <p className="mt-3 text-[1.05rem] font-medium leading-snug tracking-[-0.015em] text-navy">Cardiology referral from Aug 4 has no recorded outcome</p>
-        <p className="meta-label mt-1.5">Aiko Tanaka · fictional patient · Referral outcome v1.0.0</p>
+        <p className="meta-label mt-1.5">Aiko Tanaka · fictional patient · <span className="record-meta">Referral outcome v1.0.0</span></p>
       </div>
       <div className="space-y-4 px-5 py-4 text-sm">
         <p className="text-body"><span className="font-semibold text-navy">Why flagged: </span>A specialist appointment was expected within 30 days. More than 44 days have passed with no appointment, consult note, or outcome documented.</p>

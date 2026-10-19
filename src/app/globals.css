@@ -57,7 +57,9 @@
    Neutral greys with a single clinical blue. Green means "documented /
    closed", amber means "needs attention" — never decoration. Every text
    pair is ≥ 4.5:1 on background, card, and surface. */
-:root {
+/* `.light` re-establishes the app theme inside the dark site (e.g. the hero's
+   real product shot), so visitors see the interface they will actually use. */
+:root, .light {
   --background: #f8f9fa;
   --foreground: #0e1116;
   --card: #ffffff;
@@ -253,8 +255,14 @@
     line-height: 1.16;
     letter-spacing: -0.028em;
   }
-  /* Small record-style label: monospace, quiet, used for metadata only. */
+  /* Quiet supporting label in plain type (round 7: fewer "developer tool" mono labels). */
   .meta-label {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+  /* Record data only — record numbers, dates, rule versions, file names. */
+  .record-meta {
     font-family: var(--font-geist-mono), ui-monospace, monospace;
     font-size: 0.75rem;
     line-height: 1.5;

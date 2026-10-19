@@ -12,10 +12,17 @@ export const metadata: Metadata = {
 };
 
 const STEPS = [
-  { title: "Bring in your records", body: "Import lab-order and referral reports from your EHR, or record visits, appointments, and orders as they happen. Only fictional data in this prototype." },
+  { title: "Bring in your records", body: "Import lab-order and referral reports exported from your EHR, or update statuses by hand as they change. Only fictional data in this prototype." },
   { title: "SymptomWatch checks every patient", body: "Four simple rules look for follow-ups that should have happened by now. Each finding becomes a flag with its evidence attached." },
   { title: "A physician reviews", body: "Confirm the gap and assign a task, snooze it until a date, or dismiss it with a reason. Nothing changes in the chart without a person deciding." },
   { title: "The front desk closes the loop", body: "Calls, confirmations, and records requests land in a shared queue. When the missing record arrives, the flag closes on its own." },
+];
+
+const SETUP = [
+  { title: "Create your clinic and invite staff", body: "An administrator sets up the clinic workspace and invites physicians and front-desk staff. Each person's role limits what they can see and do." },
+  { title: "Upload your first exports", body: "Export a lab-order report and a referral report from your EHR as CSV files. A physician uploads lab orders; a physician or administrator uploads referrals. You see a preview of every change before anything is saved." },
+  { title: "Review the first flags", body: "Affected patients are checked right after each import. A physician works through the flags, and confirmed gaps become tasks for the front desk." },
+  { title: "Keep it current", body: "Upload new exports as often as suits you, daily or weekly. Re-uploading the same file changes nothing, and statuses only ever move forward." },
 ];
 
 const RULES: RuleId[] = ["overdue-follow-up", "lab-result-missing", "referral-outcome-missing", "persistent-symptom-unresolved"];
@@ -36,7 +43,7 @@ const ROLES = [
 export default function HowItWorksPage() {
   return (
     <div className={container}>
-      <PageIntro title="How SymptomWatch works" label="How it works">
+      <PageIntro title="How SymptomWatch works">
         <p>SymptomWatch doesn&rsquo;t guess and doesn&rsquo;t diagnose. It compares what a clinic asked for with what its records show, and asks a physician about the difference.</p>
       </PageIntro>
 
@@ -45,14 +52,33 @@ export default function HowItWorksPage() {
         <ol className="grid border-border md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
             <li key={step.title} className="border-b border-border py-7 md:px-6 md:[&:nth-child(odd)]:border-r md:[&:nth-child(odd)]:pl-0 lg:border-b-0 lg:border-r lg:first:pl-0 lg:last:border-r-0 lg:[&:nth-child(odd)]:pl-6 lg:[&:first-child]:pl-0">
-              <p className="meta-label tabular-nums">
-                <span className="text-brand">{String(index + 1).padStart(2, "0")}</span>
-              </p>
+              <p className="meta-label">Step {index + 1}</p>
               <h3 className="mt-5 text-[1.05rem] font-medium tracking-[-0.015em]">{step.title}</h3>
               <p className="mt-2 text-[0.9375rem] leading-relaxed text-body">{step.body}</p>
             </li>
           ))}
         </ol>
+      </section>
+
+      <section id="setup" aria-labelledby="setup-title" className="scroll-mt-28 grid gap-10 border-t border-border section-space lg:grid-cols-12 lg:gap-16">
+        <div className="lg:col-span-4">
+          <h2 id="setup-title" className="section-heading text-[2rem] sm:text-[2.5rem]">What setup involves</h2>
+          <p className="mt-5 leading-relaxed text-body">No installation and no change to your EHR. The work is exporting two reports you can already produce.</p>
+        </div>
+        <div className="lg:col-span-8">
+          <ol className="divide-y divide-border border-y border-border">
+            {SETUP.map((step) => (
+              <li key={step.title} className="py-6">
+                <h3 className="text-[1.05rem] font-medium tracking-[-0.015em]">{step.title}</h3>
+                <p className="mt-2 leading-relaxed text-body">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-8 rounded-lg border border-border bg-surface px-5 py-4 text-[0.9375rem] leading-relaxed text-body">
+            <p className="font-medium text-navy">What it can&rsquo;t do yet</p>
+            <p className="mt-1">Connect to your EHR automatically, import visits, appointments, or symptoms from a file, or hold real patient data. Today&rsquo;s prototype runs on fictional records only.</p>
+          </div>
+        </div>
       </section>
 
       <section id="rules" aria-labelledby="rules-title" className="scroll-mt-28 border-t border-border section-space">
@@ -61,9 +87,9 @@ export default function HowItWorksPage() {
           <p className="lead mt-5">These are the defaults. Each clinic&rsquo;s physicians can lengthen the waiting periods or turn a rule off.</p>
         </div>
         <dl className="mt-12 border-t border-border">
-          {RULES.map((rule, index) => (
+          {RULES.map((rule) => (
             <div key={rule} className="grid gap-x-6 gap-y-2 border-b border-border py-7 md:grid-cols-[19rem_1fr]">
-              <dt className="flex gap-6 font-medium text-navy"><span className="meta-label w-6 shrink-0 pt-1 tabular-nums">R{index + 1}</span>{ruleLabel[rule]}</dt>
+              <dt className="font-medium text-navy">{ruleLabel[rule]}</dt>
               <dd className="leading-relaxed text-body">{describeRule(rule, DEFAULT_RULE_SETTINGS)}</dd>
             </div>
           ))}

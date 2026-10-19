@@ -16,13 +16,10 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
       <aside className="hidden flex-col border-r border-border bg-sidebar p-10 lg:flex xl:p-16">
         <Link href="/" className="self-start rounded-md" aria-label="SymptomWatch home"><Logo markClassName="size-6" /></Link>
         <div className="my-auto max-w-md py-16">
-          <p className="meta-label">Demo workspace</p>
           <p className="display-heading mt-4 text-[2.5rem] text-navy">The SymptomWatch demo</p>
           <ul className="mt-8 divide-y divide-border border-y border-border">
-            {POINTS.map((line, index) => (
-              <li key={line} className="grid grid-cols-[2rem_1fr] py-3.5 text-[0.9375rem] leading-relaxed">
-                <span className="meta-label pt-1 tabular-nums">{String(index + 1).padStart(2, "0")}</span>{line}
-              </li>
+            {POINTS.map((line) => (
+              <li key={line} className="py-3.5 text-[0.9375rem] leading-relaxed">{line}</li>
             ))}
           </ul>
           <p className="mt-6 text-[0.9375rem] leading-relaxed text-muted-foreground">Every patient and record is fictional. No calls, texts, or emails are sent to patients. Detection is rule-based; external AI is disabled.</p>

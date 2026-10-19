@@ -35,12 +35,12 @@ export function Hero({ flags, total, selectedKey, patient, mrn }: {
         </m.p>
         <m.div variants={item} className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
           <Link href="/demo" className={buttonVariants({ size: "lg" })}>Try the demo</Link>
-          <Link href="/sign-up" className="text-link justify-center">
-            Create a demo account
+          <Link href="/contact" className="text-link justify-center">
+            Request a walkthrough
             <ArrowRight aria-hidden />
           </Link>
         </m.div>
-        <m.p variants={item} className="mt-5 text-[0.8125rem] text-slate-500">Free to try with fictional patients. Nothing to install.</m.p>
+        <m.p variants={item} className="mt-5 text-[0.8125rem] text-slate-500">The demo is free and uses fictional patients. Nothing to install.</m.p>
       </m.div>
       <div className="mt-12 sm:mt-16">
         <TiltFrame>

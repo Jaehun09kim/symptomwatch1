@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ShieldAlert, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BannerHeight } from "./banner-height";
 
 /** Sticky, non-dismissible notice rendered on every page. */
 export function DemoBanner() {
@@ -9,9 +10,10 @@ export function DemoBanner() {
     <div
       role="note"
       aria-label="Demo notice"
-      className="demo-banner sticky top-0 z-50 h-8 border-b border-[#ecd6a8] bg-[#fbf1de] text-[#7a4f0e]"
+      className="demo-banner sticky top-0 z-50 min-h-8 border-b border-[#ecd6a8] bg-[#fbf1de] text-[#7a4f0e]"
     >
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-center gap-2 px-4 text-center text-[0.78rem] font-medium">
+      <BannerHeight />
+      <div className="mx-auto flex min-h-8 max-w-7xl items-center justify-center gap-2 px-4 py-1 text-center text-[0.78rem] font-medium">
         <ShieldAlert className="size-3.5 shrink-0" aria-hidden />
         <span>
           <strong className="font-semibold">Demo Only — No Real Patient Data.</strong>{" "}

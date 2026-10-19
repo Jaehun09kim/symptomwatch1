@@ -81,7 +81,6 @@ const sections: { title: string; body: React.ReactNode }[] = [
 export default function PrivacyPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
-      <p className="meta-label mb-5">Policy · updated October 2026</p>
       <h1 className="display-heading text-[2.6rem] sm:text-6xl">Privacy &amp; data policy</h1>
       <p className="lead mt-6">
         Plain-language rules for the SymptomWatch demonstration prototype. Last updated October 2026.

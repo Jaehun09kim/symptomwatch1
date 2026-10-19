@@ -20,10 +20,9 @@ export function PageIntro({ title, label, children, aside }: { title: string; la
   );
 }
 
-/** A numbered feature with its index beside the copy and an anchor for nav deep links. */
-export function FeatureSection({ id, index, title, children, visual, flip }: {
+/** A feature: copy beside a product fragment, with an anchor for nav deep links. */
+export function FeatureSection({ id, title, children, visual, flip }: {
   id: string;
-  index?: number;
   title: string;
   children: ReactNode;
   visual: ReactNode;
@@ -33,7 +32,6 @@ export function FeatureSection({ id, index, title, children, visual, flip }: {
     <section id={id} aria-labelledby={`${id}-title`} className="section-space scroll-mt-28 border-t border-border">
       <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-16 [&>*]:min-w-0">
         <div className={flip ? "lg:order-2 lg:col-span-5" : "lg:col-span-5"}>
-          {index !== undefined ? <p className="meta-label mb-4 tabular-nums">{String(index).padStart(2, "0")}</p> : null}
           <h2 id={`${id}-title`} className="section-heading text-[1.75rem] text-navy sm:text-[2rem]">{title}</h2>
           <div className="mt-5 space-y-4 leading-relaxed text-body">{children}</div>
         </div>

@@ -51,7 +51,7 @@ export function LoopDemo({ patient, mrn, className }: { patient: string; mrn?: s
       className={cn("relative", className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="meta-label">{mrn ? `${mrn} · ` : ""}fictional patient</p>
+        <p className="record-meta">{mrn ? `${mrn} · ` : ""}fictional patient</p>
         <span className="relative inline-flex h-6 items-center overflow-hidden text-xs font-medium" aria-live="off">
           <m.span
             key={status.text}
