@@ -46,6 +46,10 @@ export function Hero({ flags, total, selectedKey, patient, mrn }: {
         <TiltFrame>
           <ProductShot flags={flags} total={total} selectedKey={selectedKey} patient={patient} mrn={mrn} />
         </TiltFrame>
+        <p className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[0.8125rem] text-slate-500">
+          <span>A fictional clinic, shown with the rules&rsquo; actual output.</span>
+          <Link href="/demo" className="text-link min-h-0 text-[0.8125rem]">Explore it at full size <ArrowRight aria-hidden /></Link>
+        </p>
       </div>
     </section>
   );

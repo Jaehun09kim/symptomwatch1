@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy & data policy",
@@ -52,7 +53,7 @@ const sections: { title: string; body: React.ReactNode }[] = [
     body: (
       <p>
         Workspaces created from “Try Demo” expire after seven days and are deleted. Any demo clinic administrator can
-        reset their workspace to the original synthetic data at any time. Audit history is retained separately.
+        reset their workspace to the original synthetic data at any time. Audit history is kept when a workspace is deleted and is not automatically deleted in this prototype. See <Link href="/safety#stores" className="font-medium text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">what SymptomWatch stores</Link>.
       </p>
     ),
   },
@@ -70,8 +71,8 @@ const sections: { title: string; body: React.ReactNode }[] = [
           business associate agreements with every vendor that touches data, multi-factor authentication, independent
           penetration testing, backup and disaster-recovery procedures, California privacy-law review (including CMIA),
           an FDA clinical-decision-support analysis, and clinical validation on de-identified data under appropriate
-          review. The full list lives in the project&rsquo;s clinical deployment checklist
-          (<code className="rounded-sm bg-surface px-1 font-mono text-[0.8em]">docs/CLINICAL_DEPLOYMENT_CHECKLIST.md</code>).
+          review. We keep the full list as a clinical deployment checklist and are glad to walk through it; just{" "}
+          <Link href="/contact" className="font-medium text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">ask</Link>.
         </p>
       </>
     ),
