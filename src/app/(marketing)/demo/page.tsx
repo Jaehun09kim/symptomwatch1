@@ -39,16 +39,17 @@ const errors: Record<string, string> = {
 async function ErrorNotice({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const error = (await searchParams).error;
   const message = typeof error === "string" ? errors[error] : undefined;
-  return message ? <p role="alert" className="mt-6 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive">{message}</p> : null;
+  return message ? <p role="alert" className="mt-6 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{message}</p> : null;
 }
 
 export default function DemoPage(props: PageProps<"/demo">) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:px-8">
       <div className="max-w-2xl">
-        <h1 className="display-heading text-4xl sm:text-5xl">Choose a role to try</h1>
-        <p className="mt-4 text-lg text-body">
-          Explore a private sandbox of <strong className="text-navy">Harbor View Family Medicine</strong> with 30
+        <p className="meta-label mb-5">Demo · private sandbox</p>
+        <h1 className="display-heading text-[2.6rem] sm:text-6xl">Choose a role to try</h1>
+        <p className="lead mt-6">
+          Explore a private sandbox of <strong className="font-medium text-navy">Harbor View Family Medicine</strong> with 30
           fictional patients, a live follow-up queue, and explainable flags. Switch roles any time from inside the app.
           Sandboxes are deleted after 7 days.
         </p>
@@ -56,12 +57,12 @@ export default function DemoPage(props: PageProps<"/demo">) {
       <Suspense fallback={null}>
         <ErrorNotice searchParams={props.searchParams} />
       </Suspense>
-      <ul className="mt-10 divide-y divide-border border-y border-border">
+      <ul className="mt-14 divide-y divide-border border-y border-border">
         {roles.map(({ role, title, persona, can }) => (
-          <li key={role} className="grid gap-5 py-7 md:grid-cols-[1fr_1.5fr_12rem] md:items-start">
-            <div><h2 className="text-xl font-medium">{title}</h2>
-            <p className="text-sm text-slate-500">{persona}</p></div>
-            <ul className="space-y-2 text-sm text-body">
+          <li key={role} className="grid gap-5 py-8 md:grid-cols-[1fr_1.5fr_13rem] md:items-start">
+            <div><h2 className="text-[1.15rem] font-medium tracking-[-0.015em]">{title}</h2>
+            <p className="meta-label mt-1.5">{persona}</p></div>
+            <ul className="space-y-2 text-[0.9375rem] text-body">
               {can.map((item) => (
                 <li key={item} className="leading-relaxed">
                   {item}
@@ -70,14 +71,14 @@ export default function DemoPage(props: PageProps<"/demo">) {
             </ul>
             <form action={startTryDemoAction} className="md:pt-1">
               <input type="hidden" name="role" value={role} />
-              <SubmitButton className="w-full" pendingLabel="Preparing your sandbox…">Start as {title}</SubmitButton>
+              <SubmitButton className="h-10 w-full" pendingLabel="Preparing your sandbox…">Start as {title}</SubmitButton>
             </form>
           </li>
         ))}
       </ul>
       <div className="mt-8 max-w-2xl space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p>Fictional data only. Do not enter real patient information. Your sandbox is private to your browser session.</p>
-        <p>Want to keep it and invite colleagues? <Link href="/sign-up" className="font-medium text-brand underline underline-offset-4">Create an account</Link>.</p>
+        <p>Want to keep it and invite colleagues? <Link href="/sign-up" className="font-medium text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">Create an account</Link>.</p>
       </div>
     </div>
   );

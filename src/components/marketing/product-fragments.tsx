@@ -7,31 +7,31 @@ import { AlarmClock, CheckCircle2, MinusCircle, PlusCircle, RefreshCw, XCircle }
 import { ProvenanceBadge } from "@/components/app/primitives/badges";
 import { cn } from "@/lib/utils";
 
-const frame = "overflow-hidden rounded-2xl border border-border bg-card shadow-card";
+const frame = "overflow-hidden rounded-xl border border-border bg-card shadow-card";
 
 export function FlagFragment() {
   return (
     <figure className={frame} aria-label="Example flag detail with fictional data">
       <div className="border-b border-border px-5 py-4">
         <ProvenanceBadge kind="rule_inferred" />
-        <p className="mt-3 text-lg font-semibold leading-snug text-navy">Cardiology referral from Aug 4 has no recorded outcome</p>
-        <p className="mt-1 text-sm text-muted-foreground">Aiko Tanaka · fictional patient · Referral outcome v1.0.0</p>
+        <p className="mt-3 text-[1.05rem] font-medium leading-snug tracking-[-0.015em] text-navy">Cardiology referral from Aug 4 has no recorded outcome</p>
+        <p className="meta-label mt-1.5">Aiko Tanaka · fictional patient · Referral outcome v1.0.0</p>
       </div>
       <div className="space-y-4 px-5 py-4 text-sm">
         <p className="text-body"><span className="font-semibold text-navy">Why flagged: </span>A specialist appointment was expected within 30 days. More than 44 days have passed with no appointment, consult note, or outcome documented.</p>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Supporting entries</p>
+          <p className="meta-label">Supporting entries</p>
           <ul className="mt-2 space-y-1.5 text-brand">
             <li>Aug 4 · Referral to Cardiology — sent</li>
             <li>Aug 4 · Visit — Palpitations (referring visit)</li>
           </ul>
         </div>
-        <p className="rounded-lg bg-surface px-3 py-2 text-body"><span className="font-semibold text-navy">Missing: </span>No specialist appointment documented</p>
+        <p className="rounded-md border border-border bg-surface px-3 py-2 text-body"><span className="font-semibold text-navy">Missing: </span>No specialist appointment documented</p>
       </div>
-      <div className="flex flex-wrap gap-2 border-t border-border bg-surface/60 px-5 py-3 text-sm" aria-hidden>
-        <span className="inline-flex h-8 items-center gap-1.5 rounded-md bg-brand px-3 font-medium text-white"><CheckCircle2 className="size-4" /> Confirm gap</span>
-        <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 bg-card px-3 font-medium text-navy"><AlarmClock className="size-4" /> Snooze</span>
-        <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 bg-card px-3 font-medium text-navy"><XCircle className="size-4" /> Dismiss</span>
+      <div className="flex flex-wrap gap-2 border-t border-border px-5 py-3 text-[0.8125rem]" aria-hidden>
+        <span className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-medium text-primary-foreground"><CheckCircle2 className="size-3.5" /> Confirm gap</span>
+        <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 px-3 font-medium text-navy"><AlarmClock className="size-3.5" /> Snooze</span>
+        <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-300 px-3 font-medium text-navy"><XCircle className="size-3.5" /> Dismiss</span>
       </div>
     </figure>
   );
@@ -47,11 +47,11 @@ const TIMELINE = [
 export function TimelineFragment() {
   return (
     <figure className={cn(frame, "p-5")} aria-label="Example patient timeline with fictional data">
-      <p className="text-sm text-muted-foreground"><span className="font-medium text-navy">Rachel Kim</span> · fictional patient</p>
+      <p className="text-sm text-muted-foreground"><span className="font-medium text-navy">Rachel Kim</span> <span className="meta-label">· fictional patient</span></p>
       <ol className="mt-4 space-y-3">
         {TIMELINE.map((entry) => (
           <li key={entry.title} className="grid grid-cols-[3.5rem_1fr] gap-3 border-t border-border pt-3 first:border-t-0 first:pt-0">
-            <span className="text-sm tabular-nums text-muted-foreground">{entry.date}</span>
+            <span className="font-mono text-[0.75rem] leading-5 tabular-nums text-muted-foreground">{entry.date}</span>
             <div>
               <p className={cn("text-sm", entry.kind === "documented" ? "text-navy" : "text-body")}>{entry.title}</p>
               <ProvenanceBadge kind={entry.kind} className="mt-1.5" />
@@ -73,9 +73,9 @@ const IMPORT_ROWS = [
 export function ImportFragment() {
   return (
     <figure className={frame} aria-label="Example import preview with fictional data">
-      <figcaption className="flex items-center justify-between border-b border-border px-5 py-3 text-sm">
-        <span className="font-medium text-navy">ehr-lab-orders-export.csv</span>
-        <span className="text-muted-foreground">Preview · nothing saved yet</span>
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-5 py-3 text-sm">
+        <span className="font-mono text-[0.8rem] text-navy">ehr-lab-orders-export.csv</span>
+        <span className="meta-label">Preview · nothing saved yet</span>
       </figcaption>
       <ul className="divide-y divide-border text-sm">
         {IMPORT_ROWS.map((row) => (
@@ -98,15 +98,15 @@ const RULE_ROWS = [
 export function RulesFragment() {
   return (
     <figure className={frame} aria-label="Example detection rule settings with fictional values">
-      <div className="grid grid-cols-[1fr_auto_auto] gap-x-5 border-b border-border bg-surface px-5 py-2.5 text-xs font-medium text-muted-foreground">
-        <span>Rule</span><span>Setting</span><span className="text-right">Confirmed</span>
+      <div className="grid grid-cols-[minmax(0,1fr)_3.5rem_4.5rem] gap-x-3 border-b border-border px-5 py-2.5 text-xs font-medium text-muted-foreground">
+        <span>Rule</span><span className="text-right">Setting</span><span className="text-right">Confirmed</span>
       </div>
       <ul className="divide-y divide-border text-sm">
         {RULE_ROWS.map((row) => (
-          <li key={row.name} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-5 px-5 py-3.5">
+          <li key={row.name} className="grid grid-cols-[minmax(0,1fr)_3.5rem_4.5rem] items-center gap-x-3 px-5 py-3.5">
             <span className="font-medium text-navy">{row.name}<span className="block text-xs font-normal text-muted-foreground">{row.setting}</span></span>
-            <span className="inline-flex h-8 min-w-14 items-center justify-end rounded-md border border-input bg-card px-2 tabular-nums text-navy">{row.value} d</span>
-            <span className="w-16 text-right tabular-nums text-body">{row.rate}</span>
+            <span className="inline-flex h-8 min-w-14 items-center justify-end rounded-md border border-slate-300 bg-surface px-2 font-mono text-[0.8rem] tabular-nums text-navy">{row.value} d</span>
+            <span className="text-right tabular-nums text-body">{row.rate}</span>
           </li>
         ))}
       </ul>

@@ -85,7 +85,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
         description="Possible documentation gaps found by transparent rules. Each one shows its evidence and needs a physician's judgment."
         actions={can(session.role, "detection.run") ? <RunDetectionButton /> : null}
       />
-      <div className="space-y-2 border-y border-border py-3 text-sm text-body">
+      <div className="space-y-2 border-y border-border py-3 text-[0.8125rem] leading-relaxed text-body">
         <p className="flex items-start gap-2">
           <Info className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
           <span>Listed by when first detected — <strong className="text-navy">not by urgency</strong>. Flags are documentation questions, not diagnoses, and never change care plans or contact patients.</span>
@@ -104,12 +104,12 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
       ) : null}
 
       <div className="space-y-2">
-        <nav aria-label="Flag status" className="border-b border-border">
-          <ul className="flex flex-wrap gap-x-3">
+        <nav aria-label="Flag status" className="overflow-x-auto border-b border-border">
+          <ul className="flex min-w-max gap-x-4">
             {STATUSES.map((value) => (
               <li key={value}>
                 <Link href={href(params, { status: value === "open" ? undefined : value, flag: undefined })} aria-current={status === value ? "page" : undefined}
-                  className={cn("inline-flex min-h-11 items-center border-b-2 px-1 text-sm font-medium focus-visible:outline-2 focus-visible:outline-brand", status === value ? "border-brand text-brand-hover" : "border-transparent text-slate-600 hover:border-input hover:text-navy")}>
+                  className={cn("inline-flex min-h-11 items-center border-b-2 px-1 text-sm font-medium transition-colors duration-150 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-brand", status === value ? "border-brand text-brand-hover" : "border-transparent text-slate-600 hover:border-input hover:text-navy")}>
                   {statusTabLabel(value)}
                 </Link>
               </li>
@@ -119,10 +119,10 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
         <nav aria-label="Rule">
           <ul className="flex flex-wrap gap-1">
             <li><Link href={href(params, { rule: undefined, flag: undefined })} aria-current={!ruleId ? "page" : undefined}
-              className={cn("inline-flex min-h-11 items-center rounded-sm px-3 text-xs font-medium", !ruleId ? "bg-brand-soft text-brand-hover underline underline-offset-4" : "text-slate-600 hover:bg-surface")}>All rules</Link></li>
+              className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150", !ruleId ? "bg-brand-soft text-brand-hover ring-1 ring-inset ring-brand/20" : "text-slate-600 hover:bg-surface")}>All rules</Link></li>
             {RULE_IDS.map((rule) => (
               <li key={rule}><Link href={href(params, { rule, flag: undefined })} aria-current={ruleId === rule ? "page" : undefined}
-                className={cn("inline-flex min-h-11 items-center rounded-sm px-3 text-xs font-medium", ruleId === rule ? "bg-brand-soft text-brand-hover underline underline-offset-4" : "text-slate-600 hover:bg-surface")}>{ruleShortLabel[rule]}</Link></li>
+                className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150", ruleId === rule ? "bg-brand-soft text-brand-hover ring-1 ring-inset ring-brand/20" : "text-slate-600 hover:bg-surface")}>{ruleShortLabel[rule]}</Link></li>
             ))}
           </ul>
         </nav>
@@ -133,17 +133,17 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
         <EmptyState icon={ClipboardCheck} title="Nothing to review here" description="No flags match these filters. Run detection after records change to look for new gaps." />
       ) : (
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(18rem,2fr)_minmax(0,3fr)] [&>*]:min-w-0">
-          <section id="flag-detail" aria-label="Selected flag" tabIndex={-1} className="scroll-mt-16 xl:col-start-2 xl:row-start-1">
+          <section id="flag-detail" aria-label="Selected flag" tabIndex={-1} className="scroll-mt-16 rounded-lg border border-border bg-card xl:sticky xl:top-12 xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100vh-4rem)] xl:overflow-y-auto">
             <div key={selected.id}>
-              <div className="space-y-1 border-b border-border pb-3">
+              <div className="space-y-1 border-b border-border px-4 pb-4 pt-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="font-display text-3xl"><Link href={`/app/patients/${selected.patientId}`} className="text-brand hover:underline">{selected.patientName}</Link></h2>
+                  <h2 className="section-heading text-2xl"><Link href={`/app/patients/${selected.patientId}`} className="rounded-sm text-navy underline-offset-4 hover:text-brand hover:underline">{selected.patientName}</Link></h2>
                   <a href="#flag-list" className="inline-flex min-h-11 items-center text-sm text-brand underline underline-offset-4">Browse flags</a>
                 </div>
                 <p className="text-xs text-slate-500"><span className="font-mono">{selected.patientMrn}</span>{selected.physicianName ? ` · ${selected.physicianName}` : ""} · first detected {formatTimelineDate(selected.firstDetectedAt)}</p>
               </div>
               <FlagCard
-                className="rounded-none border-0"
+                className="rounded-b-lg rounded-t-none border-0"
                 snoozedUntil={selected.isSnoozed && selected.snoozedUntil ? formatTimelineDate(selected.snoozedUntil) : undefined}
                 status={selected.status}
                 ruleLabel={ruleLabel[selected.ruleId]}
@@ -187,14 +187,17 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
               {flags.map((flag) => (
                 <li key={flag.id}>
                   <Link href={`${href(params, { flag: flag.id })}#flag-detail`} aria-current={selected.id === flag.id ? "true" : undefined}
-                    className={cn("block min-w-0 space-y-1.5 border-l-2 px-3 py-3 focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2", selected.id === flag.id ? "border-brand bg-brand-soft" : "border-transparent hover:bg-surface")}>
+                    className={cn("block min-w-0 space-y-1.5 border-l-2 px-3 py-3 transition-colors duration-150 focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2", selected.id === flag.id ? "border-brand bg-brand-soft" : "border-transparent hover:bg-surface")}>
                     <span className="block text-sm font-semibold text-navy">{flag.patientName}</span>
-                    <span className="block truncate text-sm text-body" title={flag.title}>{flag.title}</span>
+                    <span className="line-clamp-2 text-sm leading-relaxed text-body" title={flag.title}>{flag.title}</span>
                     <span className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-slate-500">
                       <span>{ruleShortLabel[flag.ruleId]}</span>
                       <span>Detected <time dateTime={flag.firstDetectedAt} className="tabular-nums">{formatTimelineDate(flag.firstDetectedAt)}</time></span>
                     </span>
-                    <FlagStatusBadge status={flag.status} snoozedUntil={flag.isSnoozed && flag.snoozedUntil ? formatTimelineDate(flag.snoozedUntil) : undefined} />
+                    {/* Inside a single-status tab every row would repeat the tab name; show status only where it differs. */}
+                    {status === "all" || flag.isSnoozed ? (
+                      <FlagStatusBadge status={flag.status} snoozedUntil={flag.isSnoozed && flag.snoozedUntil ? formatTimelineDate(flag.snoozedUntil) : undefined} />
+                    ) : null}
                     {flag.status === "dismissed" && flag.reviewReason ? <span className="block text-xs text-slate-600">{dismissReasonShortLabel[flag.reviewReason]}</span> : null}
                   </Link>
                 </li>

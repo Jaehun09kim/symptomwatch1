@@ -39,7 +39,7 @@ test.describe("authentication", () => {
     await expect(page).toHaveURL(/\/app\?welcome=1/);
     await expect(page.getByText("Your private demo clinic is ready.")).toBeVisible();
     await expect(page.getByText("Coastline Clinic — DEMO").first()).toBeVisible();
-    await expect(page.getByText("Total demo patients").locator("..")).toContainText("30");
+    await expect(page.getByRole("link", { name: "30 demo patients" })).toBeVisible();
   });
 
   test("admin-issued reset link lets a staff member choose a new password", async ({ page, browser }) => {

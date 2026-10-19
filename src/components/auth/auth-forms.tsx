@@ -57,7 +57,7 @@ export function SignInForm({ next, demoLogins, demoPassword, notice }: {
         <section aria-labelledby="demo-logins" className="border-t border-border pt-5">
           <h2 id="demo-logins" className="text-sm font-semibold">Shared demo logins</h2>
           <p className="mt-1 text-xs text-slate-600">
-            Fictional staff of the shared demo clinics. Password: <code className="rounded bg-white px-1 py-0.5 text-navy ring-1 ring-border">{demoPassword}</code>
+            Fictional staff of the shared demo clinics. Password: <code className="rounded-sm bg-card px-1 py-0.5 font-mono text-[0.85em] text-navy ring-1 ring-border">{demoPassword}</code>
           </p>
           <ul className="mt-3 grid gap-2">
             {demoLogins.map((login) => (

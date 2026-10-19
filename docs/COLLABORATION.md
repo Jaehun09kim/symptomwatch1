@@ -58,3 +58,10 @@ Entries are appended as work proceeds.
 - **Claude:** alert-fatigue controls (snooze, structured dismissal reasons, per-clinic rule settings, suppressed status, signal quality), CSV import (lab orders, referrals), CI workflow, migrations 0006–0008, docs.
 - **Mistake caught:** one commit (8cf4493) went in with a failing database test because a shell `&&` chain checked `grep`'s exit status, not Vitest's. The failure was a deliberate RLS widening for admin lab imports; on reflection that weakened a clinical-safety boundary, so lab imports became physician-only and the original RLS was kept (63709ae).
 
+
+### 2026-10-19 — Design round 6 (Claude + Codex) and round 7 plan
+
+- **Claude:** implemented the owner's "not AI-generated" brief with a Linear reference: scoped light/dark token system, dark public site, engine-backed hero product shot, restyled pages and auth, light app polish, plus three review fixes (marketing counts now match the dashboard, 4-metric dashboard, no repeated status on review rows).
+- **Codex (refinement pass, main tree):** spacing rhythm, tablet layouts, focus and target sizes, LoopDemo pause/replay, six interaction tests. Claude reversed two removals that contradicted explicit owner asks (hero tilt, track line draw) and restored a short dropdown fade.
+- **Joint review for round 7:** Codex did a blind read-only review from 28 screenshots plus source; Claude did web research on small-practice adoption barriers and loop-closure evidence. Agreed findings and owner decisions are in `ROADMAP.md`.
+- **Owner direction:** published SymptomWatch will hold real clinic data (CSV uploads), so publishing is gated on the clinical deployment checklist; native apps come later. Not ready to publish; refinement continues.

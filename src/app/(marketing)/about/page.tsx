@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CtaBand, PageIntro } from "@/components/marketing/page-intro";
+import { container, CtaBand, PageIntro } from "@/components/marketing/page-intro";
 
 export const metadata: Metadata = {
   title: "About",
@@ -32,14 +32,17 @@ const SECTIONS = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <PageIntro title="Why we're building SymptomWatch">
+    <div className={container}>
+      <PageIntro title="Why we're building SymptomWatch" label="About">
         <p>Small primary care practices do careful work with very little room for error. We want to make sure the follow-ups they intend actually happen.</p>
       </PageIntro>
-      {SECTIONS.map((section) => (
-        <section key={section.title} className="grid gap-6 border-b border-border py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12 lg:py-16">
-          <h2 className="display-heading text-2xl sm:text-3xl">{section.title}</h2>
-          <div className="max-w-3xl space-y-4 text-lg leading-relaxed text-body">
+      {SECTIONS.map((section, index) => (
+        <section key={section.title} className="grid gap-6 border-t border-border py-14 lg:grid-cols-12 lg:gap-16 lg:py-20">
+          <div className="lg:col-span-4">
+            <p className="meta-label tabular-nums">{String(index + 1).padStart(2, "0")}</p>
+            <h2 className="section-heading mt-3 text-[1.6rem] sm:text-[1.9rem]">{section.title}</h2>
+          </div>
+          <div className="lead max-w-2xl space-y-5 lg:col-span-8">
             {section.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </div>
         </section>

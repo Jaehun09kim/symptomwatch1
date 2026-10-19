@@ -44,7 +44,7 @@ async function Audit({ searchParams }: { searchParams: Promise<Params> }) {
           {ACTION_GROUPS.map((group) => (
             <li key={group.value}>
               <Link href={href({ action: group.value, page: 1 })} aria-current={action === group.value ? "page" : undefined}
-                className={cn("inline-flex h-9 items-center rounded-full px-3.5 text-sm font-medium", action === group.value ? "bg-navy text-white" : "text-slate-600 hover:bg-surface")}>
+                className={cn("inline-flex h-8 items-center rounded-md px-3 text-sm font-medium", action === group.value ? "bg-navy text-white" : "text-slate-600 hover:bg-surface")}>
                 {group.label}
               </Link>
             </li>

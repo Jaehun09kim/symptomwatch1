@@ -71,7 +71,7 @@ const sections: { title: string; body: React.ReactNode }[] = [
           penetration testing, backup and disaster-recovery procedures, California privacy-law review (including CMIA),
           an FDA clinical-decision-support analysis, and clinical validation on de-identified data under appropriate
           review. The full list lives in the project&rsquo;s clinical deployment checklist
-          (<code className="rounded bg-surface px-1 text-sm">docs/CLINICAL_DEPLOYMENT_CHECKLIST.md</code>).
+          (<code className="rounded-sm bg-surface px-1 font-mono text-[0.8em]">docs/CLINICAL_DEPLOYMENT_CHECKLIST.md</code>).
         </p>
       </>
     ),
@@ -80,16 +80,17 @@ const sections: { title: string; body: React.ReactNode }[] = [
 
 export default function PrivacyPage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <h1 className="display-heading text-4xl sm:text-5xl">Privacy &amp; data policy</h1>
-      <p className="mt-4 text-lg text-body">
+    <article className="mx-auto max-w-3xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
+      <p className="meta-label mb-5">Policy · updated October 2026</p>
+      <h1 className="display-heading text-[2.6rem] sm:text-6xl">Privacy &amp; data policy</h1>
+      <p className="lead mt-6">
         Plain-language rules for the SymptomWatch demonstration prototype. Last updated October 2026.
       </p>
-      <div className="mt-12 space-y-10">
+      <div className="mt-14 border-b border-border">
         {sections.map((section) => (
-          <section key={section.title} aria-labelledby={section.title} className="border-t border-border pt-6">
-            <h2 id={section.title} className="text-lg font-medium">{section.title}</h2>
-            <div className="mt-3 space-y-3 leading-relaxed text-body">{section.body}</div>
+          <section key={section.title} aria-labelledby={section.title} className="grid gap-3 border-t border-border py-8 sm:grid-cols-[12rem_1fr] sm:gap-8">
+            <h2 id={section.title} className="text-[1.05rem] font-medium tracking-[-0.015em]">{section.title}</h2>
+            <div className="space-y-3 leading-relaxed text-body">{section.body}</div>
           </section>
         ))}
       </div>

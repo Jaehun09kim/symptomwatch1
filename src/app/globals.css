@@ -2,12 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* `dark:` applies only inside an explicit .dark scope (the marketing site),
+   never because of the visitor's OS setting — the app is light-only. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -39,76 +42,135 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 5px;
+  /* Restrained radii: controls 6px, panels 8–10px, the largest frame 12px. */
+  --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: var(--radius);
-  --radius-xl: 10px;
-  --radius-2xl: 12px;
-  --radius-3xl: 14px;
-  --radius-4xl: 16px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
+  --radius-4xl: 12px;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ── Light theme: the signed-in app ───────────────────────────────────────
+   Neutral greys with a single clinical blue. Green means "documented /
+   closed", amber means "needs attention" — never decoration. Every text
+   pair is ≥ 4.5:1 on background, card, and surface. */
 :root {
-  /* SymptomWatch palette — clinical blue for actions and identity, green for
-     documented/closed loops, cool neutrals. Light theme only. Every text pair
-     below is ≥ 4.5:1 (see docs/DESIGN_REFRESH.md, round 4). */
-  --background: #f7f9fb;
-  --foreground: #0f2a43;
+  --background: #f8f9fa;
+  --foreground: #0e1116;
   --card: #ffffff;
-  --card-foreground: #0f2a43;
+  --card-foreground: #0e1116;
   --popover: #ffffff;
-  --popover-foreground: #0f2a43;
-  --primary: #1f5aa6;
+  --popover-foreground: #0e1116;
+  --primary: #2b59c3;
   --primary-foreground: #ffffff;
-  --secondary: #e7effa;
-  --secondary-foreground: #0f2a43;
-  --muted: #edf2f7;
-  --muted-foreground: #566577;
-  --accent: #e7effa;
-  --accent-foreground: #0f2a43;
-  --destructive: #b03a2e;
-  --border: #d6dee7;
-  --input: #778698;
-  --ring: #1f5aa6;
-  --chart-1: #1f5aa6;
+  --secondary: #eef2fc;
+  --secondary-foreground: #0e1116;
+  --muted: #f1f2f4;
+  --muted-foreground: #5f6670;
+  --accent: #eef2fc;
+  --accent-foreground: #0e1116;
+  --destructive: #b3372b;
+  --border: #e3e5e9;
+  --input: #8b919a;
+  --ring: #2b59c3;
+  --chart-1: #2b59c3;
   --chart-2: #1d7350;
-  --chart-3: #566577;
-  --chart-4: #80500f;
+  --chart-3: #5f6670;
+  --chart-4: #8a5a12;
   --chart-5: #6a5aa0;
-  --radius: 0.5rem;
-  --sidebar: #edf2f7;
-  --sidebar-foreground: #0f2a43;
-  --sidebar-primary: #1f5aa6;
+  --radius: 6px;
+  --sidebar: #f3f4f6;
+  --sidebar-foreground: #0e1116;
+  --sidebar-primary: #2b59c3;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e7effa;
-  --sidebar-accent-foreground: #0f2a43;
-  --sidebar-border: #d6dee7;
-  --sidebar-ring: #1f5aa6;
+  --sidebar-accent: #e9ebef;
+  --sidebar-accent-foreground: #0e1116;
+  --sidebar-border: #e3e5e9;
+  --sidebar-ring: #2b59c3;
 
-  --sw-navy: #0f2a43;
-  --sw-body: #36475a;
-  --sw-surface: #edf2f7;
-  --sw-blue: #1f5aa6;
-  --sw-blue-hover: #17467f;
-  --sw-blue-soft: #e7effa;
+  --sw-navy: #0e1116;
+  --sw-body: #3b424c;
+  --sw-surface: #f1f2f4;
+  --sw-blue: #2b59c3;
+  --sw-blue-hover: #1f469f;
+  --sw-blue-soft: #eef2fc;
   --sw-teal: #1d7350;
   --sw-teal-strong: #155c3f;
-  --sw-teal-soft: #e4f2ea;
-  --sw-attention: #80500f;
-  --sw-attention-soft: #fbefd9;
-  --sw-shadow-sm: 0 1px 2px rgb(15 42 67 / 0.05);
-  --sw-shadow-md: 0 1px 2px rgb(15 42 67 / 0.05), 0 4px 16px -6px rgb(15 42 67 / 0.10);
-  --sw-shadow-lg: 0 2px 4px rgb(15 42 67 / 0.05), 0 18px 40px -16px rgb(15 42 67 / 0.22);
+  --sw-teal-soft: #e8f4ee;
+  --sw-attention: #8a5a12;
+  --sw-attention-soft: #fbf1de;
+  --sw-attention-line: #e8c98f;
+  --sw-logo: #2b59c3;
+  --sw-slate-100: #f1f2f4;
+  --sw-slate-300: #c9cdd3;
+  --sw-slate-400: #666d77;
+  --sw-slate-500: #5f6670;
+  --sw-slate-600: #4d545d;
+  --sw-slate-700: #3b424c;
+  --sw-shadow-sm: 0 1px 2px rgb(14 17 22 / 0.05);
+  --sw-shadow-md: 0 1px 2px rgb(14 17 22 / 0.04), 0 4px 14px -6px rgb(14 17 22 / 0.10);
+  --sw-shadow-lg: 0 1px 2px rgb(14 17 22 / 0.05), 0 16px 40px -18px rgb(14 17 22 / 0.24);
+}
+
+/* ── Dark theme: the public site ──────────────────────────────────────────
+   Near-black neutrals, hairline borders, one blue accent. Scoped by class so
+   app fragments rendered on marketing pages pick it up automatically. */
+.dark {
+  --background: #08090a;
+  --foreground: #eef0f3;
+  --card: #0e0f11;
+  --card-foreground: #eef0f3;
+  --popover: #111214;
+  --popover-foreground: #eef0f3;
+  --primary: #eef0f3;
+  --primary-foreground: #08090a;
+  --secondary: #17181b;
+  --secondary-foreground: #eef0f3;
+  --muted: #141518;
+  --muted-foreground: #8b919a;
+  --accent: #17181b;
+  --accent-foreground: #eef0f3;
+  --destructive: #ff8a7d;
+  --border: rgb(255 255 255 / 0.10);
+  --input: #5a6069;
+  --ring: #7ea6ff;
+  --sidebar: #0b0c0e;
+
+  --sw-navy: #eef0f3;
+  --sw-body: #a3a9b2;
+  --sw-surface: #121316;
+  --sw-blue: #7ea6ff;
+  --sw-blue-hover: #a9c3ff;
+  --sw-blue-soft: rgb(126 166 255 / 0.10);
+  --sw-teal: #5fd39b;
+  --sw-teal-strong: #82e1b4;
+  --sw-teal-soft: rgb(95 211 155 / 0.10);
+  --sw-attention: #f2b866;
+  --sw-attention-soft: rgb(242 184 102 / 0.08);
+  --sw-attention-line: rgb(242 184 102 / 0.28);
+  --sw-logo: #3d6be0;
+  --sw-slate-100: #17181b;
+  --sw-slate-300: rgb(255 255 255 / 0.14);
+  --sw-slate-400: #8b919a;
+  --sw-slate-500: #8b919a;
+  --sw-slate-600: #a3a9b2;
+  --sw-slate-700: #c3c8cf;
+  --sw-shadow-sm: 0 1px 0 rgb(255 255 255 / 0.04) inset;
+  --sw-shadow-md: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --sw-shadow-lg: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 40px 100px -40px rgb(0 0 0 / 0.9);
+  color-scheme: dark;
 }
 
 @theme inline {
-  /* Cool greys; muted text stays above AA on page, surface, and tints. */
-  --color-slate-500: #566577;
-  --color-slate-600: #4a5a6c;
-  --color-slate-700: #36475a;
-  --color-slate-400: #617082;
-  --color-slate-300: #b9c4d0;
-  --color-slate-100: #edf2f7;
+  --color-slate-500: var(--sw-slate-500);
+  --color-slate-600: var(--sw-slate-600);
+  --color-slate-700: var(--sw-slate-700);
+  --color-slate-400: var(--sw-slate-400);
+  --color-slate-300: var(--sw-slate-300);
+  --color-slate-100: var(--sw-slate-100);
   --color-navy: var(--sw-navy);
   --color-body: var(--sw-body);
   --color-surface: var(--sw-surface);
@@ -120,6 +182,7 @@
   --color-teal-soft: var(--sw-teal-soft);
   --color-attention: var(--sw-attention);
   --color-attention-soft: var(--sw-attention-soft);
+  --color-attention-line: var(--sw-attention-line);
   --shadow-card: var(--sw-shadow-md);
   --shadow-soft: var(--sw-shadow-sm);
   --shadow-float: var(--sw-shadow-lg);
@@ -132,19 +195,32 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* The public site is dark edge to edge, including overscroll. */
+  html:has(.marketing-root) {
+    background: #08090a;
+    color-scheme: dark;
+  }
+  html:has(.marketing-root) body {
+    background: #08090a;
+  }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
   html {
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
+    font-feature-settings: "ss01", "cv11";
   }
   h1, h2, h3, h4 {
-    @apply text-navy tracking-tight;
+    @apply text-navy;
+    letter-spacing: -0.012em;
     text-wrap: balance;
   }
   p {
     text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--sw-blue) 30%, transparent);
   }
   :focus-visible {
     outline: 2px solid var(--sw-blue);
@@ -163,13 +239,70 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
+
 @layer components {
+  /* Type scale. Display sizes are set at the call site; these set the voice. */
   .display-heading {
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-    font-weight: 600;
-    line-height: 1.06;
-    letter-spacing: -0.032em;
+    font-weight: 560;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
   }
+  .section-heading {
+    font-weight: 560;
+    line-height: 1.16;
+    letter-spacing: -0.028em;
+  }
+  /* Small record-style label: monospace, quiet, used for metadata only. */
+  .meta-label {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    color: var(--muted-foreground);
+  }
+  .lead {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--sw-body);
+  }
+  @media (min-width: 640px) {
+    .lead { font-size: 1.125rem; }
+  }
+
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--foreground);
+    text-underline-offset: 0.25em;
+    text-decoration-color: var(--muted-foreground);
+  }
+  .text-link:is(:hover, :focus-visible) {
+    text-decoration-line: underline;
+  }
+  .text-link svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--muted-foreground);
+    transition: transform 150ms ease-out;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .text-link:hover svg { transform: translateX(2px); }
+  }
+
+  .section-space { padding-block: 4rem; }
+  @media (min-width: 768px) {
+    .section-space { padding-block: 5rem; }
+  }
+  @media (min-width: 1024px) {
+    .section-space { padding-block: 6rem; }
+  }
+
   .metric-strip {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -180,11 +313,18 @@
   .metric-strip > * {
     border-inline-end: 1px solid var(--border);
   }
-  .metric-strip > :last-child { border-inline-end: 0; }
-  @media (min-width: 768px) {
+  .metric-strip > :nth-child(2n) { border-inline-end: 0; }
+  .metric-strip > :nth-child(-n + 2) { border-block-end: 1px solid var(--border); }
+  @media (min-width: 1024px) {
     .metric-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .metric-strip > :nth-child(n) { border-inline-end: 1px solid var(--border); border-block-end: 0; }
+    .metric-strip > :last-child { border-inline-end: 0; }
   }
-  @media (min-width: 1280px) {
-    .metric-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-  }
+}
+
+/* The demo banner on the dark public site: same message, quieter amber. */
+html:has(.marketing-root) .demo-banner {
+  background: #17120a;
+  border-color: rgb(242 184 102 / 0.18);
+  color: #f2c27a;
 }

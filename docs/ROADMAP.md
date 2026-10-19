@@ -22,9 +22,22 @@ SymptomWatch helps 1–5-physician primary-care clinics catch follow-up loops th
 | 1 | Hardening: CI, blind Codex review + fixes, README cleanup | ✅ Done (CI runs once pushed) |
 | 2 | Data on-ramp: CSV import (lab orders, referrals) | ✅ Done. Appointments import deferred until clinics ask for it |
 | 3 | Alert-fatigue controls: snooze, structured dismissals, per-clinic rule settings, signal quality | ✅ Done |
-| — | Design refresh with Codex (product owner request) | 🔄 Round 3 merged; iterating with the product owner until agreed |
+| — | Design refresh with Codex (product owner request) | 🔄 Round 6 done on branch `design-round-5` (dark Linear-style site, light app). Round 7 agreed 2026-10-19 — see below |
 | 4 | Hosted demo (Vercel + demo-only Supabase) | ⏸ Needs approval and the product owner's accounts |
 | 5 | Customer discovery (interview guide + demo script for 5–10 clinics) | ⏸ Product owner-led; `DEMO_SCRIPT.md` updated for v0.2 |
+
+## Round 7 (agreed 2026-10-19, from a joint Claude + Codex review)
+
+Owner decisions: keep the site dark but warmer (fewer mono labels/numbering, plainer language); hero shows the real light app on the dark page; About will name the real founders (owner to supply details); Claude builds the site, Codex builds the app workflow in parallel, Claude verifies and merges.
+
+- **A — Site answers the buyer (Claude):** "What setup involves" + short FAQ; "What SymptomWatch stores" with real retention/deletion; "Why this matters" with a verified citation (Casalino et al., Arch Intern Med 2009: 7.1% of abnormal results without documented patient notification across 23 practices); clearer CTAs; direct nav links; safety caveat above the evaluation figures; less repetitive Product/About layouts.
+- **B — App workflow (Codex):** rule-aware "Confirm gap" defaults with explicit owner; queue quick views (Mine / Due today / Unassigned), one-tap outcomes, mobile cards, larger targets; dashboard "Review next" and metrics that link to exactly what they count; specific empty states; timeline provenance separated from event outcome; mobile review as a decision workspace.
+- **C — Accessibility (Claude):** demo banner grows with text size (fixed height was a round-6 regression).
+
+## Later (owner direction, 2026-10-19)
+
+- **Publishing = real clinics with real data.** Requires the clinical deployment checklist first (BAAs, MFA, pen test, backups, legal review) and a data-minimization design (dates/statuses only; consider SMART on FHIR embedding).
+- **Native apps** (Mac download, iOS App Store, Google Play) after the web product is refined and in use. Needs a token-auth API (server actions can't serve mobile), no PHI stored on devices, and paid developer accounts (approval).
 
 ## Next design round (candidates)
 

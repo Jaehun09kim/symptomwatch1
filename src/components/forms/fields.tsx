@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const controlClass =
-  "w-full rounded-[10px] border border-input bg-white px-3 text-[0.95rem] text-navy shadow-soft outline-none transition placeholder:text-slate-400 focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20 aria-invalid:border-destructive disabled:bg-surface disabled:text-slate-500";
+  "w-full rounded-md border border-input bg-card px-3 text-base sm:text-[0.9375rem] text-navy shadow-soft outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 hover:border-slate-500 focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20 aria-invalid:border-destructive disabled:bg-surface disabled:text-slate-500";
 
 interface FieldShellProps {
   label: string;
@@ -127,7 +127,7 @@ export function FormMessage({ status, message }: { status: "idle" | "error" | "s
       role={success ? "status" : "alert"}
       className={cn(
         "flex items-start gap-2.5 rounded-[10px] border px-3.5 py-3 text-sm",
-        success ? "border-teal/30 bg-teal-soft text-teal-strong" : "border-destructive/30 bg-red-50 text-destructive",
+        success ? "border-teal/30 bg-teal-soft text-teal-strong" : "border-destructive/30 bg-destructive/10 text-destructive",
       )}
     >
       {success ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden /> : <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />}

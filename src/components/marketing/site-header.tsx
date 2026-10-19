@@ -18,13 +18,12 @@ const CLOSE_DELAY = 140;
 /**
  * Desktop navigation: disclosure dropdowns (buttons with aria-expanded, not an
  * ARIA menu), opened by hover intent or click, closed by Escape, outside click,
- * or choosing a link. A shared hover pill slides between top-level items.
+ * or choosing a link. Panels move as a single surface; labels stay crisp.
  */
 function DesktopNav() {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const [open, setOpen] = useState<string | null>(null);
-  const [hovered, setHovered] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);
   /** When hover opened a panel; a click right after shouldn't immediately close it. */
   const hoverOpenedAt = useRef(0);
@@ -43,10 +42,14 @@ function DesktopNav() {
   useEffect(() => {
     if (!open) return;
     const onPointer = (event: PointerEvent) => {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) setOpen(null);
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        window.clearTimeout(timer.current);
+        setOpen(null);
+      }
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      window.clearTimeout(timer.current);
       const current = open;
       setOpen(null);
       triggers.current[current]?.focus();
@@ -64,28 +67,32 @@ function DesktopNav() {
   const onTriggerKey = (event: ReactKeyboardEvent<HTMLButtonElement>, group: NavGroup) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
+      window.clearTimeout(timer.current);
       setOpen(group.label);
       window.requestAnimationFrame(() => document.getElementById(`${baseId}-${group.label}`)?.querySelector<HTMLElement>("a")?.focus());
     }
   };
 
   return (
-    <nav ref={navRef} aria-label="Primary" className="hidden flex-1 md:block" onMouseLeave={() => { setHovered(null); schedule(null, CLOSE_DELAY); }}>
+    <nav ref={navRef} aria-label="Primary" className="hidden flex-1 justify-center lg:flex"
+      onMouseLeave={() => schedule(null, CLOSE_DELAY)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          window.clearTimeout(timer.current);
+          setOpen(null);
+        }
+      }}>
       <ul className="flex items-center gap-0.5">
         {MARKETING_NAV.map((group) => {
           const active = isActive(pathname, group.href);
           const expanded = open === group.label;
           const panelId = `${baseId}-${group.label}`;
           const itemClass = cn(
-            "relative isolate inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[0.9rem] font-medium transition-colors",
-            active || expanded ? "text-navy" : "text-slate-600 hover:text-navy",
+            "inline-flex h-9 items-center gap-1 rounded-md px-3 text-[0.875rem] font-medium transition-colors duration-150",
+            active || expanded ? "bg-muted text-navy" : "text-slate-600 hover:bg-muted hover:text-navy",
           );
-          const pill = hovered === group.label || expanded ? (
-            <m.span layoutId="marketing-nav-pill" aria-hidden className="absolute inset-0 -z-10 rounded-full bg-surface"
-              transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 38 }} />
-          ) : null;
           return (
-            <li key={group.label} className="relative" onMouseEnter={() => { setHovered(group.label); schedule(group.items ? group.label : null, OPEN_DELAY); }}>
+            <li key={group.label} className="relative" onMouseEnter={() => { schedule(group.items ? group.label : null, OPEN_DELAY); }}>
               {group.items ? (
                 <>
                   <button
@@ -101,48 +108,44 @@ function DesktopNav() {
                     onKeyDown={(event) => onTriggerKey(event, group)}
                     className={itemClass}
                   >
-                    {pill}
                     {group.label}
                     {active ? <span className="sr-only"> (current section)</span> : null}
-                    <m.span aria-hidden animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2, ease: EASE }} className="inline-flex">
-                      <ChevronDown className="size-3.5" />
+                    <m.span aria-hidden animate={{ rotate: expanded ? 180 : 0 }} transition={reduce ? { duration: 0 } : { duration: 0.16, ease: EASE }} className="inline-flex">
+                      <ChevronDown className="size-3 text-slate-500" />
                     </m.span>
                   </button>
                   <AnimatePresence>
                     {expanded ? (
                       <m.div
                         id={panelId}
-                        initial={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
-                        transition={{ duration: 0.2, ease: EASE }}
-                        style={{ transformOrigin: "top left" }}
-                        className="absolute left-0 top-full z-40 pt-2"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4, transition: { duration: reduce ? 0 : 0.1 } }}
+                        transition={reduce ? { duration: 0 } : { duration: 0.12, ease: EASE }}
+                        style={{ transformOrigin: "top center" }}
+                        className="absolute left-1/2 top-full z-40 -translate-x-1/2 pt-2"
                       >
-                        <div className="w-[26rem] overflow-hidden rounded-2xl border border-border bg-card shadow-float">
-                          <ul className="p-2">
-                            {group.items.map((item, index) => (
-                              <m.li key={item.href}
-                                initial={reduce ? false : { opacity: 0, y: 4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.18, ease: EASE, delay: reduce ? 0 : 0.02 * index }}>
+                        <div className="w-[22rem] overflow-hidden rounded-xl border border-white/10 bg-popover shadow-float">
+                          <ul className="p-1.5">
+                            {group.items.map((item) => (
+                              <li key={item.href}>
                                 <Link href={item.href} onClick={() => setOpen(null)}
-                                  className="group flex gap-3 rounded-xl p-3 outline-none transition-colors hover:bg-surface focus-visible:bg-surface focus-visible:ring-2 focus-visible:ring-ring">
-                                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand transition-colors group-hover:bg-brand group-hover:text-white">
-                                    <item.icon className="size-[18px]" aria-hidden />
+                                  className="group flex gap-3 rounded-lg px-3 py-2.5 outline-none transition-colors duration-150 hover:bg-white/[0.05] focus-visible:bg-white/[0.05] focus-visible:ring-2 focus-visible:ring-ring">
+                                  <span className="mt-0.5 grid size-7 shrink-0 place-items-center text-slate-500 transition-colors duration-150 group-hover:text-navy">
+                                    <item.icon className="size-3.5" aria-hidden />
                                   </span>
                                   <span className="min-w-0">
-                                    <span className="block text-sm font-semibold text-navy">{item.title}</span>
+                                    <span className="block text-[0.875rem] font-medium text-navy">{item.title}</span>
                                     <span className="mt-0.5 block text-[0.8rem] leading-snug text-muted-foreground">{item.body}</span>
                                   </span>
                                 </Link>
-                              </m.li>
+                              </li>
                             ))}
                           </ul>
                           <Link href={group.href} onClick={() => setOpen(null)}
-                            className="group flex items-center justify-between border-t border-border bg-surface px-5 py-3 text-sm font-medium text-brand outline-none hover:text-brand-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                            className="group flex items-center justify-between border-t border-white/[0.07] px-4.5 py-3 text-[0.8125rem] font-medium text-slate-600 outline-none transition-colors hover:text-navy focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
                             {group.overview}
-                            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                            <ArrowRight className="size-3.5 transition-transform duration-150 motion-safe:group-hover:translate-x-0.5" aria-hidden />
                           </Link>
                         </div>
                       </m.div>
@@ -151,7 +154,6 @@ function DesktopNav() {
                 </>
               ) : (
                 <Link href={group.href} aria-current={active ? "page" : undefined} className={itemClass} onClick={() => setOpen(null)}>
-                  {pill}
                   {group.label}
                 </Link>
               )}
@@ -171,10 +173,10 @@ function MobileNav() {
   const close = () => setOpen(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "ml-auto md:hidden")} aria-label="Open menu">
+      <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "ml-auto lg:hidden")} aria-label="Open menu">
         <Menu className="size-5" />
       </SheetTrigger>
-      <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto">
+      <SheetContent side="right" className="dark w-[88vw] max-w-sm overflow-y-auto border-white/10 bg-background">
         <SheetHeader>
           <SheetTitle><Logo /></SheetTitle>
         </SheetHeader>
@@ -187,24 +189,24 @@ function MobileNav() {
                   {group.items ? (
                     <>
                       <button type="button" aria-expanded={expanded} onClick={() => setSection(expanded ? null : group.label)}
-                        className="flex min-h-12 w-full items-center justify-between text-left text-base font-semibold text-navy">
+                        className="flex min-h-12 w-full items-center justify-between text-left text-[0.95rem] font-medium text-navy">
                         {group.label}
-                        <m.span aria-hidden animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2, ease: EASE }} className="inline-flex">
+                        <m.span aria-hidden animate={{ rotate: expanded ? 180 : 0 }} transition={reduce ? { duration: 0 } : { duration: 0.16, ease: EASE }} className="inline-flex">
                           <ChevronDown className="size-4 text-slate-500" />
                         </m.span>
                       </button>
                       <AnimatePresence initial={false}>
                         {expanded ? (
                           <m.ul
-                            initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                            animate={reduce ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-                            exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                            transition={{ duration: 0.22, ease: EASE }}
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
+                            transition={reduce ? { duration: 0 } : { duration: 0.18, ease: EASE }}
                             className="overflow-hidden"
                           >
                             {[{ href: group.href, title: group.overview ?? group.label }, ...group.items].map((item) => (
                               <li key={item.href}>
-                                <Link href={item.href} onClick={close} className="flex min-h-11 items-center rounded-lg px-3 text-[0.95rem] text-body hover:bg-surface hover:text-navy">
+                                <Link href={item.href} onClick={close} className="flex min-h-11 items-center rounded-md px-3 text-[0.9rem] text-body hover:bg-white/[0.05] hover:text-navy">
                                   {item.title}
                                 </Link>
                               </li>
@@ -215,7 +217,7 @@ function MobileNav() {
                       </AnimatePresence>
                     </>
                   ) : (
-                    <Link href={group.href} onClick={close} className="flex min-h-12 items-center text-base font-semibold text-navy">{group.label}</Link>
+                    <Link href={group.href} onClick={close} className="flex min-h-12 items-center text-[0.95rem] font-medium text-navy">{group.label}</Link>
                   )}
                 </li>
               );
@@ -234,15 +236,15 @@ function MobileNav() {
 
 export function SiteHeader() {
   return (
-    <header className="relative z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="rounded-md" aria-label="SymptomWatch home">
-          <Logo />
+    <header className="sticky top-8 z-40 border-b border-border bg-background">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="shrink-0 rounded-md lg:w-44" aria-label="SymptomWatch home">
+          <Logo markClassName="size-6" />
         </Link>
         <DesktopNav />
-        <div className="ml-auto hidden items-center gap-2 md:flex">
-          <Link href="/sign-in" className={buttonVariants({ variant: "ghost" })}>Sign in</Link>
-          <Link href="/demo" className={buttonVariants()}>Try Demo</Link>
+        <div className="hidden shrink-0 items-center justify-end gap-1 whitespace-nowrap lg:flex lg:w-44">
+          <Link href="/sign-in" className="inline-flex h-8 items-center rounded-md px-3 text-[0.875rem] font-medium text-slate-500 transition-colors duration-150 hover:text-navy">Sign in</Link>
+          <Link href="/demo" className={buttonVariants({ size: "sm", className: "h-8" })}>Try the demo</Link>
         </div>
         <MobileNav />
       </div>

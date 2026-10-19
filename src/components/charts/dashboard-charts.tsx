@@ -17,11 +17,11 @@ import type { NameType, ValueType } from "recharts/types/component/DefaultToolti
 
 // Blue = work opened, green = work completed (validated for CVD separation with
 // the dataviz palette checker); the completion line is also dashed. Tables remain available.
-const SERIES = { opened: "#1f5aa6", completed: "#14855a" } as const;
-const GRID = "#e3e9ef";
-const AXIS_TEXT = "#566577";
-const SURFACE = "#f7f9fb";
-const LABEL = "#0f2a43";
+const SERIES = { opened: "#2b59c3", completed: "#14855a" } as const;
+const GRID = "#e9ebef";
+const AXIS_TEXT = "#5f6670";
+const SURFACE = "#f8f9fa";
+const LABEL = "#0e1116";
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null;

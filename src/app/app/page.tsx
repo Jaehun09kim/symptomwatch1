@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { HorizontalBarChart, WeeklyTrendChart } from "@/components/charts/dashboard-charts";
 import { PatientsPanel } from "@/components/app/patients/patients-panel";
 import { PageHeader } from "@/components/app/primitives/layout";
@@ -32,13 +33,13 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
   const welcomeMessage = typeof params.welcome === "string" ? welcome[params.welcome] : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Dashboard"
         description={`${session.clinicName} · Review open work, then assign the next follow-up.`}
       />
       {welcomeMessage ? (
-        <p role="status" className="rounded-xl border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
+        <p role="status" className="rounded-md border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
       ) : null}
 
       <div className="metric-strip">
@@ -49,7 +50,6 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
           href="/app/queue?due=overdue"
           hint="Past due date, not completed"
         />
-        <StatCard label="Open follow-ups" value={summary.openTasks} href="/app/queue" hint="Tasks not yet completed" />
         <StatCard
           label="Patients needing review"
           value={summary.patientsNeedingReview ?? 0}
@@ -67,9 +67,13 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
           locked={summary.pendingLabs === null ? locked : undefined}
         />
         <StatCard label="Pending specialist records" value={summary.pendingRecords} tone="blue" href="/app/queue?view=records" hint="Referrals without records received" />
-        <StatCard label="Tasks completed this week" value={summary.completedThisWeek} tone="teal" href="/app/queue?status=completed" hint="Since Monday" />
-        <StatCard label="Total demo patients" value={summary.totalPatients} tone="slate" href="/app/patients" />
       </div>
+      {/* Context, not calls to action: kept quiet and out of the headline metrics. */}
+      <p className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
+        <Link href="/app/queue" className="hover:text-navy"><span className="font-medium tabular-nums text-navy">{summary.openTasks}</span> open follow-ups</Link>
+        <Link href="/app/queue?status=completed" className="hover:text-navy"><span className="font-medium tabular-nums text-navy">{summary.completedThisWeek}</span> tasks completed this week</Link>
+        <Link href="/app/patients" className="hover:text-navy"><span className="font-medium tabular-nums text-navy">{summary.totalPatients}</span> demo patients</Link>
+      </p>
 
       <PatientsPanel ctx={ctx} params={params} basePath="/app" />
 
@@ -96,7 +100,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
             <HorizontalBarChart
               label="Open flags by rule"
               valueLabel="Open flags"
-              color="#1f5aa6"
+              color="#2b59c3"
               data={summary.openFlagsByRule.map((row) => ({ name: ruleLabel[row.ruleId], value: row.count })).sort((a, b) => b.value - a.value)}
             />
           ) : (
@@ -113,7 +117,7 @@ function DashboardFallback() {
     <div className="space-y-6">
       <div className="h-9 w-48 animate-pulse rounded-lg bg-surface" />
       <div className="metric-strip">
-        {Array.from({ length: 7 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-xl bg-surface" />)}
+        {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-36 animate-pulse bg-surface" />)}
       </div>
       <div className="h-80 animate-pulse rounded-xl bg-surface" />
     </div>

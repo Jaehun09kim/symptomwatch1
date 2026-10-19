@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { CheckCircle2, CircleSlash } from "lucide-react";
-import { CtaBand, PageIntro } from "@/components/marketing/page-intro";
+import { Minus } from "lucide-react";
+import { container, CtaBand, PageIntro } from "@/components/marketing/page-intro";
 import { DEFAULT_RULE_SETTINGS } from "@/lib/detection/clinic-config";
 import type { RuleId } from "@/lib/detection/types";
 import { ruleLabel } from "@/lib/labels";
@@ -35,57 +35,59 @@ const ROLES = [
 
 export default function HowItWorksPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <PageIntro title="How SymptomWatch works">
+    <div className={container}>
+      <PageIntro title="How SymptomWatch works" label="How it works">
         <p>SymptomWatch doesn&rsquo;t guess and doesn&rsquo;t diagnose. It compares what a clinic asked for with what its records show, and asks a physician about the difference.</p>
       </PageIntro>
 
-      <section aria-labelledby="steps-title" className="border-b border-border py-14 lg:py-20">
+      <section aria-labelledby="steps-title" className="border-t border-border section-space">
         <h2 id="steps-title" className="sr-only">Steps</h2>
-        <ol className="grid gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <ol className="grid border-border md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (
-            <li key={step.title}>
-              <span className={index === STEPS.length - 1 ? "grid size-9 place-items-center rounded-full bg-teal font-semibold text-white" : "grid size-9 place-items-center rounded-full bg-brand font-semibold text-white"}>{index + 1}</span>
-              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
-              <p className="mt-2 leading-relaxed text-body">{step.body}</p>
+            <li key={step.title} className="border-b border-border py-7 md:px-6 md:[&:nth-child(odd)]:border-r md:[&:nth-child(odd)]:pl-0 lg:border-b-0 lg:border-r lg:first:pl-0 lg:last:border-r-0 lg:[&:nth-child(odd)]:pl-6 lg:[&:first-child]:pl-0">
+              <p className="meta-label tabular-nums">
+                <span className="text-brand">{String(index + 1).padStart(2, "0")}</span>
+              </p>
+              <h3 className="mt-5 text-[1.05rem] font-medium tracking-[-0.015em]">{step.title}</h3>
+              <p className="mt-2 text-[0.9375rem] leading-relaxed text-body">{step.body}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <section id="rules" aria-labelledby="rules-title" className="scroll-mt-20 border-b border-border py-14 lg:py-20">
+      <section id="rules" aria-labelledby="rules-title" className="scroll-mt-28 border-t border-border section-space">
         <div className="max-w-2xl">
-          <h2 id="rules-title" className="display-heading text-3xl">The four rules</h2>
-          <p className="mt-4 leading-relaxed text-body">These are the defaults. Each clinic&rsquo;s physicians can lengthen the waiting periods or turn a rule off.</p>
+          <h2 id="rules-title" className="section-heading text-[2rem] sm:text-[2.5rem]">The four rules</h2>
+          <p className="lead mt-5">These are the defaults. Each clinic&rsquo;s physicians can lengthen the waiting periods or turn a rule off.</p>
         </div>
-        <dl className="mt-10 grid gap-x-12 gap-y-8 md:grid-cols-2">
-          {RULES.map((rule) => (
-            <div key={rule} className="border-l-2 border-brand pl-5">
-              <dt className="font-semibold text-navy">{ruleLabel[rule]}</dt>
-              <dd className="mt-2 leading-relaxed text-body">{describeRule(rule, DEFAULT_RULE_SETTINGS)}</dd>
+        <dl className="mt-12 border-t border-border">
+          {RULES.map((rule, index) => (
+            <div key={rule} className="grid gap-x-6 gap-y-2 border-b border-border py-7 md:grid-cols-[19rem_1fr]">
+              <dt className="flex gap-6 font-medium text-navy"><span className="meta-label w-6 shrink-0 pt-1 tabular-nums">R{index + 1}</span>{ruleLabel[rule]}</dt>
+              <dd className="leading-relaxed text-body">{describeRule(rule, DEFAULT_RULE_SETTINGS)}</dd>
             </div>
           ))}
         </dl>
       </section>
 
-      <section aria-labelledby="not-title" className="grid gap-10 border-b border-border py-14 lg:grid-cols-2 lg:gap-16 lg:py-20">
-        <div>
-          <h2 id="not-title" className="display-heading text-3xl">What it deliberately doesn&rsquo;t flag</h2>
+      <section aria-labelledby="not-title" className="grid gap-10 section-space lg:grid-cols-12 lg:gap-16">
+        <div className="lg:col-span-5">
+          <h2 id="not-title" className="section-heading text-[2rem] sm:text-[2.5rem]">What it deliberately doesn&rsquo;t flag</h2>
           <p className="mt-4 leading-relaxed text-body">A good follow-up tool is quiet when things are fine. The rules look for a documented plan, not just a repeated event.</p>
         </div>
-        <ul className="space-y-4">
+        <ul className="divide-y divide-border border-y border-border lg:col-span-7">
           {NOT_FLAGGED.map((line) => (
-            <li key={line} className="flex gap-3 leading-relaxed text-body"><CircleSlash className="mt-1 size-4 shrink-0 text-teal" aria-hidden />{line}</li>
+            <li key={line} className="flex gap-4 py-4 leading-relaxed text-body"><Minus className="mt-1 size-4 shrink-0 text-slate-500" aria-hidden />{line}</li>
           ))}
         </ul>
       </section>
 
-      <section aria-labelledby="roles-title" className="py-14 lg:py-20">
-        <h2 id="roles-title" className="display-heading text-3xl">Who does what</h2>
-        <dl className="mt-8 divide-y divide-border border-y border-border">
+      <section aria-labelledby="roles-title" className="border-t border-border section-space">
+        <h2 id="roles-title" className="section-heading text-[2rem] sm:text-[2.5rem]">Who does what</h2>
+        <dl className="mt-10 divide-y divide-border border-y border-border">
           {ROLES.map(({ role, does }) => (
             <div key={role} className="grid gap-2 py-5 sm:grid-cols-[12rem_1fr]">
-              <dt className="flex items-center gap-2 font-semibold text-navy"><CheckCircle2 className="size-4 text-brand" aria-hidden />{role}</dt>
+              <dt className="font-medium text-navy">{role}</dt>
               <dd className="leading-relaxed text-body">{does}</dd>
             </div>
           ))}

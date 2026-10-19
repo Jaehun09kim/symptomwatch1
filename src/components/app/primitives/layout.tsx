@@ -9,10 +9,10 @@ export function DemoBanner() {
     <div
       role="note"
       aria-label="Demo notice"
-      className="sticky top-0 z-50 border-b border-amber-200 bg-attention-soft text-attention"
+      className="demo-banner sticky top-0 z-50 h-8 border-b border-[#ecd6a8] bg-[#fbf1de] text-[#7a4f0e]"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-center text-[0.8rem] font-medium">
-        <ShieldAlert className="size-4 shrink-0" aria-hidden />
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-center gap-2 px-4 text-center text-[0.78rem] font-medium">
+        <ShieldAlert className="size-3.5 shrink-0" aria-hidden />
         <span>
           <strong className="font-semibold">Demo Only — No Real Patient Data.</strong>{" "}
           <span className="hidden sm:inline">Every patient and record here is fictional. </span>
@@ -37,13 +37,13 @@ export function PageHeader({
   eyebrow?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         {eyebrow ? <div className="mb-2">{eyebrow}</div> : null}
-        <h1 className="text-2xl font-semibold sm:text-[1.75rem]">{title}</h1>
-        {description ? <p className="mt-1 max-w-2xl text-sm text-slate-600">{description}</p> : null}
+        <h1 className="section-heading text-[1.625rem] sm:text-[1.875rem]">{title}</h1>
+        {description ? <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
 }
@@ -62,8 +62,8 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col items-center rounded-xl border border-dashed border-border px-6 py-12 text-center", className)}>
-      <span className="grid size-11 place-items-center rounded-full bg-surface text-slate-500">
+    <div className={cn("flex flex-col items-center rounded-lg border border-dashed border-border px-6 py-12 text-center", className)}>
+      <span className="grid size-10 place-items-center rounded-md border border-border bg-card text-slate-500">
         <Icon className="size-5" aria-hidden />
       </span>
       <p className="mt-3 font-medium text-navy">{title}</p>

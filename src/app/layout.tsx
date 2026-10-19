@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "SymptomWatch", description },
 };
 
-export const viewport: Viewport = { themeColor: "#f7f9fb", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#f8f9fa", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

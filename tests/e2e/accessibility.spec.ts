@@ -5,7 +5,7 @@ import { openPatient, signIn, USERS } from "./helpers";
 async function expectNoSeriousViolations(page: Page, label: string) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
   const serious = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
-  expect(serious.map((violation) => `${label}: ${violation.id} — ${violation.help} (${violation.nodes.length})`)).toEqual([]);
+  expect(serious.map((violation) => `${label}: ${violation.id} — ${violation.help} (${violation.nodes.length}): ${violation.nodes.slice(0, 3).map((node) => node.target.join(" ")).join(", ")}`)).toEqual([]);
 }
 
 test.describe("accessibility (axe, WCAG 2.2 AA)", () => {

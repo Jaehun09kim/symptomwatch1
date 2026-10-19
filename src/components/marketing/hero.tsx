@@ -2,43 +2,51 @@
 
 import Link from "next/link";
 import { m, useReducedMotion, type Variants } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { LoopDemo } from "./loop-demo";
+import type { SampleFlag } from "./hero-data";
+import { ProductShot } from "./product-shot";
+import { TiltFrame } from "./tilt-frame";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export function Hero({ patient }: { patient: string }) {
+export function Hero({ flags, total, selectedKey, patient, mrn }: {
+  flags: SampleFlag[];
+  total: number;
+  selectedKey: string;
+  patient: string;
+  mrn: string;
+}) {
   const reduce = useReducedMotion();
   const item: Variants = {
-    hidden: reduce ? { opacity: 1 } : { opacity: 0, y: 14 },
-    shown: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+    hidden: { y: 8 },
+    shown: { y: 0, transition: reduce ? { duration: 0 } : { duration: 0.35, ease: EASE } },
   };
   return (
-    <section aria-labelledby="hero-title" className="grid items-center gap-12 py-14 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-24 [&>*]:min-w-0">
-      <m.div initial="hidden" animate="shown" variants={{ shown: { transition: { staggerChildren: 0.08 } } }}>
-        <m.h1 variants={item} id="hero-title" className="display-heading text-4xl sm:text-5xl lg:text-[3.6rem]">
+    <section aria-labelledby="hero-title" className="pb-4 pt-12 sm:pt-20 lg:pt-24">
+      <m.div initial="hidden" animate="shown" variants={{ shown: { transition: { staggerChildren: reduce ? 0 : 0.06 } } }} className="max-w-[52rem]">
+        <m.p variants={item} className="meta-label mb-5">For independent primary care · 1–5 physicians</m.p>
+        <m.h1 variants={item} id="hero-title" className="display-heading text-[2.5rem] text-navy sm:text-[3.5rem] lg:text-[4.25rem]">
           Follow-up tracking for small primary care clinics.
         </m.h1>
-        <m.p variants={item} className="mt-6 max-w-xl text-lg leading-relaxed text-body">
+        <m.p variants={item} className="lead mt-6 max-w-[38rem]">
           SymptomWatch reads your clinic&rsquo;s records and points out follow-ups that never closed: a return visit that didn&rsquo;t happen,
           a lab result that never came back, a referral with no consult note, or a symptom that keeps coming back without a plan.
         </m.p>
-        <m.p variants={item} className="mt-4 max-w-xl leading-relaxed text-muted-foreground">
-          Each flag shows the records behind it. A physician decides what happens next, and the front desk gets a clear list of calls and records requests.
-        </m.p>
-        <m.div variants={item} className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <m.div variants={item} className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
           <Link href="/demo" className={buttonVariants({ size: "lg" })}>Try the demo</Link>
-          <Link href="/sign-up" className={buttonVariants({ size: "lg", variant: "outline" })}>Create a demo account</Link>
+          <Link href="/sign-up" className="text-link justify-center">
+            Create a demo account
+            <ArrowRight aria-hidden />
+          </Link>
         </m.div>
-        <m.p variants={item} className="mt-4 text-sm text-muted-foreground">Free to try with fictional patients. Nothing to install.</m.p>
+        <m.p variants={item} className="mt-5 text-[0.8125rem] text-slate-500">Free to try with fictional patients. Nothing to install.</m.p>
       </m.div>
-      <m.div
-        initial={reduce ? false : { opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, ease: EASE, delay: reduce ? 0 : 0.25 }}
-      >
-        <LoopDemo patient={patient} />
-      </m.div>
+      <div className="mt-12 sm:mt-16">
+        <TiltFrame>
+          <ProductShot flags={flags} total={total} selectedKey={selectedKey} patient={patient} mrn={mrn} />
+        </TiltFrame>
+      </div>
     </section>
   );
 }
