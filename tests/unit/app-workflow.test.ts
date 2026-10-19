@@ -10,11 +10,16 @@ describe("rule-aware task defaults", () => {
     ["referral-outcome-missing", "request_records", "2026-10-26", "Request specialist"],
     ["overdue-follow-up", "call_patient", "2026-10-21", "Call to rebook"],
     ["persistent-symptom-unresolved", "clinical_review", "2026-10-22", "Review recurring symptom"],
-  ] as const)("%s gives an actionable task owned by the reviewer", (rule, category, dueDate, action) => {
-    const result = flagTaskDefaults(rule, "Fictional documentation gap", "reviewer-id", new Date("2026-10-19T23:59:00Z"));
-    expect(result).toMatchObject({ category, dueDate, assigneeId: "reviewer-id" });
+  ] as const)("%s gives an actionable task with a sensible owner", (rule, category, dueDate, action) => {
+    const result = flagTaskDefaults(rule, "Fictional documentation gap", "reviewer-id", new Date("2026-10-19T23:59:00Z"), "front-desk-id");
+    expect(result).toMatchObject({ category, dueDate, assigneeId: category === "clinical_review" ? "reviewer-id" : "front-desk-id" });
     expect(result.title).toContain(action);
     expect(result.title).toContain("Fictional documentation gap");
+  });
+
+  it("never hands front-desk work to the reviewing physician by default", () => {
+    expect(flagTaskDefaults("overdue-follow-up", "x", "reviewer-id").assigneeId).toBe("");
+    expect(flagTaskDefaults("persistent-symptom-unresolved", "x", "reviewer-id").assigneeId).toBe("reviewer-id");
   });
 
   it("caps the title and handles due dates across years", () => {

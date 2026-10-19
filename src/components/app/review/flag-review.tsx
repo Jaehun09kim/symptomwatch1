@@ -104,7 +104,9 @@ function ConfirmFields({ flagId, status, title, ruleId, reviewerId, assignees, e
   flagId: string; status: FlagStatus; title: string; ruleId: RuleId; reviewerId: string;
   assignees: AssigneeOption[]; errors: Record<string, string | undefined>;
 }) {
-  const [defaults] = useState(() => flagTaskDefaults(ruleId, title, reviewerId));
+  const frontDesk = assignees.filter((person) => person.role === "staff");
+  const soleFrontDesk = frontDesk.length === 1 ? frontDesk[0].userId : undefined;
+  const [defaults] = useState(() => flagTaskDefaults(ruleId, title, reviewerId, new Date(), soleFrontDesk));
   const [createTask, setCreateTask] = useState(true);
   const [category, setCategory] = useState(defaults.category);
   const [assignee, setAssignee] = useState(defaults.assigneeId);
@@ -127,14 +129,17 @@ function ConfirmFields({ flagId, status, title, ruleId, reviewerId, assignees, e
           <SelectField label="Task type" name="taskCategory" value={category} error={errors.taskCategory} onChange={(event) => {
             const next = event.target.value as TaskCategory;
             setCategory(next);
-            if (next === "clinical_review" && assignee && assignees.find((person) => person.userId === assignee)?.role !== "physician") setAssignee(reviewerId);
+            if (next === "clinical_review" && assignees.find((person) => person.userId === assignee)?.role !== "physician") setAssignee(reviewerId);
+            else if (next !== "clinical_review" && assignee === reviewerId) setAssignee(soleFrontDesk ?? "");
           }}>
             {(Object.keys(taskCategoryLabel) as TaskCategory[]).map((value) => <option key={value} value={value}>{taskCategoryLabel[value]}</option>)}
           </SelectField>
           <TextField label="Due date" name="dueDate" type="date" value={due} onChange={(event) => setDue(event.target.value)} required error={errors.dueDate} />
         </div>
         <SelectField label="Assign to" name="assigneeId" value={assignee} onChange={(event) => setAssignee(event.target.value)} error={errors.assigneeId}
-          hint="You own this follow-up by default. Reassign it or deliberately leave it for the team to claim.">
+          hint={category === "clinical_review"
+            ? "Clinical reviews stay with you by default."
+            : soleFrontDesk ? "Front-desk work goes to your front desk by default." : "Starts unassigned for the team to claim. Pick someone to make it theirs."}>
           {allowed.map((person) => <option key={person.userId} value={person.userId}>{person.displayName} · {roleLabel[person.role]}</option>)}
           <option value="">Unassigned — leave for the team to claim</option>
         </SelectField>

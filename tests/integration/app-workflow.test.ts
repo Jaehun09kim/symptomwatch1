@@ -47,7 +47,8 @@ describe("app workflow boundaries and destinations", () => {
       await confirmFlag(physician, { flagId: flag.id, createTask: true }, db);
       const task = (await listTasks(physician, {}, db)).find((row) => row.sourceFlagId === flag.id)!;
       const expected = flagTaskDefaults(ruleId, flag.title, physician.userId);
-      expect(task).toMatchObject({ category: expected.category, title: expected.title, assigneeId: physician.userId });
+      // Server-side default (no owner sent): clinical reviews go to the reviewer, front-desk work starts unassigned.
+      expect(task).toMatchObject({ category: expected.category, title: expected.title, assigneeId: expected.assigneeId || null });
       expect(task.dueDate.slice(0, 10)).toBe(expected.dueDate);
       if (ruleId === "persistent-symptom-unresolved") {
         expect(await listTasks(staff, { taskId: task.id }, db)).toEqual([]);
