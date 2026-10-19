@@ -7,6 +7,8 @@ import { FlagStatusBadge } from "@/components/app/primitives/badges";
 import { FlagCard } from "@/components/app/primitives/flag-card";
 import { EmptyState, PageHeader } from "@/components/app/primitives/layout";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
+import { MobileReviewFilters } from "@/components/app/review/mobile-filters";
+import { listPatients } from "@/lib/services/patients";
 import { FlagReviewActions, RunDetectionButton } from "@/components/app/review/flag-review";
 import { requirePermission } from "@/lib/auth/current";
 import { can } from "@/lib/authz/permissions";
@@ -71,6 +73,11 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
   const selected = flags.find((flag) => flag.id === one(params.flag)) ?? flags[0];
   // Canonical selection also advances the workspace when a decision removes a flag from this filter.
   if (selected && one(params.flag) !== selected.id) redirect(href(params, { flag: selected.id }));
+  const selectedIndex = selected ? flags.findIndex((flag) => flag.id === selected.id) : -1;
+  const previous = flags[selectedIndex - 1];
+  const next = flags[selectedIndex + 1];
+  const hasPatients = Boolean(selected) || (await listPatients(ctx)).total > 0;
+  const filtered = status !== "open" || Boolean(ruleId);
   const history = await getFlagHistory(ctx, selected ? [selected.id] : []);
   const assignees = members.filter((member) => member.status === "active").map(({ userId, displayName, role }) => ({ userId, displayName, role }));
   const feedbackByRule = RULE_IDS.map((rule) => ({
@@ -79,7 +86,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
   })).filter((entry) => entry.rows.length);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-40 md:pb-0">
       <PageHeader
         title="Review flags"
         description="Possible documentation gaps found by transparent rules. Each one shows its evidence and needs a physician's judgment."
@@ -87,10 +94,10 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
       />
       <div className="space-y-2 border-y border-border py-3 text-[0.8125rem] leading-relaxed text-body">
         <p className="flex items-start gap-2">
-          <Info className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
+          <Info className="mt-0.5 size-4 shrink-0 text-body" aria-hidden />
           <span>Listed by when first detected — <strong className="text-navy">not by urgency</strong>. Flags are documentation questions, not diagnoses, and never change care plans or contact patients.</span>
         </p>
-        <p className="shrink-0 text-xs text-slate-500">
+        <p className="shrink-0 text-xs text-body">
           {lastRun
             ? `Last run ${new Date(lastRun.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} · ${lastRun.patientsEvaluated} patient${lastRun.patientsEvaluated === 1 ? "" : "s"} · ${lastRun.findingsCount} finding${lastRun.findingsCount === 1 ? "" : "s"}`
             : "Not run yet"}
@@ -103,13 +110,16 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
         </p>
       ) : null}
 
-      <div className="space-y-2">
+      <MobileReviewFilters status={status} rule={ruleId ?? ""}
+        statuses={STATUSES.map((value) => ({ value, label: statusTabLabel(value) }))}
+        rules={RULE_IDS.map((value) => ({ value, label: ruleShortLabel[value] }))} />
+      <div className="hidden space-y-2 md:block">
         <nav aria-label="Flag status" className="overflow-x-auto border-b border-border">
           <ul className="flex min-w-max gap-x-4">
             {STATUSES.map((value) => (
               <li key={value}>
                 <Link href={href(params, { status: value === "open" ? undefined : value, flag: undefined })} aria-current={status === value ? "page" : undefined}
-                  className={cn("inline-flex min-h-11 items-center border-b-2 px-1 text-sm font-medium transition-colors duration-150 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-brand", status === value ? "border-brand text-brand-hover" : "border-transparent text-slate-600 hover:border-input hover:text-navy")}>
+                  className={cn("inline-flex min-h-11 items-center border-b-2 px-1 text-sm font-medium transition-colors duration-150 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-brand", status === value ? "border-brand text-brand-hover" : "border-transparent text-body hover:border-input hover:text-navy")}>
                   {statusTabLabel(value)}
                 </Link>
               </li>
@@ -119,33 +129,42 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
         <nav aria-label="Rule">
           <ul className="flex flex-wrap gap-1">
             <li><Link href={href(params, { rule: undefined, flag: undefined })} aria-current={!ruleId ? "page" : undefined}
-              className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150", !ruleId ? "bg-brand-soft text-brand-hover ring-1 ring-inset ring-brand/20" : "text-slate-600 hover:bg-surface")}>All rules</Link></li>
+              className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150", !ruleId ? "bg-brand-soft text-brand-hover ring-1 ring-inset ring-brand/20" : "text-body hover:bg-surface")}>All rules</Link></li>
             {RULE_IDS.map((rule) => (
               <li key={rule}><Link href={href(params, { rule, flag: undefined })} aria-current={ruleId === rule ? "page" : undefined}
-                className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150", ruleId === rule ? "bg-brand-soft text-brand-hover ring-1 ring-inset ring-brand/20" : "text-slate-600 hover:bg-surface")}>{ruleShortLabel[rule]}</Link></li>
+                className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150", ruleId === rule ? "bg-brand-soft text-brand-hover ring-1 ring-inset ring-brand/20" : "text-body hover:bg-surface")}>{ruleShortLabel[rule]}</Link></li>
             ))}
           </ul>
         </nav>
       </div>
 
-      <p className="text-xs text-slate-500">{flags.length} flag{flags.length === 1 ? "" : "s"} · Fictional patient records</p>
+      <p className="text-xs text-body">{flags.length} flag{flags.length === 1 ? "" : "s"} · Fictional patient records</p>
       {!selected ? (
-        <EmptyState icon={ClipboardCheck} title="Nothing to review here" description="No flags match these filters. Run detection after records change to look for new gaps." />
+        <EmptyState icon={ClipboardCheck}
+          title={!hasPatients ? "No patient records yet" : !lastRun ? "Detection has not run yet" : filtered ? "No flags match these filters" : "All caught up"}
+          description={!hasPatients ? "Import fictional records before checking for documentation gaps." : !lastRun ? "Run detection to find documentation gaps in the imported records." : filtered ? "Clear the filters to return to flags awaiting review." : "No flags are awaiting review. Run detection after records change to look for new gaps."}
+          action={!hasPatients ? <Link href="/app/import" className="inline-flex min-h-11 items-center text-brand underline">Import records</Link> : lastRun && filtered ? <Link href="/app/review" className="inline-flex min-h-11 items-center text-brand underline">Clear filters</Link> : <RunDetectionButton />} />
       ) : (
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(18rem,2fr)_minmax(0,3fr)] [&>*]:min-w-0">
-          <section id="flag-detail" aria-label="Selected flag" tabIndex={-1} className="scroll-mt-16 rounded-lg border border-border bg-card xl:sticky xl:top-12 xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100vh-4rem)] xl:overflow-y-auto">
+        <div className="grid items-start gap-6 md:grid-cols-[minmax(14rem,2fr)_minmax(0,3fr)] [&>*]:min-w-0">
+          <section id="flag-detail" aria-label="Selected flag" tabIndex={-1} className="scroll-mt-16 rounded-lg border border-border bg-card md:sticky md:top-12 md:col-start-2 md:row-start-1 md:max-h-[calc(100vh-4rem)] md:overflow-y-auto">
             <div key={selected.id}>
+              <nav aria-label="Review position" className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-1 text-sm text-body">
+                {previous ? <Link href={`${href(params, { flag: previous.id })}#flag-detail`} className="inline-flex min-h-11 items-center text-brand underline">Previous</Link> : <span className="text-body" aria-disabled="true">Previous</span>}
+                <span className="tabular-nums">{selectedIndex + 1} of {flags.length}</span>
+                {next ? <Link href={`${href(params, { flag: next.id })}#flag-detail`} className="inline-flex min-h-11 items-center text-brand underline">Next</Link> : <span className="text-body" aria-disabled="true">Next</span>}
+              </nav>
               <div className="space-y-1 border-b border-border px-4 pb-4 pt-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="section-heading text-2xl"><Link href={`/app/patients/${selected.patientId}`} className="rounded-sm text-navy underline-offset-4 hover:text-brand hover:underline">{selected.patientName}</Link></h2>
                   <a href="#flag-list" className="inline-flex min-h-11 items-center text-sm text-brand underline underline-offset-4">Browse flags</a>
                 </div>
-                <p className="text-xs text-slate-500"><span className="font-mono">{selected.patientMrn}</span>{selected.physicianName ? ` · ${selected.physicianName}` : ""} · first detected {formatTimelineDate(selected.firstDetectedAt)}</p>
+                <p className="text-xs text-body"><span className="font-mono">{selected.patientMrn}</span>{selected.physicianName ? ` · ${selected.physicianName}` : ""} · first detected {formatTimelineDate(selected.firstDetectedAt)}</p>
               </div>
               <FlagCard
                 className="rounded-b-lg rounded-t-none border-0"
                 snoozedUntil={selected.isSnoozed && selected.snoozedUntil ? formatTimelineDate(selected.snoozedUntil) : undefined}
                 status={selected.status}
+                showStatus={status === "all" || selected.isSnoozed}
                 ruleLabel={ruleLabel[selected.ruleId]}
                 ruleVersion={selected.ruleVersion}
                 title={selected.title}
@@ -163,25 +182,28 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                       <p className="text-sm text-body">Snoozed{selected.snoozedByName ? ` by ${selected.snoozedByName}` : ""}{selected.snoozeNote ? ` — ${selected.snoozeNote}` : ""}. Returns sooner if the record changes.</p>
                     ) : null}
                     {history[selected.id]?.length ? (
-                      <details className="text-xs text-slate-600">
-                        <summary className="cursor-pointer select-none py-2 font-medium text-slate-700">Review history ({history[selected.id].length})</summary>
+                      <details className="text-xs text-body">
+                        <summary className="cursor-pointer select-none py-2 font-medium text-navy">Review history ({history[selected.id].length})</summary>
                         <ol className="mt-2 space-y-1 border-l border-border pl-3">
                           {history[selected.id].map((entry, index) => (
                             <li key={index}>
-                              <span className="tabular-nums text-slate-500">{new Date(entry.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>{" "}
+                              <span className="tabular-nums text-body">{new Date(entry.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>{" "}
                               · {EVENT_LABEL[entry.eventType] ?? entry.eventType}{entry.actorName ? ` by ${entry.actorName}` : " (automatic)"}{entry.note ? ` — ${entry.note}` : ""}
                             </li>
                           ))}
                         </ol>
                       </details>
                     ) : null}
-                    {canReview ? <FlagReviewActions flagId={selected.id} status={selected.status} title={selected.title} assignees={assignees} snoozed={selected.isSnoozed} /> : null}
+                    {canReview ? <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static md:z-auto md:border-0 md:p-0">
+                      <p className="mb-2 truncate text-xs text-body md:hidden" title={`${selected.patientName} · ${selected.title}`}>Reviewing {selected.patientName} · {selected.title}</p>
+                      <FlagReviewActions flagId={selected.id} status={selected.status} title={selected.title} ruleId={selected.ruleId} reviewerId={ctx.userId} assignees={assignees} snoozed={selected.isSnoozed} />
+                    </div> : null}
                   </div>
                 }
               />
             </div>
           </section>
-          <nav id="flag-list" aria-label="Flags" tabIndex={-1} className="scroll-mt-16 xl:col-start-1 xl:row-start-1">
+          <nav id="flag-list" aria-label="Flags" tabIndex={-1} className="scroll-mt-16 md:col-start-1 md:row-start-1">
             <h2 className="border-b border-border pb-3 text-sm font-semibold">Select a flag</h2>
             <ul className="divide-y divide-border border-b border-border">
               {flags.map((flag) => (
@@ -190,7 +212,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                     className={cn("block min-w-0 space-y-1.5 border-l-2 px-3 py-3 transition-colors duration-150 focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-brand focus-visible:-outline-offset-2", selected.id === flag.id ? "border-brand bg-brand-soft" : "border-transparent hover:bg-surface")}>
                     <span className="block text-sm font-semibold text-navy">{flag.patientName}</span>
                     <span className="line-clamp-2 text-sm leading-relaxed text-body" title={flag.title}>{flag.title}</span>
-                    <span className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-body">
                       <span>{ruleShortLabel[flag.ruleId]}</span>
                       <span>Detected <time dateTime={flag.firstDetectedAt} className="tabular-nums">{formatTimelineDate(flag.firstDetectedAt)}</time></span>
                     </span>
@@ -198,7 +220,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
                     {status === "all" || flag.isSnoozed ? (
                       <FlagStatusBadge status={flag.status} snoozedUntil={flag.isSnoozed && flag.snoozedUntil ? formatTimelineDate(flag.snoozedUntil) : undefined} />
                     ) : null}
-                    {flag.status === "dismissed" && flag.reviewReason ? <span className="block text-xs text-slate-600">{dismissReasonShortLabel[flag.reviewReason]}</span> : null}
+                    {flag.status === "dismissed" && flag.reviewReason ? <span className="block text-xs text-body">{dismissReasonShortLabel[flag.reviewReason]}</span> : null}
                   </Link>
                 </li>
               ))}
@@ -218,7 +240,7 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
             ))}
           </ul>
           <p className="mt-3 text-sm"><Link href="/app/rules" className="font-medium text-brand hover:underline">{settings.isDefault ? "Default settings" : "This clinic's settings"} · adjust rules and see signal quality</Link></p>
-          <p className="mt-3 text-xs text-slate-500">Known limits: free-text plans and differently worded symptoms aren&rsquo;t understood in v1.</p>
+          <p className="mt-3 text-xs text-body">Known limits: free-text plans and differently worded symptoms aren&rsquo;t understood in v1.</p>
         </section>
         <section>
           <h2 className="text-sm font-semibold">Clinician feedback</h2>
@@ -227,11 +249,11 @@ async function Review({ searchParams }: { searchParams: Promise<Params> }) {
               {feedbackByRule.map(({ rule, rows }) => (
                 <li key={rule}>
                   <p className="font-medium text-navy">{ruleShortLabel[rule]}</p>
-                  <p className="text-xs text-slate-600">{rows.map((row) => `${row.verdict.replace("_", " ")}: ${row.count}`).join(" · ")}</p>
+                  <p className="text-xs text-body">{rows.map((row) => `${row.verdict.replace("_", " ")}: ${row.count}`).join(" · ")}</p>
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-2 text-sm text-slate-500">No feedback yet. Use “Feedback” on a flag to rate it.</p>}
+          ) : <p className="mt-2 text-sm text-body">No feedback yet. Use “Feedback” on a flag to rate it.</p>}
         </section>
       </aside>
     </div>

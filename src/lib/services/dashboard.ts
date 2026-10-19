@@ -1,7 +1,7 @@
-import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { AppContext } from "@/lib/authz/context";
 import { can } from "@/lib/authz/permissions";
-import { detectionFlags, labOrders, patients, referrals, tasks } from "@/lib/db/schema";
+import { detectionFlags, patients, tasks } from "@/lib/db/schema";
 import { withTenant } from "@/lib/db/tenant";
 import type { DatabaseHandle } from "@/lib/db/types";
 import type { TaskCategory } from "@/lib/labels";
@@ -9,13 +9,14 @@ import type { RuleId } from "@/lib/detection/types";
 
 export interface DashboardSummary {
   totalPatients: number;
+  totalTasks: number;
   openTasks: number;
   overdueAdminTasks: number;
-  pendingRecords: number;
+  openRecordTasks: number;
   completedThisWeek: number;
   /** null = viewer lacks clinical access. */
   patientsNeedingReview: number | null;
-  pendingLabs: number | null;
+  pendingLabFlags: number | null;
   weekly: Array<{ weekStart: string; opened: number; completed: number }>;
   openByCategory: Array<{ category: TaskCategory; count: number }>;
   openFlagsByRule: Array<{ ruleId: RuleId; count: number }> | null;
@@ -31,7 +32,6 @@ export function startOfWeekUtc(date: Date): Date {
 }
 
 export async function getDashboardSummary(ctx: AppContext, now = new Date(), database?: DatabaseHandle): Promise<DashboardSummary> {
-  const clinical = can(ctx.role, "patient.read_clinical");
   const flags = can(ctx.role, "flag.read");
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
   const weekStart = startOfWeekUtc(now);
@@ -40,22 +40,17 @@ export async function getDashboardSummary(ctx: AppContext, now = new Date(), dat
   return withTenant(ctx, async (tx) => {
     const count = sql<number>`count(*)::int`;
     const [{ value: totalPatients }] = await tx.select({ value: count }).from(patients).where(eq(patients.clinicId, ctx.clinicId));
+    const [{ value: totalTasks }] = await tx.select({ value: count }).from(tasks).where(eq(tasks.clinicId, ctx.clinicId));
     const [{ value: openTasks }] = await tx.select({ value: count }).from(tasks)
       .where(and(eq(tasks.clinicId, ctx.clinicId), ne(tasks.status, "completed")));
     const [{ value: overdueAdminTasks }] = await tx.select({ value: count }).from(tasks)
       .where(and(eq(tasks.clinicId, ctx.clinicId), ne(tasks.status, "completed"), ne(tasks.category, "clinical_review"), sql`${tasks.dueDate} < ${today}`));
-    const [{ value: pendingRecords }] = await tx.select({ value: count }).from(referrals)
-      .innerJoin(patients, eq(patients.id, referrals.patientId))
-      .where(and(eq(referrals.clinicId, ctx.clinicId), inArray(referrals.status, ["sent", "scheduled", "seen"]), eq(patients.careStatus, "active")));
+    const [{ value: openRecordTasks }] = await tx.select({ value: count }).from(tasks)
+      .where(and(eq(tasks.clinicId, ctx.clinicId), eq(tasks.category, "request_records"), ne(tasks.status, "completed")));
     const [{ value: completedThisWeek }] = await tx.select({ value: count }).from(tasks)
       .where(and(eq(tasks.clinicId, ctx.clinicId), eq(tasks.status, "completed"), gte(tasks.completedAt, weekStart.toISOString())));
 
-    let pendingLabs: number | null = null;
-    if (clinical) {
-      [{ value: pendingLabs }] = await tx.select({ value: count }).from(labOrders)
-        .innerJoin(patients, eq(patients.id, labOrders.patientId))
-        .where(and(eq(labOrders.clinicId, ctx.clinicId), inArray(labOrders.status, ["ordered", "collected"]), eq(patients.careStatus, "active")));
-    }
+    let pendingLabFlags: number | null = null;
     let patientsNeedingReview: number | null = null;
     let openFlagsByRule: DashboardSummary["openFlagsByRule"] = null;
     if (flags) {
@@ -70,6 +65,7 @@ export async function getDashboardSummary(ctx: AppContext, now = new Date(), dat
         .from(detectionFlags)
         .where(awaitingReview)
         .groupBy(detectionFlags.ruleId);
+      pendingLabFlags = openFlagsByRule.find((row) => row.ruleId === "lab-result-missing")?.count ?? 0;
     }
 
     const openByCategory = await tx.select({ category: tasks.category, count })
@@ -92,12 +88,13 @@ export async function getDashboardSummary(ctx: AppContext, now = new Date(), dat
 
     return {
       totalPatients,
+      totalTasks,
       openTasks,
       overdueAdminTasks,
-      pendingRecords,
+      openRecordTasks,
       completedThisWeek,
       patientsNeedingReview,
-      pendingLabs,
+      pendingLabFlags,
       weekly,
       openByCategory,
       openFlagsByRule,

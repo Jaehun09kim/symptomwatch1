@@ -48,4 +48,41 @@ test.describe("mobile layout", () => {
     await page.getByRole("link", { name: "Follow-up queue" }).click();
     await expect(page).toHaveURL(/\/app\/queue/);
   });
+
+  test("queue cards keep the patient, owner, due date, and outcome action together", async ({ page }) => {
+    await signIn(page, USERS.staff);
+    const cards = page.getByRole("list", { name: "Follow-up tasks", exact: true });
+    await expect(cards).toBeVisible();
+    await expect(page.getByRole("region", { name: "Task table" })).toHaveCount(0);
+    const card = cards.getByRole("listitem").first();
+    await expect(card.getByRole("heading", { level: 3 })).toBeVisible();
+    await expect(card.getByText("Owner", { exact: true })).toBeVisible();
+    await expect(card.getByText("Due", { exact: true })).toBeVisible();
+    const action = card.getByRole("button", { name: /^Record outcome for/ });
+    expect((await action.boundingBox())!.height).toBeGreaterThanOrEqual(40);
+    await action.click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Outcome", { exact: true }).selectOption("attempted");
+    await dialog.getByRole("button", { name: "Save outcome" }).click();
+    await expect(page.getByText("Outcome recorded.")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    await page.getByRole("navigation", { name: "Quick task views" }).getByRole("link", { name: "Mine", exact: true }).click();
+    await expect(page).toHaveURL(/assignee=me/);
+  });
+
+  test("review decisions stay reachable and next preserves the rule filter", async ({ page }) => {
+    await signIn(page, USERS.physician);
+    await page.goto("/app/review?rule=lab-result-missing");
+    const detail = page.getByRole("region", { name: "Selected flag", exact: true });
+    await expect(page.getByRole("group", { name: "Filter flags" })).toBeVisible();
+    await expect(detail.getByRole("button", { name: "Confirm gap", exact: true })).toBeInViewport();
+    const position = detail.getByRole("navigation", { name: "Review position" });
+    await expect(position).toContainText(/1 of \d+/);
+    const firstId = new URL(page.url()).searchParams.get("flag");
+    await position.getByRole("link", { name: "Next", exact: true }).click();
+    await expect(position).toContainText(/2 of \d+/);
+    expect(new URL(page.url()).searchParams.get("flag")).not.toBe(firstId);
+    expect(new URL(page.url()).searchParams.get("rule")).toBe("lab-result-missing");
+    await expect(detail.getByRole("button", { name: "Confirm gap", exact: true })).toBeInViewport();
+  });
 });

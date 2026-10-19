@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleDashed, CircleDot, CircleHelp, CirclePause, Clock3, Eye, ScanSearch, XCircle, type LucideIcon } from "lucide-react";
+import { CheckCircle2, CircleDashed, CircleDot, CircleHelp, CirclePause, Clock3, Eye, FileText, ScanSearch, XCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { flagStatusLabel, taskStatusLabel, type FlagStatus, type TaskStatus } from "@/lib/labels";
 
@@ -39,10 +39,11 @@ const provenanceStyle: Record<Provenance, { icon: LucideIcon; label: string; cla
 };
 
 /** Distinguishes charted facts, missing expected records, and engine inferences — never by color alone. */
-export function ProvenanceBadge({ kind, className, plain = false }: { kind: Provenance; className?: string; plain?: boolean }) {
-  const { icon: Icon, label, className: tone } = provenanceStyle[kind];
+export function ProvenanceBadge({ kind, className, plain = false, neutral = false }: { kind: Provenance; className?: string; plain?: boolean; neutral?: boolean }) {
+  const { icon, label, className: tone } = provenanceStyle[kind];
+  const Icon = neutral && kind === "documented" ? FileText : icon;
   return (
-    <span className={cn(pill, tone, plain && "h-auto whitespace-normal rounded-none border-0 bg-transparent px-0", className)}>
+    <span className={cn(pill, neutral ? "border-border bg-surface text-body" : tone, plain && "h-auto whitespace-normal rounded-none border-0 bg-transparent px-0", className)}>
       <Icon aria-hidden />
       {label}
     </span>

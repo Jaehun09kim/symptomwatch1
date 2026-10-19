@@ -65,11 +65,11 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center rounded-lg border border-dashed border-border px-6 py-12 text-center", className)}>
-      <span className="grid size-10 place-items-center rounded-md border border-border bg-card text-slate-500">
+      <span className="grid size-10 place-items-center rounded-md border border-border bg-card text-body">
         <Icon className="size-5" aria-hidden />
       </span>
       <p className="mt-3 font-medium text-navy">{title}</p>
-      {description ? <p className="mt-1 max-w-sm text-sm text-slate-600">{description}</p> : null}
+      {description ? <p className="mt-1 max-w-sm text-sm text-body">{description}</p> : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );

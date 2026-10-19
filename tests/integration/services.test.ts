@@ -132,8 +132,8 @@ describe("tenant services", () => {
       const forPhysician = await getDashboardSummary(physician, new Date(), db);
       const forStaff = await getDashboardSummary(staff, new Date(), db);
       expect(forPhysician.totalPatients).toBe(30);
-      expect(forPhysician.pendingLabs).toBeGreaterThan(0);
-      expect(forStaff.pendingLabs).toBeNull();
+      expect(forPhysician.pendingLabFlags).toBeGreaterThan(0);
+      expect(forStaff.pendingLabFlags).toBeNull();
       expect(forStaff.patientsNeedingReview).toBeNull();
       expect(forPhysician.weekly).toHaveLength(8);
       expect(forPhysician.weekly.reduce((sum, week) => sum + week.completed, 0)).toBeGreaterThan(0);

@@ -95,14 +95,15 @@ export function CreateTaskDialog({
 }
 
 export function UpdateTaskDialog({ task, assignees }: {
-  task: { id: string; title: string; status: TaskStatus; category: TaskCategory; assigneeId: string | null; outcome: string | null; dueDate: string };
+  task: { id: string; title: string; patientName?: string | null; status: TaskStatus; category: TaskCategory; assigneeId: string | null; outcome: string | null; dueDate: string };
   assignees: AssigneeOption[];
 }) {
   return (
     <ActionDialog
       action={updateTaskAction}
-      trigger={<><Pencil aria-hidden /> Update</>}
-      triggerSize="xs"
+      trigger={<><Pencil aria-hidden /> Update follow-up</>}
+      triggerLabel={`Update follow-up for ${task.patientName ?? "the team"}: ${task.title}`}
+      triggerSize="default"
       title="Update task"
       description={task.title}
       submitLabel="Save changes"

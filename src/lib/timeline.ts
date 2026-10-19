@@ -4,7 +4,7 @@
  * record (not_documented), or engine inference (rule_inferred).
  */
 import type { Provenance } from "@/components/app/primitives/badges";
-import type { TimelineKind } from "@/components/app/primitives/timeline-item";
+import type { TimelineItemProps, TimelineKind } from "@/components/app/primitives/timeline-item";
 import {
   appointmentPurposeLabel,
   appointmentStatusLabel,
@@ -34,6 +34,7 @@ export interface TimelineEvent {
   title: string;
   meta?: string;
   provenance: Provenance;
+  outcome?: TimelineItemProps["outcome"];
   details: TimelineDetail[];
   /** Events dated after "now" (scheduled appointments). */
   upcoming: boolean;
@@ -47,6 +48,10 @@ export const anchorFor = (kind: string, id: string) => `ev-${kind}-${id}`;
 const DAY = 86_400_000;
 const plusDays = (iso: string, days: number) => new Date(new Date(iso).getTime() + days * DAY).toISOString();
 const MISSED = new Set(["no_show", "cancelled_by_patient", "cancelled_by_clinic", "rescheduled"]);
+
+export function appointmentOutcome(status: keyof typeof appointmentStatusLabel): NonNullable<TimelineEvent["outcome"]> {
+  return { label: appointmentStatusLabel[status], tone: status === "completed" ? "complete" : MISSED.has(status) ? "attention" : "neutral" };
+}
 
 function followUpText(kind: string, days: number | null): string {
   if (kind === "interval" && days) return days % 30 === 0 ? `Return in ${days / 30} month${days === 30 ? "" : "s"} requested` : `Return in ${days} days requested`;
@@ -109,10 +114,11 @@ export function buildTimeline(record: PatientRecord, now = new Date()): Timeline
       kind: missed ? "missed_appointment" : "appointment",
       filter: "appointment",
       date: appointment.scheduledFor,
-      title: `${appointmentPurposeLabel[appointment.purpose]} appointment — ${appointmentStatusLabel[appointment.status].toLowerCase()}`,
+      title: `${appointmentPurposeLabel[appointment.purpose]} appointment`,
+      outcome: appointmentOutcome(appointment.status),
       meta: appointment.statusReason ?? undefined,
       provenance: "documented",
-      upcoming: isFuture(appointment.scheduledFor),
+      upcoming: (appointment.status === "scheduled" || appointment.status === "confirmed") && isFuture(appointment.scheduledFor),
       details: [],
     });
   }
@@ -124,7 +130,8 @@ export function buildTimeline(record: PatientRecord, now = new Date()): Timeline
       filter: "lab",
       date: lab.orderedAt,
       title: `Lab ordered — ${lab.testName}`,
-      meta: `Expected within ${lab.expectedWithinDays} day${lab.expectedWithinDays === 1 ? "" : "s"} · ${labStatusLabel[lab.status]}`,
+      meta: `Expected within ${lab.expectedWithinDays} day${lab.expectedWithinDays === 1 ? "" : "s"}`,
+      outcome: { label: labStatusLabel[lab.status], tone: lab.status === "cancelled" ? "attention" : lab.status === "resulted" ? "complete" : "neutral" },
       provenance: "documented",
       upcoming: false,
       details: lab.status === "cancelled" && lab.statusReason ? [{ label: "Cancellation reason", value: lab.statusReason }] : [],
@@ -162,7 +169,7 @@ export function buildTimeline(record: PatientRecord, now = new Date()): Timeline
       filter: "referral",
       date: referral.referredAt,
       title: `Referral to ${referral.specialty}`,
-      meta: referralStatusLabel[referral.status],
+      outcome: { label: referralStatusLabel[referral.status], tone: referral.status === "cancelled" || referral.status === "declined" ? "attention" : referral.status === "records_received" ? "complete" : "neutral" },
       provenance: "documented",
       upcoming: false,
       details: [

@@ -11,7 +11,7 @@ import { PatientFilters } from "./patient-filters";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-const STATUS = new Set<PatientStatusFilter>(["all", "needs_review", "open_tasks", "clear"]);
+const STATUS = new Set<PatientStatusFilter>(["all", "needs_review", "awaiting_review", "open_tasks", "clear"]);
 const SORTS = new Set<PatientSort>(["name", "mrn", "open_tasks", "flags", "next_due"]);
 const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
 
@@ -51,6 +51,7 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
   const physicians = members.filter((member) => member.role === "physician").map((member) => ({ id: member.userId, name: member.displayName }));
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const now = new Date();
+  const filtered = Boolean(query.q || query.physicianId || query.status !== "all" || (query.page ?? 1) > 1);
 
   return (
     <section aria-labelledby="patients-heading" className="border-y border-border">
@@ -62,7 +63,10 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
         <PatientFilters physicians={physicians} showReviewFilter={clinical} />
       </div>
       {rows.length === 0 ? (
-        <EmptyState className="m-4 border-0" icon={UsersRound} title="No patients match these filters" description="Try clearing the search or choosing a different status." />
+        <EmptyState className="m-4 border-0" icon={UsersRound}
+          title={filtered ? "No patients match these filters" : "No patients yet"}
+          description={filtered ? "Clear the filters to see your clinic’s patients." : "Import fictional records to start tracking follow-ups."}
+          action={filtered ? <Link href={basePath} className="inline-flex min-h-11 items-center text-brand underline">Clear filters</Link> : can(ctx.role, "records.import") ? <Link href="/app/import" className="inline-flex min-h-11 items-center text-brand underline">Import records</Link> : <p className="text-sm text-body">Ask a physician or clinic administrator to import records.</p>} />
       ) : (
         <div tabIndex={0} role="region" aria-label="Patient table" className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left text-sm">

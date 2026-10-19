@@ -6,21 +6,14 @@ import { patients, tasks, users } from "@/lib/db/schema";
 import { withTenant } from "@/lib/db/tenant";
 import type { DatabaseHandle } from "@/lib/db/types";
 import type { TaskCategory, TaskStatus } from "@/lib/labels";
+import { TASK_VIEWS, type DueWindow, type TaskView } from "@/lib/queue-filters";
+import { resolveTaskOutcome } from "@/lib/task-outcomes";
 import { checkFreeText, describePhiFailure } from "@/lib/validation/phi-guard";
 import { recordAudit } from "./audit";
 import { ServiceError } from "./errors";
 import { assertAssignable } from "./members";
 
-export const TASK_VIEWS = {
-  all: null,
-  calls: ["call_patient"],
-  confirmations: ["confirm_appointment"],
-  records: ["request_records"],
-  other: ["lab_follow_up", "admin_other"],
-  clinical: ["clinical_review"],
-} as const satisfies Record<string, readonly TaskCategory[] | null>;
-export type TaskView = keyof typeof TASK_VIEWS;
-export type DueWindow = "all" | "overdue" | "today" | "week";
+export { TASK_VIEWS, type DueWindow, type TaskView } from "@/lib/queue-filters";
 
 export interface TaskQuery {
   view?: TaskView;
@@ -28,6 +21,7 @@ export interface TaskQuery {
   assignee?: "me" | "unassigned" | string;
   due?: DueWindow;
   patientId?: string;
+  taskId?: string;
 }
 
 export interface TaskRow {
@@ -66,6 +60,7 @@ export async function listTasks(ctx: AppContext, query: TaskQuery = {}, database
     else if (query.assignee === "unassigned") filters.push(isNull(tasks.assigneeId));
     else if (query.assignee) filters.push(eq(tasks.assigneeId, query.assignee));
     if (query.patientId) filters.push(eq(tasks.patientId, query.patientId));
+    if (query.taskId) filters.push(eq(tasks.id, query.taskId));
     const today = startOfTodayUtc();
     const tomorrow = new Date(today.getTime() + 86_400_000);
     if (query.due === "overdue") filters.push(sql`${tasks.dueDate} < ${today.toISOString()}`);
@@ -121,6 +116,8 @@ export const updateTaskSchema = z.object({
   assigneeId: z.uuid().or(z.literal("")).optional(),
   outcome: text(1000).optional(),
   dueDate: z.iso.date().optional(),
+  outcomeChoice: text(40).min(1, "Choose an outcome").optional(),
+  outcomeNote: text(900).optional(),
 });
 
 function assertNoPhi(fields: Array<[string, string | undefined]>): void {
@@ -177,6 +174,13 @@ export async function updateTask(ctx: AppContext, raw: z.input<typeof updateTask
     const [task] = await tx.select().from(tasks).where(and(eq(tasks.clinicId, ctx.clinicId), eq(tasks.id, input.taskId)));
     if (!task) throw new ServiceError("Task not found.");
     assertCategoryAllowed(ctx, task.category);
+    if (input.outcomeChoice !== undefined) {
+      const result = resolveTaskOutcome(task.category, input.outcomeChoice, input.outcomeNote ?? "");
+      if (!result) throw new ServiceError("Choose an outcome for this task type.");
+      assertNoPhi([["Outcome note", input.outcomeNote]]);
+      input.status = result.status;
+      input.outcome = result.outcome;
+    }
 
     const changes: Partial<typeof tasks.$inferInsert> = { updatedAt: sql`now()` as unknown as string };
     const audit: Record<string, unknown> = {};

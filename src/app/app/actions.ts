@@ -70,6 +70,14 @@ export async function updateTaskAction(_previous: ActionResult | null, form: For
   }), "Task updated.");
 }
 
+export async function recordTaskOutcomeAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("task.manage", (ctx) => updateTask(ctx, {
+    taskId: str(form, "taskId") ?? "",
+    outcomeChoice: str(form, "outcomeChoice") ?? "",
+    outcomeNote: str(form, "outcomeNote") ?? "",
+  }), "Outcome recorded.");
+}
+
 export async function updateAppointmentAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
   return run("appointment.manage", (ctx) => updateAppointment(ctx, {
     appointmentId: str(form, "appointmentId") ?? "",
@@ -163,8 +171,8 @@ export async function confirmFlagAction(_previous: ActionResult | null, form: Fo
     note: str(form, "note") ?? "",
     createTask: form.get("createTask") === "on",
     taskTitle: str(form, "taskTitle") ?? "",
-    taskCategory: (str(form, "taskCategory") ?? "clinical_review") as never,
-    assigneeId: str(form, "assigneeId") ?? "",
+    taskCategory: str(form, "taskCategory") as never,
+    assigneeId: str(form, "assigneeId"),
     dueDate: str(form, "dueDate") ?? "",
   }), "Gap confirmed.");
 }

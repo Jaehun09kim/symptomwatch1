@@ -131,7 +131,7 @@ async function PatientView({ params }: { params: Promise<{ id: string }> }) {
                       rationale={flag.rationale}
                       evidence={flag.evidence.map((item) => ({ label: item.label, date: item.date, href: `#${anchorFor(item.kind, item.id)}` }))}
                       missing={flag.missingInfo}
-                      footer={can(session.role, "flag.review") ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} assignees={assignees} snoozed={flag.isSnoozed} /> : undefined}
+                      footer={can(session.role, "flag.review") ? <FlagReviewActions flagId={flag.id} status={flag.status} title={flag.title} ruleId={flag.ruleId} reviewerId={ctx.userId} assignees={assignees} snoozed={flag.isSnoozed} /> : undefined}
                     />
                   ))}
                 </div>

@@ -19,7 +19,7 @@ import { ServiceError } from "./errors";
 
 export const PATIENT_PAGE_SIZE = 12;
 
-export type PatientStatusFilter = "all" | "needs_review" | "open_tasks" | "clear";
+export type PatientStatusFilter = "all" | "needs_review" | "awaiting_review" | "open_tasks" | "clear";
 export type PatientSort = "name" | "mrn" | "open_tasks" | "flags" | "next_due";
 
 export interface PatientListQuery {
@@ -67,6 +67,10 @@ export async function listPatients(
     }
     if (query.physicianId) filters.push(eq(patients.primaryPhysicianId, query.physicianId));
     const status = query.status ?? "all";
+    if (status === "awaiting_review" && clinical) filters.push(sql`exists (
+      select 1 from ${detectionFlags} f where f.patient_id = ${patients.id}
+      and f.status = 'open' and (f.snoozed_until is null or f.snoozed_until <= now())
+    )`);
     if (status === "needs_review" && clinical) filters.push(sql`${openFlags} > 0`);
     if (status === "open_tasks") filters.push(sql`${openTasks} > 0`);
     if (status === "clear") filters.push(clinical ? sql`${openTasks} = 0 and ${openFlags} = 0` : sql`${openTasks} = 0`);

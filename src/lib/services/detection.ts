@@ -10,6 +10,7 @@ import type { RuleId } from "@/lib/detection/types";
 import { getEnv } from "@/lib/env";
 import { dismissReasonShortLabel, type DismissReason, type FlagStatus } from "@/lib/labels";
 import { RULE_IDS } from "@/lib/detection/clinic-config";
+import { flagTaskDefaults } from "@/lib/flag-task-defaults";
 import { checkFreeText, describePhiFailure } from "@/lib/validation/phi-guard";
 import { recordAudit } from "./audit";
 import { ServiceError } from "./errors";
@@ -157,8 +158,9 @@ export const confirmFlagSchema = z.object({
   note: z.string().trim().max(500).optional().default(""),
   createTask: z.boolean().default(false),
   taskTitle: z.string().trim().max(160).optional().default(""),
-  taskCategory: z.enum(["call_patient", "confirm_appointment", "request_records", "lab_follow_up", "admin_other", "clinical_review"]).default("clinical_review"),
-  assigneeId: z.uuid().optional().or(z.literal("")).transform((value) => value || undefined),
+  taskCategory: z.enum(["call_patient", "confirm_appointment", "request_records", "lab_follow_up", "admin_other", "clinical_review"]).optional(),
+  // Missing means use the reviewer; an explicit empty string means Unassigned.
+  assigneeId: z.uuid().or(z.literal("")).optional(),
   dueDate: z.iso.date().optional().or(z.literal("")).transform((value) => value || undefined),
 });
 
@@ -185,20 +187,23 @@ export async function confirmFlag(ctx: AppContext, raw: z.input<typeof confirmFl
       const [openTask] = await tx.select({ id: tasks.id }).from(tasks)
         .where(and(eq(tasks.clinicId, ctx.clinicId), eq(tasks.sourceFlagId, flag.id), ne(tasks.status, "completed")));
       if (!openTask) {
-        if (input.assigneeId) await assertAssignable(tx, ctx, input.assigneeId, input.taskCategory);
-        const due = input.dueDate ?? new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+        const defaults = flagTaskDefaults(flag.ruleId, flag.title, ctx.userId);
+        const category = input.taskCategory ?? defaults.category;
+        const assigneeId = input.assigneeId ?? defaults.assigneeId;
+        if (assigneeId) await assertAssignable(tx, ctx, assigneeId, category);
+        const due = input.dueDate ?? defaults.dueDate;
         const [row] = await tx.insert(tasks).values({
           clinicId: ctx.clinicId,
           patientId: flag.patientId,
-          category: input.taskCategory,
-          title: input.taskTitle || `Follow up: ${flag.title}`.slice(0, 160),
-          assigneeId: input.assigneeId ?? null,
+          category,
+          title: input.taskTitle || defaults.title,
+          assigneeId: assigneeId || null,
           createdBy: ctx.userId,
           dueDate: `${due}T16:00:00.000Z`,
           sourceFlagId: flag.id,
         }).returning({ id: tasks.id });
         taskId = row.id;
-        await recordAudit(tx, ctx, "task.created", { type: "task", id: row.id }, { category: input.taskCategory, fromFlag: true });
+        await recordAudit(tx, ctx, "task.created", { type: "task", id: row.id }, { category, fromFlag: true });
       }
     }
     await recordAudit(tx, ctx, "flag.confirmed", { type: "detection_flag", id: flag.id }, { ruleId: flag.ruleId, taskCreated: Boolean(taskId) });
