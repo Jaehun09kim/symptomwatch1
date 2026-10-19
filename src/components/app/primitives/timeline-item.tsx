@@ -41,12 +41,13 @@ export interface TimelineItemProps {
   title: string;
   meta?: string;
   provenance: Provenance;
+  outcome?: { label: string; tone: "neutral" | "attention" | "complete" };
   highlighted?: boolean;
   children?: ReactNode;
   isLast?: boolean;
 }
 
-export function TimelineItem({ id, kind, date, title, meta, provenance, highlighted, children, isLast }: TimelineItemProps) {
+export function TimelineItem({ id, kind, date, title, meta, provenance, outcome, highlighted, children, isLast }: TimelineItemProps) {
   const Icon = kindIcon[kind];
   const dashed = provenance === "not_documented";
   return (
@@ -54,10 +55,8 @@ export function TimelineItem({ id, kind, date, title, meta, provenance, highligh
       <div className="flex flex-col items-center">
         <span
           className={cn(
-            "grid size-7 shrink-0 place-items-center rounded-sm border bg-background",
-            provenance === "documented" && "border-border text-slate-600",
-            provenance === "rule_inferred" && "border-brand/40 bg-brand-soft text-brand",
-            dashed && "border-dashed border-slate-400 text-slate-500",
+            "grid size-7 shrink-0 place-items-center rounded-sm border border-border bg-card text-body",
+            dashed && "border-dashed",
           )}
         >
           <Icon className="size-4" aria-hidden />
@@ -75,9 +74,10 @@ export function TimelineItem({ id, kind, date, title, meta, provenance, highligh
           <time className="font-sans tabular-nums text-xs text-slate-500" dateTime={date}>
             {formatTimelineDate(date)}
           </time>
-          <ProvenanceBadge kind={provenance} className="rounded-sm" />
+          <ProvenanceBadge kind={provenance} neutral className="rounded-sm" />
         </div>
         <p className="mt-1.5 font-medium text-navy">{title}</p>
+        {outcome ? <p className={cn("mt-2 w-fit rounded-sm px-2 py-1 text-sm font-medium", outcome.tone === "attention" ? "bg-attention-soft text-attention" : outcome.tone === "complete" ? "bg-teal-soft text-teal-strong" : "bg-surface text-body")}>Outcome: {outcome.label}</p> : null}
         {meta ? <p className="mt-0.5 text-sm text-slate-600">{meta}</p> : null}
         {children ? <div className="mt-3 text-sm text-body">{children}</div> : null}
       </div>

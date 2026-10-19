@@ -22,6 +22,7 @@ export interface FlagCardProps {
   evidence: FlagEvidence[];
   missing: FlagMissing[];
   status: FlagStatus;
+  showStatus?: boolean;
   /** Formatted return date, when this flag is currently snoozed. */
   snoozedUntil?: string;
   ruleLabel: string;
@@ -37,6 +38,7 @@ export function FlagCard({
   evidence,
   missing,
   status,
+  showStatus = true,
   snoozedUntil,
   ruleLabel,
   ruleVersion,
@@ -55,7 +57,7 @@ export function FlagCard({
       <div className={cn("space-y-5 p-4", compact && "space-y-4 px-0")}>
         <div>
           <h3 className={cn("text-xl font-medium leading-snug", compact && "text-base")}>{title}</h3>
-          <FlagStatusBadge status={status} snoozedUntil={snoozedUntil} className="mt-2" />
+          {showStatus || snoozedUntil ? <FlagStatusBadge status={status} snoozedUntil={snoozedUntil} className="mt-2" /> : null}
           <p className="mt-3 text-sm leading-relaxed text-body">
             <span className="font-medium text-navy">Why flagged: </span>
             {rationale}

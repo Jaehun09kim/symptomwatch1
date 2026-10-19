@@ -12,7 +12,7 @@ test.describe("follow-up workflows", () => {
     await expect(page.getByText("Task created.")).toBeVisible();
 
     const row = page.locator("tr", { hasText: title });
-    await row.getByRole("button", { name: "Update" }).click();
+    await row.getByRole("button", { name: /^Update follow-up for/ }).click();
     await page.getByRole("dialog").getByLabel("Status").selectOption("completed");
     await page.getByRole("dialog").getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByRole("dialog").getByText("Record an outcome before marking the task completed.")).toBeVisible();
@@ -32,13 +32,17 @@ test.describe("follow-up workflows", () => {
     const flagId = new URL(page.url()).searchParams.get("flag")!;
     const flagTitle = await card.locator("h3").innerText();
     await card.getByRole("button", { name: "Confirm gap" }).click();
+    await expect(page.getByRole("dialog").getByLabel("Task type")).toHaveValue("lab_follow_up");
+    await expect(page.getByRole("dialog").getByLabel("Task title (optional)")).toHaveValue(/Check lab status/);
+    await expect(page.getByRole("dialog").getByLabel("Assign to")).not.toHaveValue("");
     await page.getByLabel("Review note (optional)").fill("Confirmed in e2e");
     await page.getByLabel("Task title (optional)").fill("Review confirmation follow-up (fictional)");
     await page.getByRole("dialog").getByRole("button", { name: "Confirm", exact: true }).click();
     await expect(page.getByText("Gap confirmed.")).toBeVisible();
     await page.goto(`/app/review?status=confirmed&flag=${flagId}`);
     await expect(card.getByRole("heading", { name: flagTitle, exact: true })).toBeVisible();
-    await expect(card.getByText("Gap confirmed", { exact: true })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Flag status" }).getByRole("link", { name: "Gap confirmed", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(card.getByText("Gap confirmed", { exact: true })).toHaveCount(0);
     await expect(card.getByRole("button", { name: "Add task", exact: true })).toBeVisible();
     await page.goto("/app/queue");
     await expect(page.getByRole("row", { name: /Review confirmation follow-up \(fictional\)/ })).toBeVisible();
@@ -53,7 +57,7 @@ test.describe("follow-up workflows", () => {
     await page.goto("/app/review?status=resolved_by_data");
     await page.getByRole("navigation", { name: "Flags", exact: true }).getByRole("link", { name: /Ophthalmology referral/ }).click();
     await expect(card.getByRole("heading", { name: /Ophthalmology referral/ })).toBeVisible();
-    await expect(card.getByText("Resolved by new data", { exact: true })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Flag status" }).getByRole("link", { name: "Resolved by new data", exact: true })).toHaveAttribute("aria-current", "page");
     await staff.close();
   });
 
@@ -129,12 +133,13 @@ test.describe("follow-up workflows", () => {
     await expect(detail).toContainText("Fictional lab result expected next week.");
     await expect(detail.getByRole("button", { name: "Snooze", exact: true })).toHaveCount(0);
     await detail.getByRole("button", { name: "Wake now" }).click();
-    await expect(page.getByText("Nothing to review here")).toBeVisible();
+    await expect(page.getByText("No flags match these filters")).toBeVisible();
     await page.getByRole("navigation", { name: "Flag status" }).getByRole("link", { name: "Awaiting review", exact: true }).click();
     await rows.locator(`a[href*="flag=${flagId}"]`).click();
     await expect(detail.getByRole("button", { name: "Snooze", exact: true })).toBeVisible();
     await expect(detail.getByRole("button", { name: "Wake now" })).toHaveCount(0);
-    await expect(detail.getByText("Awaiting review", { exact: true })).toBeVisible();
+    await expect(detail.getByText("Awaiting review", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Flag status" }).getByRole("link", { name: "Awaiting review", exact: true })).toHaveAttribute("aria-current", "page");
   });
 
   test("Try Demo provisions a sandbox and supports viewing as another role", async ({ page }) => {

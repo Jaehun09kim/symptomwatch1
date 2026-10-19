@@ -21,6 +21,7 @@ export function ActionDialog({
   trigger,
   triggerVariant = "outline",
   triggerSize = "sm",
+  triggerLabel,
   title,
   description,
   submitLabel,
@@ -31,6 +32,7 @@ export function ActionDialog({
   trigger: ReactNode;
   triggerVariant?: "default" | "outline" | "ghost" | "secondary";
   triggerSize?: "default" | "sm" | "xs";
+  triggerLabel?: string;
   title: string;
   description?: ReactNode;
   submitLabel: string;
@@ -53,8 +55,8 @@ export function ActionDialog({
   const showResult = state !== null && (!state.ok || keepOpenOnSuccess);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className={cn(buttonVariants({ variant: triggerVariant, size: triggerSize }))}>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogTrigger aria-label={triggerLabel} className={cn(buttonVariants({ variant: triggerVariant, size: triggerSize }), "min-h-10 rounded-md")}>{trigger}</DialogTrigger>
+      <DialogContent className="max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-lg bg-card text-navy sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}

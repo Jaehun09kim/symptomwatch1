@@ -50,8 +50,13 @@ describe("patient timeline", () => {
         { id: "a2", clinicId: "c", patientId: "p1", scheduledFor: iso("2026-07-01"), purpose: "follow_up", status: "confirmed", statusReason: null, originEncounterId: null, completedEncounterId: null, seedKey: null },
       ],
     }), new Date("2026-06-01"));
-    expect(events.find((event) => event.anchor === "ev-appointment-a1")).toMatchObject({ kind: "missed_appointment", upcoming: false });
+    expect(events.find((event) => event.anchor === "ev-appointment-a1")).toMatchObject({ kind: "missed_appointment", upcoming: false, provenance: "documented", outcome: { label: "Cancelled by clinic", tone: "attention" } });
     expect(events.find((event) => event.anchor === "ev-appointment-a2")).toMatchObject({ kind: "appointment", upcoming: true });
+  });
+
+  it("does not present a cancelled future booking as upcoming", () => {
+    const events = buildTimeline(record({ appointments: [{ id: "a1", clinicId: "c", patientId: "p1", scheduledFor: iso("2026-07-01"), purpose: "follow_up", status: "cancelled_by_patient", statusReason: null, originEncounterId: null, completedEncounterId: null, seedKey: null }] }), new Date("2026-06-01"));
+    expect(events[0]).toMatchObject({ upcoming: false, outcome: { label: "Cancelled by patient", tone: "attention" } });
   });
 
   it("distinguishes documented events, missing records, and rule inferences", () => {
