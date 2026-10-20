@@ -17,7 +17,7 @@ import { controlClass, SelectField, SubmitButton, TextField } from "@/components
 import { roleLabel, type MemberRole } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
-function useToastResult(state: ActionResult | null) {
+export function useToastResult(state: ActionResult | null) {
   useEffect(() => {
     if (!state) return;
     if (state.ok) toast.success(state.message ?? "Saved.");

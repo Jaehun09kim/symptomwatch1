@@ -2,20 +2,25 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/app/primitives/layout";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
+import { JoinCodePanel } from "@/components/app/staff/join-code-panel";
+import { JoinRequests } from "@/components/app/staff/join-requests";
 import { InviteDialog, ManageToggle, ResetLinkDialog, RevokeInvitation, RoleSelect, StatusToggle } from "@/components/app/staff/staff-controls";
 import { requirePermission } from "@/lib/auth/current";
 import { isPast } from "@/lib/dates";
 import { roleLabel } from "@/lib/labels";
 import { listMembers } from "@/lib/services/members";
+import { listJoinRequests } from "@/lib/services/join-codes";
 import { listInvitations } from "@/lib/services/staff";
 
 export const metadata: Metadata = { title: "Staff" };
 
 async function Staff() {
   const { ctx, session } = await requirePermission("staff.manage");
-  const [members, invitations] = await Promise.all([listMembers(ctx), listInvitations(ctx)]);
   // Access changes act for a human; while viewing as a colleague they're refused server-side, so don't offer them.
   const viewingAs = session.originalUserId !== null;
+  const [members, invitations, joinRequests] = await Promise.all([
+    listMembers(ctx), listInvitations(ctx), viewingAs ? Promise.resolve([]) : listJoinRequests(ctx),
+  ]);
   const invitationStatus = (invite: (typeof invitations)[number]) =>
     invite.acceptedAt ? "Accepted" : invite.revokedAt ? "Revoked" : isPast(invite.expiresAt) ? "Expired" : "Pending";
 
@@ -23,6 +28,12 @@ async function Staff() {
     <div className="space-y-6">
       <PageHeader title="Staff & access" description="Who can use this clinic workspace, and what each role can see." actions={viewingAs ? null : <InviteDialog />} />
       {viewingAs ? <p role="status" className="rounded-md border border-border bg-surface px-4 py-3 text-sm text-body">You&rsquo;re viewing as a colleague. Return to your own account to change anyone&rsquo;s access.</p> : null}
+      {viewingAs ? null : (
+        <>
+          <JoinCodePanel />
+          <JoinRequests requests={joinRequests} />
+        </>
+      )}
       <section aria-labelledby="members-heading" className="rounded-xl border border-border bg-white shadow-soft">
         <h2 id="members-heading" className="border-b border-border p-4 text-base font-semibold">Members ({members.length})</h2>
         <ul className="divide-y divide-border">
