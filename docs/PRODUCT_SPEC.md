@@ -12,7 +12,7 @@ It is a **documentation and coordination aid**. It surfaces *possible documentat
 |---|---|---|
 | Dr. Maya Rivera (fictional) | `physician` | Review flagged gaps, inspect timelines, confirm/dismiss flags, create clinical review tasks |
 | Daniel Okafor (fictional) | `staff` (front desk) | Work the call/confirmation/records queue, record outcomes |
-| Priya Shah (fictional) | `clinic_admin` (office manager) | Invite & manage staff, oversee throughput, audit log, reset demo |
+| Priya Shah (fictional) | `clinic_admin` (practice admin) + manages the clinic | Invite & manage staff, oversee throughput, audit log, reset demo |
 
 ## 3. Design system
 
@@ -65,7 +65,7 @@ Staff view: demographics, appointments, referral administrative status, non-clin
 Triage workspace (v0.2): a compact flag list beside the selected flag's detail (`?flag=<id>`), stacked on narrow screens. Tabs: Awaiting review · Snoozed · Gap confirmed · Dismissed · Resolved by new data · All; rule filter. Sorted by first detected date (not by urgency). “Run detection” with last-run metadata. Physician actions: confirm (+ optional task), **snooze** until a date (≤ 90 days; wakes early if evidence changes), **wake now**, dismiss with a **structured reason** (expected · addressed elsewhere · not clinically relevant · data error · other — note required for “other”), feedback.
 
 ### 5.5 Staff `/app/staff` (admin)
-Members (role, status), change role, disable/enable (cannot remove last admin or self-demote last admin), invitations (create, copy link, revoke, status).
+Members (role, "Manages the clinic" toggle, status), change role, disable/enable. Nobody changes their own role or manager flag; a clinic always keeps one active human manager. Invitations (create, copy link, revoke, status) never grant manager access. Reset links only in demo workspaces.
 
 ### 5.6 Audit log `/app/audit` (admin)
 Filterable table (action, actor, date range), paginated.
@@ -76,7 +76,7 @@ Clinic name, demo reset (admin, confirm dialog), data-handling notice, detection
 ### 5.8 Detection rules `/app/rules` (physician edits, admin reads) — v0.2
 Per-clinic settings: turn each rule on/off; R1 grace (0–60 d, default 14), R2 grace (0–60, 7), R3 appointment grace (0–90, 14) and records wait (0–90, 14), R4 minimum visits (2–6, 2) and span (0–180 d, 28). Saving re-runs detection: flags that no longer qualify close as `resolved_by_data` with the note “No longer meets this clinic's rule settings”; a turned-off rule's open/confirmed flags become `suppressed` and return when it's turned back on. **Signal quality** table per rule: raised, awaiting, snoozed, confirmed, dismissed, resolved, confirm rate (confirmed ÷ reviewed), top dismissal reason — review outcomes, not clinical validation. The evaluation (`npm run evaluate`) always uses the engine defaults.
 
-### 5.9 Import records `/app/import` (clinic admin, physician) — v0.2
+### 5.9 Import records `/app/import` (practice admin, physician) — v0.2
 CSV import of EHR report exports: **referrals** (admin or physician) and **lab orders** (physician only — recording a result closes a lab gap). Steps: choose a file (≤ 512 KB, ≤ 1,000 rows) or generate a sample export from the clinic's own fictional records → match columns (auto-matched from common EHR header names) → preview (new / update / no change / problem, per row, with reasons) → import.
 - Patients are matched by **demo MRN within the current clinic only**; non-`DEMO-#####` identifiers are refused. An optional patient-name column is used only to catch wrong-patient rows (surname must match) and is never stored.
 - Matching existing records: by source order/referral id when present, otherwise by (patient, test/specialty, order/referral date). Re-importing the same export is idempotent; source ids are saved for future matches.

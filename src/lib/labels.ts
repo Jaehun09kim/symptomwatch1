@@ -29,7 +29,7 @@ export const taskCategoryLabel: Record<TaskCategory, string> = {
 };
 
 export const roleLabel: Record<MemberRole, string> = {
-  clinic_admin: "Clinic admin",
+  clinic_admin: "Practice admin",
   physician: "Physician",
   staff: "Front desk",
 };

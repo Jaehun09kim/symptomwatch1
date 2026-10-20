@@ -40,6 +40,8 @@ Import onboarding (steps, field guide, sample CSV, correction report), data fres
 
 ## Next milestone: clinic onboarding (approved 2026-10-19)
 
+- **M1 role split — done (branch `onboarding-m1`).** Manager flag, RLS, self-change trigger, last-manager guard, sandbox-only reset links, Staff page toggle, "Clinic admin" renamed "Practice admin". Plan: `docs/superpowers/plans/2026-10-19-onboarding-m1-role-split.md`.
+
 Design: `docs/superpowers/specs/2026-10-19-clinic-onboarding-design.md`. Start-or-join sign-up, role codes with one-click manager approval, job role separate from "manages the clinic", email verification via dev outbox, Continue with Google (mocked provider until the owner creates the OAuth client). Four milestones: role split → codes and approvals → sign-up flow → Google. Includes an existing-risk fix: manager-issued password resets become sandbox-only.
 
 ## Later (owner direction, 2026-10-19)

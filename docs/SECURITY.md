@@ -58,6 +58,13 @@ A blind, read-only Codex review of the engine and the security model found, and 
 | Other outstanding reset links stayed valid after a reset | A reset invalidates every outstanding link for the account |
 | Detection could overwrite a physician's concurrent review | Reviews and runs share a per-clinic advisory lock |
 
+## Manager flag (onboarding M1, 2026-10-19)
+
+- "Manages the clinic" (`memberships.can_manage`) alone grants staff management, the audit log and demo reset; job roles never do. It is read from the membership row on every request (sessions and RLS), never from a GUC, cookie or form.
+- RLS: management policies use `app.current_can_manage()` (SECURITY DEFINER); a trigger refuses changes to one's own role or flag; services also refuse self-changes.
+- Membership mutations lock the clinic's rows and re-check the actor after the lock; a clinic keeps at least one active non-placeholder manager across disable and un-flag.
+- Invitations never grant the flag; managers grant it after the person joins. Every role change that grants clinical access is audited with `clinicalGrant: true`.
+
 ## Known gaps (prototype)
 
 | Gap | Risk | Production fix |
@@ -65,7 +72,8 @@ A blind, read-only Codex review of the engine and the security model found, and 
 | CSP allows `'unsafe-inline'` scripts (static CSP keeps pages prerenderable) | XSS impact not mitigated by CSP | Nonce- or hash-based CSP |
 | In-memory, per-instance rate limits | Distributed brute force | Shared store (Redis/Upstash) or edge WAF |
 | No MFA, no SSO | Account takeover via password reuse | TOTP/WebAuthn, enforced for admins; SAML/OIDC |
-| No email transport; admin-issued reset links | Admin must relay the link securely | BAA-covered transactional email |
+| No email transport; manager-issued reset links in demo workspaces only (refused in non-sandbox clinics since M1) | A manager who can mint a password could impersonate the member; real clinics must self-serve | BAA-covered transactional email for self-service recovery |
+| Last-manager guard concurrency verified only on PGlite (serialized transactions) | A true race on hosted Postgres is untested | Re-run the concurrency test against real Postgres before real clinics |
 | Column-level redaction lives in the service layer | A new service could leak a clinical column to front desk | Views or column privileges per role; tests per new service |
 | PHI tripwire is heuristic | Real data could still be typed in | Organizational controls; real-data mode would need a different design entirely |
 | Single-region, no backups/DR configured | Data loss in a hosted demo | Managed backups, PITR, tested restore |

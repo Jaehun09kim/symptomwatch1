@@ -37,7 +37,8 @@ const NOT_FLAGGED = [
 const ROLES = [
   { role: "Physician", does: "Reviews flags, confirms or dismisses them, tunes rules, imports lab orders." },
   { role: "Front desk", does: "Works the follow-up queue: calls, confirmations, records requests. Sees administrative detail only." },
-  { role: "Clinic admin", does: "Manages staff and access, imports referrals, reviews the audit log. Can read flags but not decide them." },
+  { role: "Practice admin", does: "Office and reporting: imports referrals and can read flags, but not decide them." },
+  { role: "Clinic manager", does: "Any of the above can also manage the clinic: invite and approve people, change access, and review the audit log, without gaining clinical access." },
 ];
 
 export default function HowItWorksPage() {

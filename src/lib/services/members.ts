@@ -12,6 +12,8 @@ export interface Member {
   email: string;
   role: MemberRole;
   status: "active" | "disabled";
+  /** "Manages the clinic" (staff, audit log, demo reset). */
+  canManage: boolean;
   isPlaceholder: boolean;
 }
 
@@ -23,6 +25,7 @@ export async function listMembersTx(tx: DbTransaction, ctx: AppContext): Promise
       email: users.email,
       role: memberships.role,
       status: memberships.status,
+      canManage: memberships.canManage,
       isPlaceholder: users.isPlaceholder,
     })
     .from(memberships)
