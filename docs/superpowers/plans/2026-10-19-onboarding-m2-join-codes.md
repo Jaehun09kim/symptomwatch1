@@ -32,7 +32,7 @@
 
 ---
 
-### Task 1: Migration 0010 and code primitives
+### Task 1: Migration 0011 and code primitives
 
 **Files:**
 - Create: `db/migrations/0011_join_codes.sql`, `src/lib/onboarding/codes.ts`
