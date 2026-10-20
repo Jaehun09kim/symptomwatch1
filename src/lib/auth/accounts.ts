@@ -20,7 +20,7 @@ const RESET_TOKEN_MINUTES = 30;
 export type AuthFailure = { ok: false; error: string; field?: string };
 export type SessionGrant = { ok: true; token: string; expiresAt: Date; userId: string; clinicId: string };
 
-interface RequestMeta {
+export interface RequestMeta {
   ipHash?: string | null;
   userAgent?: string | null;
 }
@@ -44,6 +44,15 @@ async function activeMembershipFor(tx: DbTransaction, userId: string) {
     .orderBy(desc(memberships.createdAt))
     .limit(1);
   return membership;
+}
+
+/** Timing-safe credential check (unknown emails cost the same as wrong passwords). */
+export async function findUserByCredentials(tx: DbTransaction, email: string, password: string): Promise<typeof users.$inferSelect | null> {
+  const [user] = await tx.select().from(users).where(eq(users.email, email)).limit(1);
+  const valid = user?.passwordHash
+    ? await verifyPassword(password, user.passwordHash)
+    : (await verifyPassword(password, await getDummyHash()), false);
+  return user && valid ? user : null;
 }
 
 export async function signInWithPassword(
@@ -204,7 +213,7 @@ export async function acceptInvitationAsUser(
 /** Simulated email delivery for staff (never patients). */
 export async function writeOutbox(
   tx: DbTransaction,
-  message: { to: string; subject: string; body: string; kind: "invitation" | "password_reset" },
+  message: { to: string; subject: string; body: string; kind: "invitation" | "password_reset" | "email_verification" },
 ): Promise<void> {
   await tx.insert(outboxMessages).values({ toEmail: message.to, subject: message.subject, body: message.body, kind: message.kind });
 }
