@@ -53,6 +53,7 @@ Environment variables (Production and Preview):
 | `AUTH_PROVIDER` | `local` |
 | `EXTERNAL_AI_ENABLED` | `false` |
 | `DETECTION_PROVIDER` | `rules` |
+| `DEV_OUTBOX_ENABLED` | leave **unset** (the app refuses `true` on Vercel/Netlify/Lambda). Without an email provider, "Join with a code" works only through Google sign-in once configured. |
 | `SEED_SHARED_DEMO_ACCOUNTS` | `false` (recommended publicly — visitors use **Try Demo** or **Create Demo Account**). Set `true` together with `DEMO_ACCOUNT_PASSWORD` only for a private review link. |
 
 Never commit these values; `.env*` files are git-ignored except `.env.example`.

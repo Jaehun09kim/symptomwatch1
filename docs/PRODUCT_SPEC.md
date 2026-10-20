@@ -66,6 +66,10 @@ Triage workspace (v0.2): a compact flag list beside the selected flag's detail (
 
 ### 5.5 Staff `/app/staff` (admin)
 Members (role, "Manages the clinic" toggle, status), change role, disable/enable. Nobody changes their own role or manager flag; a clinic always keeps one active human manager. Invitations (create, copy link, revoke, status) never grant manager access. Reset links only in demo workspaces.
+**Invite with a code** (managers): pick a role and "I approve each person" (default) or "Let them in right away" → a code like `HV7K-29QF` with a 1:30 countdown ring; "Generate new code" after expiry; "Cancel code" declines anyone waiting on it. **Join requests**: name, email (confirmed or not), requested role; approve (optionally changing the role) or decline.
+
+### 5.5b Join with a code `/join` (anyone)
+From the sign-in page: enter the code → see the clinic and role → create an account or sign in → confirm email (link) → land in the clinic, or wait on "Waiting for {clinic} to approve you" (check again / withdraw) until a manager approves → "Enter clinic". Physicians' dashboards show "New clinical access" for 14 days.
 
 ### 5.6 Audit log `/app/audit` (admin)
 Filterable table (action, actor, date range), paginated.

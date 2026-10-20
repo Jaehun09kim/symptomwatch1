@@ -33,6 +33,7 @@ export default defineConfig({
       DEMO_ACCOUNT_PASSWORD: "SymptomWatch-Demo-2026",
       APP_BASE_URL: baseURL,
       RATE_LIMIT_SCALE: "50",
+      DEV_OUTBOX_ENABLED: "true",
     },
   },
 });

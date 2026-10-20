@@ -2,19 +2,25 @@
 
 import { useActionState } from "react";
 import { BadgeCheck, CircleAlert } from "lucide-react";
-import { decideJoinRequestAction } from "@/app/app/actions";
+import { toast } from "sonner";
+import { decideJoinRequestAction, type ActionResult } from "@/app/app/actions";
 import { controlClass } from "@/components/forms/fields";
 import { Button } from "@/components/ui/button";
 import { roleLabel, type MemberRole } from "@/lib/labels";
 import type { JoinRequestRow } from "@/lib/services/join-codes";
 import { cn } from "@/lib/utils";
-import { useToastResult } from "./staff-controls";
 
 const ROLES: MemberRole[] = ["physician", "staff", "clinic_admin"];
 
 function RequestRow({ request }: { request: JoinRequestRow }) {
-  const [state, action, pending] = useActionState(decideJoinRequestAction, null);
-  useToastResult(state);
+  // Toast from inside the action: a decided request leaves the list on refresh, so this row
+  // may unmount before an effect could announce the result.
+  const [, action, pending] = useActionState(async (previous: ActionResult | null, form: FormData) => {
+    const result = await decideJoinRequestAction(previous, form);
+    if (result.ok) toast.success(result.message ?? "Saved.");
+    else toast.error(result.message ?? "Couldn't save.");
+    return result;
+  }, null);
   return (
     <li className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">

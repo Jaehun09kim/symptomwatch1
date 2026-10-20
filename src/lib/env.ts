@@ -19,6 +19,8 @@ const environmentSchema = z.object({
   APP_BASE_URL: z.url().default("http://localhost:3000"),
   // Multiplies rate-limit allowances (e.g. 50 for end-to-end tests). Cannot disable limiting.
   RATE_LIMIT_SCALE: z.coerce.number().int().min(1).max(1000).default(1),
+  /** Shows /dev/outbox (simulated email). Defaults on outside production; e2e turns it on; never on hosting platforms. */
+  DEV_OUTBOX_ENABLED: booleanString.optional(),
   // Set by serverless hosts, where a PGlite directory is per-instance and ephemeral.
   VERCEL: z.string().optional(),
   AWS_LAMBDA_FUNCTION_NAME: z.string().optional(),
@@ -38,6 +40,9 @@ const environmentSchema = z.object({
     if (serverless && env.DATABASE_DRIVER === "pglite" && !env.ALLOW_EPHEMERAL_PGLITE) {
       issue("ALLOW_EPHEMERAL_PGLITE", "Serverless production requires Postgres (DATABASE_URL); single-instance PGlite previews must explicitly set ALLOW_EPHEMERAL_PGLITE=true");
     }
+    if (serverless && env.DEV_OUTBOX_ENABLED) {
+      issue("DEV_OUTBOX_ENABLED", "The developer outbox must never be exposed on a hosted deployment");
+    }
     if (env.SEED_SHARED_DEMO_ACCOUNTS && !env.DEMO_ACCOUNT_PASSWORD) {
       issue("DEMO_ACCOUNT_PASSWORD", "Required when enabling shared demo accounts in production");
     }
@@ -46,6 +51,7 @@ const environmentSchema = z.object({
   ...env,
   SESSION_SECRET: env.SESSION_SECRET ?? "symptomwatch-local-development-secret-only",
   SEED_SHARED_DEMO_ACCOUNTS: env.SEED_SHARED_DEMO_ACCOUNTS ?? env.NODE_ENV !== "production",
+  DEV_OUTBOX_ENABLED: env.DEV_OUTBOX_ENABLED ?? env.NODE_ENV !== "production",
   DEMO_ACCOUNT_PASSWORD: env.DEMO_ACCOUNT_PASSWORD ?? (env.NODE_ENV !== "production" ? "SymptomWatch-Demo-2026" : undefined),
 }));
 

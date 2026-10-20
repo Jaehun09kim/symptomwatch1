@@ -64,7 +64,15 @@ A blind, read-only Codex review of the engine and the security model found, and 
 - RLS: management policies use `app.current_can_manage()` (SECURITY DEFINER); a trigger refuses changes to one's own role or flag; services also refuse self-changes.
 - Membership mutations lock the clinic's rows and re-check the actor after the lock; a clinic keeps at least one active non-placeholder manager across disable and un-flag.
 - The database enforces the same rules (0010): the tenant path cannot delete memberships, inserts cannot add yourself or grant management, updates cannot move a membership to another person or clinic, change your own role/flag/status, or leave a clinic without an active human manager (per-clinic advisory lock). Access changes are refused while viewing as a colleague.
-- Invitations never grant the flag; managers grant it after the person joins. Every role change that grants clinical access is audited with `clinicalGrant: true`.
+- Invitations never grant the flag; managers grant it after the person joins.
+
+## Join codes (onboarding M2, 2026-10-19)
+
+- 90-second role codes (40 bits, unambiguous alphabet, CSPRNG) stored only as HMAC hashes; one generic message for unknown/expired/cancelled codes; attempts rate-limited per hashed IP (in-memory, single instance — see known gaps).
+- A code only opens a 15-minute, single-use, HttpOnly join transaction. Membership requires a confirmed email (single-use 30-minute link, consumed by an explicit button press). "Approve" codes require a manager's decision (atomic, pending-only, never overwrites a membership); "instant" codes never grant management. Cancelling a code declines its pending requests.
+- Applicants awaiting approval hold identity-only sessions with no active clinic: `resolveSession` ignores them and RLS sees no membership.
+- Managers can read only the name, email and confirmation status of people who asked to join their clinic. Clinical-access grants (role changes and joins) are visible to the clinic's physicians for 14 days.
+- Without an email provider, email confirmation works only where the developer outbox is enabled (never on hosting platforms). Every role change that grants clinical access is audited with `clinicalGrant: true`.
 
 ## Known gaps (prototype)
 

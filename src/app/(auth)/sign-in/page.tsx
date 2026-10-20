@@ -43,6 +43,9 @@ export default function SignInPage(props: PageProps<"/sign-in">) {
         New here? <Link href="/sign-up" className="font-medium text-brand hover:underline">Create a demo account</Link> or{" "}
         <Link href="/demo" className="font-medium text-brand hover:underline">try it instantly</Link>.
       </p>
+      <p className="mt-3 rounded-md border border-border bg-surface px-4 py-3 text-sm text-body">
+        Have a code from your clinic? <Link href="/join" className="font-medium text-brand hover:underline">Join with a code</Link>
+      </p>
       <div className="mt-8">
         <Suspense fallback={<div className="h-72 animate-pulse rounded-xl bg-surface" />}>
           <SignInContent searchParams={props.searchParams} />

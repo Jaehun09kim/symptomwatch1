@@ -16,6 +16,13 @@ export const signUpSchema = z.object({
   noRealData: z.literal(true, { error: "Please confirm you will only use fictional data" }),
 });
 
+export const joinNewAccountSchema = z.object({
+  displayName: z.string().trim().min(2, "Enter your name").max(80),
+  email,
+  password: z.string().min(10, "Use at least 10 characters").max(200),
+  noRealData: z.literal(true, { error: "Please confirm you will only use fictional data" }),
+});
+
 export const forgotPasswordSchema = z.object({ email });
 
 export const resetPasswordSchema = z

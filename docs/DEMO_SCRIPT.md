@@ -46,7 +46,7 @@ Open a few patients from **Patients**:
 
 ## 5. Administration & trust (2 min)
 1. Sign in as **Priya Shah** — `admin@harborview.demo.test`.
-2. **Staff:** invite a colleague (the link appears instantly; no email is sent), change a role, issue a password-reset link.
+2. **Staff:** under **Invite with a code**, generate a Physician code and point out the 90-second countdown. In a private window, open **Sign in → Join with a code**, enter it, create an account, confirm the email from the developer outbox, and land on the waiting screen; approve the request back on Staff, then **Enter clinic**. Mention that physicians see who was given clinical access. (Password-reset links only appear in private demo workspaces.)
 3. **Audit log:** filter *Record access* and *Flag reviews* — every view and decision is attributed.
 4. Mention: clinic data is isolated in the database itself (row-level security), not just hidden in the interface.
 
