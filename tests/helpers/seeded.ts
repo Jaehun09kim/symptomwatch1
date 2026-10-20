@@ -19,12 +19,12 @@ export async function createSeededDatabase(): Promise<DatabaseHandle> {
 export async function contextFor(db: DatabaseHandle, staffKey: string): Promise<AppContext> {
   return withSystem(async (tx) => {
     const [row] = await tx
-      .select({ userId: memberships.userId, clinicId: memberships.clinicId, role: memberships.role })
+      .select({ userId: memberships.userId, clinicId: memberships.clinicId, role: memberships.role, canManage: memberships.canManage })
       .from(memberships)
       .innerJoin(clinics, eq(clinics.id, memberships.clinicId))
       .where(and(eq(memberships.seedKey, staffKey), eq(clinics.isSandbox, false)));
     if (!row) throw new Error(`No seeded member ${staffKey}`);
-    return { userId: row.userId, actorUserId: row.userId, clinicId: row.clinicId, role: row.role };
+    return { userId: row.userId, actorUserId: row.userId, clinicId: row.clinicId, role: row.role, canManage: row.canManage };
   }, db);
 }
 

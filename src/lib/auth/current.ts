@@ -31,13 +31,14 @@ export function toAppContext(session: SessionContext): AppContext {
     actorUserId: session.originalUserId ?? session.userId,
     clinicId: session.clinicId,
     role: session.role,
+    canManage: session.canManage,
   };
 }
 
 /** For pages: redirects anonymous visitors to sign-in and other roles to the access-denied page. */
 export async function requirePermission(permission: Permission): Promise<{ session: SessionContext; ctx: AppContext }> {
   const session = await requireSession();
-  if (!can(session.role, permission)) redirect("/app/access-denied");
+  if (!can(session, permission)) redirect("/app/access-denied");
   return { session, ctx: toAppContext(session) };
 }
 
@@ -52,7 +53,7 @@ export class AuthorizationError extends Error {
 export async function authorizeAction(permission?: Permission): Promise<{ session: SessionContext; ctx: AppContext }> {
   const session = await getCurrentSession();
   if (!session) throw new AuthorizationError("Your session has ended. Please sign in again.");
-  if (permission && !can(session.role, permission)) throw new AuthorizationError();
+  if (permission && !can(session, permission)) throw new AuthorizationError();
   return { session, ctx: toAppContext(session) };
 }
 

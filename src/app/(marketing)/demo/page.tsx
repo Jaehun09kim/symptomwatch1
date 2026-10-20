@@ -25,7 +25,7 @@ const roles: { role: MemberRole; title: string; persona: string; can: string[] }
   },
   {
     role: "clinic_admin",
-    title: "Clinic admin",
+    title: "Practice admin",
     persona: "Priya Shah (fictional)",
     can: ["Oversee follow-up throughput", "Invite staff and manage roles", "Review the audit log and reset demo data"],
   },

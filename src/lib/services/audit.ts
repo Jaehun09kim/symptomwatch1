@@ -46,7 +46,7 @@ export interface AuditQuery {
 export const AUDIT_PAGE_SIZE = 25;
 
 export async function listAuditLog(ctx: AppContext, query: AuditQuery = {}, database?: DatabaseHandle): Promise<{ entries: AuditEntry[]; total: number }> {
-  if (!can(ctx.role, "audit.read")) throw new ServiceError("Only clinic administrators can view the audit log.");
+  if (!can(ctx, "audit.read")) throw new ServiceError("Only clinic managers can view the audit log.");
   return withTenant(ctx, async (tx) => {
     const filters = [eq(auditLogs.clinicId, ctx.clinicId)];
     if (query.action) filters.push(sql`${auditLogs.action} LIKE ${`${query.action}%`}`);

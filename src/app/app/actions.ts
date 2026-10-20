@@ -13,7 +13,7 @@ import { addFlagFeedback, confirmFlag, dismissFlag, runDetectionForClinic, snooz
 import { RULE_IDS, updateRuleSettings } from "@/lib/services/rule-settings";
 import { ServiceError } from "@/lib/services/errors";
 import { scheduleAppointment, updateAppointment, updateLab, updateReferral } from "@/lib/services/records";
-import { changeMemberRole, inviteStaff, revokeInvitation, setMemberStatus } from "@/lib/services/staff";
+import { changeMemberRole, inviteStaff, revokeInvitation, setMemberCanManage, setMemberStatus } from "@/lib/services/staff";
 import { createTask, updateTask } from "@/lib/services/tasks";
 import { fieldErrorsFrom, inviteSchema, type FieldErrors } from "@/lib/validation/auth";
 
@@ -125,6 +125,13 @@ export async function inviteStaffAction(_previous: ActionResult | null, form: Fo
 
 export async function revokeInvitationAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
   return run("staff.manage", (ctx) => revokeInvitation(ctx, str(form, "invitationId") ?? ""), "Invitation revoked.");
+}
+
+export async function setMemberCanManageAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("staff.manage", (ctx) => setMemberCanManage(ctx, {
+    userId: str(form, "userId") ?? "",
+    canManage: str(form, "canManage") === "true",
+  }), "Manager access updated.");
 }
 
 export async function changeRoleAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {

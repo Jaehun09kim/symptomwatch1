@@ -266,12 +266,13 @@ export async function seedSyntheticClinic(
       userId: user.id,
       role: member.role,
       status: "active",
+      canManage: member.role === "clinic_admin",
       seedKey: member.key,
     });
   }
 
   if (ownerUserId && !Object.values(staffUserIds).includes(ownerUserId)) {
-    await tx.insert(memberships).values({ clinicId, userId: ownerUserId, role: "clinic_admin", status: "active" });
+    await tx.insert(memberships).values({ clinicId, userId: ownerUserId, role: "clinic_admin", status: "active", canManage: true });
   }
   const patientIds = await seedClinicalData(tx, clinicId, clinicKey, referenceDate, staffUserIds, options.data ?? defaultData);
   await afterSeed(tx, clinicId, referenceDate);

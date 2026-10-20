@@ -58,7 +58,7 @@ export interface ViewAsCandidate {
 
 /**
  * View-as is allowed only inside a sandbox, only onto fictional placeholder
- * colleagues, and only for the sandbox's admin or a Try-Demo visitor (who is
+ * colleagues, and only for a sandbox manager or a Try-Demo visitor (who is
  * themselves a placeholder in that sandbox).
  */
 async function viewAsAllowed(session: SessionContext, database?: DatabaseHandle): Promise<boolean> {
@@ -66,11 +66,11 @@ async function viewAsAllowed(session: SessionContext, database?: DatabaseHandle)
   const humanId = session.originalUserId ?? session.userId;
   return withSystem(async (tx) => {
     const [row] = await tx
-      .select({ role: memberships.role, status: memberships.status, isPlaceholder: users.isPlaceholder })
+      .select({ canManage: memberships.canManage, status: memberships.status, isPlaceholder: users.isPlaceholder })
       .from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
       .where(and(eq(memberships.clinicId, session.clinicId), eq(memberships.userId, humanId)));
-    return Boolean(row && row.status === "active" && (row.isPlaceholder || row.role === "clinic_admin"));
+    return Boolean(row && row.status === "active" && (row.isPlaceholder || row.canManage));
   }, database);
 }
 

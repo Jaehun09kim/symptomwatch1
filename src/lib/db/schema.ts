@@ -80,6 +80,8 @@ export const memberships = pgTable("memberships", {
   userId: uuid("user_id").notNull().references(() => users.id),
   role: text("role", { enum: roles }).notNull(),
   status: text("status", { enum: ["active", "disabled"] }).notNull().default("active"),
+  /** "Manages the clinic": staff, audit log, demo reset. Separate from the job role (0009). */
+  canManage: boolean("can_manage").notNull().default(false),
   seedKey: text("seed_key"),
   createdAt: createdAt(),
 }, (t) => [

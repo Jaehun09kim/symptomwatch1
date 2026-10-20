@@ -78,3 +78,8 @@ Entries are appended as work proceeds.
 - **Claude:** site items (privacy wording, contact inputs, full-size link); wrote the clinic-onboarding design from the owner's idea.
 - **Codex (read-only):** security review of the design — found an existing risk (manager-issued password resets would let a non-clinical manager take over a physician account) and gaps in RLS replacement, approval atomicity, pending sessions, OIDC binding and the last-manager guard. All folded into the design before owner approval.
 - **Owner decisions:** code + one-click approval; job role separate from manager; manager can grant physician access alone (visible to physicians); verify applicants both in person and by email (dev outbox); revoking a code declines pending requests; Google sign-in and `oauth4webapi` approved.
+
+### 2026-10-19 — Onboarding M1: role split (Claude, inline TDD)
+
+- Implemented the approved plan in four tasks on `onboarding-m1`: migration 0009 (flag, RLS replacement, self-change trigger), permission model and sessions, staff rules (lock + re-check, no self-changes, human-manager guard, sandbox-only reset links), Staff page toggle and docs. Every task test-first; rulings recorded in the plan ledger (seed change pulled forward; four pre-existing tests updated where the spec changed behavior).
+- Codex unavailable (usage limit); whole-branch review queued for when it returns.

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openPatient, signIn, USERS } from "./helpers";
+import { openPatient, signIn, signOut, USERS } from "./helpers";
 
 test.describe("role-based access", () => {
   test("front desk sees administrative detail only", async ({ page }) => {
@@ -52,5 +52,31 @@ test.describe("role-based access", () => {
     await expect(page.getByText("No patients match these filters")).toBeVisible();
     await page.goto("/app/patients");
     await expect(page.getByRole("heading", { name: /Patients/ }).last()).toContainText("6");
+  });
+
+  test("a manager flag gives front desk staff management without clinical access", async ({ page }) => {
+    const toggle = () => page.getByRole("checkbox", { name: "Daniel Okafor manages the clinic" });
+    await signIn(page, USERS.admin);
+    await page.goto("/app/staff");
+    await toggle().check();
+    await expect(page.getByText("Manager access updated.").first()).toBeVisible();
+    await signOut(page);
+
+    await signIn(page, USERS.staff);
+    const nav = page.getByRole("navigation", { name: "Application" });
+    await expect(nav.getByRole("link", { name: "Staff" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Audit log" })).toBeVisible();
+    await page.goto("/app/review");
+    await expect(page).toHaveURL(/access-denied/);
+    await page.goto("/app/staff");
+    await expect(page.getByRole("heading", { name: "Staff & access" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Reset link/ })).toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: "Daniel Okafor manages the clinic" })).toBeDisabled();
+    await signOut(page);
+
+    await signIn(page, USERS.admin);
+    await page.goto("/app/staff");
+    await toggle().uncheck();
+    await expect(page.getByText("Manager access updated.").first()).toBeVisible();
   });
 });

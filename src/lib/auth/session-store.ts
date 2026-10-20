@@ -26,6 +26,8 @@ export interface SessionContext {
   isSandbox: boolean;
   clinicExpiresAt: string | null;
   role: MemberRole;
+  /** "Manages the clinic", from the active membership; never from the client. */
+  canManage: boolean;
 }
 
 export async function createSessionRecord(
@@ -63,6 +65,7 @@ export async function resolveSession(token: string, database?: DatabaseHandle): 
         isSandbox: clinics.isSandbox,
         clinicExpiresAt: clinics.expiresAt,
         role: memberships.role,
+        canManage: memberships.canManage,
         membershipStatus: memberships.status,
       })
       .from(sessions)
@@ -80,10 +83,10 @@ export async function resolveSession(token: string, database?: DatabaseHandle): 
       (row.clinicExpiresAt !== null && new Date(row.clinicExpiresAt).getTime() <= now) ||
       row.membershipStatus !== "active" ||
       row.role === null;
-    // A "view as" session is only valid while the human behind it is still an active admin here.
+    // A "view as" session is only valid while the human behind it still manages this clinic.
     const actorRevoked = row.originalUserId !== null && !(await tx.select({ id: memberships.id }).from(memberships).where(and(
       eq(memberships.clinicId, row.clinicId), eq(memberships.userId, row.originalUserId),
-      eq(memberships.status, "active"), eq(memberships.role, "clinic_admin"),
+      eq(memberships.status, "active"), eq(memberships.canManage, true),
     )).limit(1)).length;
     if (expired || actorRevoked) {
       await tx.delete(sessions).where(eq(sessions.id, row.sessionId));
@@ -104,6 +107,7 @@ export async function resolveSession(token: string, database?: DatabaseHandle): 
       isSandbox: row.isSandbox,
       clinicExpiresAt: row.clinicExpiresAt,
       role: row.role!,
+      canManage: row.canManage ?? false,
     };
   }, database);
 }
