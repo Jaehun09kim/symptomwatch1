@@ -70,7 +70,8 @@ A blind, read-only Codex review of the engine and the security model found, and 
 
 - 90-second role codes (40 bits, unambiguous alphabet, CSPRNG) stored only as HMAC hashes; one generic message for unknown/expired/cancelled codes; attempts rate-limited per hashed IP (in-memory, single instance — see known gaps).
 - A code only opens a 15-minute, single-use, HttpOnly join transaction. Membership requires a confirmed email (single-use 30-minute link, consumed by an explicit button press). "Approve" codes require a manager's decision (atomic, pending-only, never overwrites a membership); "instant" codes never grant management. Cancelling a code declines its pending requests.
-- Applicants awaiting approval hold identity-only sessions with no active clinic: `resolveSession` ignores them and RLS sees no membership.
+- A confirmation link finishes the join (and signs in) only in the browser holding that transaction's HttpOnly join cookie and the matching user; opened anywhere else it only confirms the address, and the original window continues. Cancelling a code also blocks joins already in progress (completion locks the code row).
+- Applicants awaiting approval hold identity-only sessions with no active clinic: `resolveSession` ignores them and RLS sees no membership. Signing in while a request is pending returns such a session and the waiting screen. Join sign-in shares the per-account sign-in limit; withdrawals are audited.
 - Managers can read only the name, email and confirmation status of people who asked to join their clinic. Clinical-access grants (role changes and joins) are visible to the clinic's physicians for 14 days.
 - Without an email provider, email confirmation works only where the developer outbox is enabled (never on hosting platforms). Every role change that grants clinical access is audited with `clinicalGrant: true`.
 

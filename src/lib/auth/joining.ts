@@ -28,6 +28,8 @@ const EXPIRED_JOIN = "This join has expired. Ask your clinic for a new code.";
 type Failure = { ok: false; error: string; field?: string };
 export type JoinStep =
   | { ok: true; next: "verify_email"; email: string }
+  /** Email confirmed from another browser/device: the browser that entered the code finishes the join. */
+  | { ok: true; next: "verified" }
   | { ok: true; next: "joined"; session: SessionGrant }
   | { ok: true; next: "waiting"; session: { token: string; expiresAt: Date } }
   | Failure;
@@ -109,6 +111,10 @@ export async function attachJoinAccount(
 
     let user: typeof users.$inferSelect;
     if (input.mode === "sign_in") {
+      // Same per-account bucket as ordinary sign-in, so a join transaction can't spread guesses across IPs.
+      if (!rateLimiter().check(`sign-in:email:${input.email.toLowerCase()}`, RATE_LIMITS.signIn).allowed) {
+        return { ok: false, error: "Too many sign-in attempts. Please wait a few minutes and try again." };
+      }
       const found = await findUserByCredentials(tx, input.email, input.password);
       if (!found) return { ok: false, error: "That email and password don't match an account." };
       user = found;
@@ -136,8 +142,20 @@ export async function attachJoinAccount(
   }, database).catch(unwrap);
 }
 
-/** Step 3: the confirmation link marks the email verified and finishes the join. Single-use. */
-export async function verifyEmailAndJoin(verificationToken: string, meta: RequestMeta, database?: DatabaseHandle, now = new Date()): Promise<JoinStep> {
+/**
+ * Step 3: the single-use confirmation link marks the email verified. It finishes
+ * the join (and signs in) only in the browser that entered the code — the one
+ * holding the join cookie for this transaction and user. Opened anywhere else,
+ * it just confirms the address (Codex review: a forwarded link must not sign a
+ * stranger in as the applicant).
+ */
+export async function verifyEmailAndJoin(
+  verificationToken: string,
+  joinToken: string | undefined,
+  meta: RequestMeta,
+  database?: DatabaseHandle,
+  now = new Date(),
+): Promise<JoinStep> {
   return withSystem<JoinStep>(async (tx) => {
     const [used] = await tx.update(emailVerifications).set({ usedAt: now.toISOString() })
       .where(and(eq(emailVerifications.tokenHash, hashToken(verificationToken, "verify")), isNull(emailVerifications.usedAt),
@@ -147,7 +165,25 @@ export async function verifyEmailAndJoin(verificationToken: string, meta: Reques
     await tx.update(users).set({ emailVerifiedAt: now.toISOString() }).where(and(eq(users.id, used.userId), isNull(users.emailVerifiedAt)));
     await recordAuthEvent(tx, { action: "auth.email_verified", actorUserId: used.userId, ipHash: meta.ipHash });
     if (!used.joinTransactionId) return { ok: false, error: EXPIRED_JOIN };
-    return completeJoin(tx, used.joinTransactionId, used.userId, meta, now);
+    const txn = joinToken ? await usableTransaction(tx, joinToken, now) : null;
+    if (!txn || txn.id !== used.joinTransactionId || txn.userId !== used.userId) {
+      const [pending] = await tx.select({ expiresAt: joinTransactions.expiresAt, consumedAt: joinTransactions.consumedAt })
+        .from(joinTransactions).where(eq(joinTransactions.id, used.joinTransactionId));
+      if (!pending || pending.consumedAt || new Date(pending.expiresAt).getTime() <= now.getTime()) throw new Abort({ ok: false, error: EXPIRED_JOIN });
+      return { ok: true, next: "verified" };
+    }
+    return completeJoin(tx, txn.id, used.userId, meta, now);
+  }, database).catch(unwrap);
+}
+
+/** From the browser that entered the code: finish once the email has been confirmed (anywhere). */
+export async function continueJoin(joinToken: string, meta: RequestMeta, database?: DatabaseHandle, now = new Date()): Promise<JoinStep> {
+  return withSystem<JoinStep>(async (tx) => {
+    const txn = await usableTransaction(tx, joinToken, now);
+    if (!txn?.userId) return { ok: false, error: EXPIRED_JOIN };
+    const [user] = await tx.select({ emailVerifiedAt: users.emailVerifiedAt }).from(users).where(eq(users.id, txn.userId));
+    if (!user?.emailVerifiedAt) return { ok: false, error: "Confirm your email first — open the link we sent you." };
+    return completeJoin(tx, txn.id, txn.userId, meta, now);
   }, database).catch(unwrap);
 }
 
@@ -159,6 +195,13 @@ async function assertNotAMember(tx: DbTransaction, clinicId: string, userId: str
 
 /** Consumes the transaction exactly once, then grants access (instant) or files a request (approve). */
 async function completeJoin(tx: DbTransaction, transactionId: string, userId: string, meta: RequestMeta, now: Date): Promise<JoinStep> {
+  // Serialize against cancellation: lock the code row (cancelJoinCode updates it), then refuse
+  // revoked codes. Code *expiry* is deliberately not re-checked — the transaction governs.
+  const [codeState] = await tx.select({ revokedAt: joinCodes.revokedAt }).from(joinCodes)
+    .innerJoin(joinTransactions, eq(joinTransactions.joinCodeId, joinCodes.id))
+    .where(eq(joinTransactions.id, transactionId))
+    .for("update", { of: joinCodes });
+  if (!codeState || codeState.revokedAt) throw new Abort({ ok: false, error: "This code was cancelled by your clinic. Ask for a new one." });
   const [txn] = await tx.update(joinTransactions).set({ consumedAt: now.toISOString() })
     .where(and(eq(joinTransactions.id, transactionId), isNull(joinTransactions.consumedAt), sql`${joinTransactions.expiresAt} > ${now.toISOString()}`))
     .returning();
@@ -212,8 +255,10 @@ export async function withdrawJoin(sessionToken: string, requestId: string, data
   return withSystem(async (tx) => {
     const updated = await tx.update(joinRequests).set({ status: "withdrawn", decidedAt: sql`now()` })
       .where(and(eq(joinRequests.id, requestId), eq(joinRequests.userId, identity.userId), eq(joinRequests.status, "pending")))
-      .returning({ id: joinRequests.id });
-    return { ok: updated.length === 1 };
+      .returning({ id: joinRequests.id, clinicId: joinRequests.clinicId });
+    if (updated.length !== 1) return { ok: false };
+    await recordAuthEvent(tx, { action: "join_request.withdrawn", clinicId: updated[0].clinicId, actorUserId: identity.userId, entityType: "join_request", entityId: requestId });
+    return { ok: true };
   }, database);
 }
 

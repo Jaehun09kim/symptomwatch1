@@ -17,7 +17,7 @@ describe("sessions and the manager flag", () => {
 
   it("session reflects can_manage changes immediately", async () => {
     const grant = await signInWithPassword({ email: "frontdesk@harborview.demo.test", password: PASSWORD }, {}, db);
-    if (!grant.ok) throw new Error("sign-in failed");
+    if (!grant.ok || "pending" in grant) throw new Error("sign-in failed");
     expect(await resolveSession(grant.token, db)).toMatchObject({ role: "staff", canManage: false });
     const where = and(eq(memberships.userId, grant.userId), eq(memberships.clinicId, grant.clinicId));
     await withSystem((tx) => tx.update(memberships).set({ canManage: true }).where(where), db);

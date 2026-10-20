@@ -26,6 +26,8 @@ export interface ActionResult {
   link?: string;
   /** A freshly generated join code (shown once; only its hash is stored). */
   joinCode?: { id: string; display: string; expiresAt: string };
+  /** Which code a successful cancellation applied to. */
+  cancelledCodeId?: string;
 }
 
 const str = (form: FormData, key: string) => {
@@ -250,7 +252,11 @@ export async function createJoinCodeAction(_previous: ActionResult | null, form:
 }
 
 export async function cancelJoinCodeAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
-  return run("staff.manage", (ctx) => cancelJoinCode(ctx, str(form, "codeId") ?? ""), "Code cancelled.");
+  const codeId = str(form, "codeId") ?? "";
+  return run("staff.manage", async (ctx) => {
+    await cancelJoinCode(ctx, codeId);
+    return { ok: true, message: "Code cancelled.", cancelledCodeId: codeId };
+  }, "Code cancelled.");
 }
 
 export async function decideJoinRequestAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {

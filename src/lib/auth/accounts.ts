@@ -3,7 +3,7 @@
  * functions only touch the database so they can be integration-tested.
  */
 import { and, desc, eq, gt, isNull, ne, sql } from "drizzle-orm";
-import { clinics, invitations, memberships, outboxMessages, passwordResetTokens, users } from "@/lib/db/schema";
+import { clinics, invitations, joinRequests, memberships, outboxMessages, passwordResetTokens, users } from "@/lib/db/schema";
 import { withSystem } from "@/lib/db/system";
 import type { DatabaseHandle, DbTransaction } from "@/lib/db/types";
 import { getEnv } from "@/lib/env";
@@ -19,6 +19,8 @@ const RESET_TOKEN_MINUTES = 30;
 
 export type AuthFailure = { ok: false; error: string; field?: string };
 export type SessionGrant = { ok: true; token: string; expiresAt: Date; userId: string; clinicId: string };
+/** Signed in while a join request awaits approval: identity-only session, waiting screen only. */
+export type PendingGrant = { ok: true; pending: true; token: string; expiresAt: Date; userId: string };
 
 export interface RequestMeta {
   ipHash?: string | null;
@@ -59,8 +61,8 @@ export async function signInWithPassword(
   input: { email: string; password: string },
   meta: RequestMeta = {},
   database?: DatabaseHandle,
-): Promise<SessionGrant | AuthFailure> {
-  return withSystem(async (tx) => {
+): Promise<SessionGrant | PendingGrant | AuthFailure> {
+  return withSystem<SessionGrant | PendingGrant | AuthFailure>(async (tx) => {
     const [user] = await tx.select().from(users).where(eq(users.email, input.email)).limit(1);
     const valid = user?.passwordHash
       ? await verifyPassword(input.password, user.passwordHash)
@@ -76,6 +78,14 @@ export async function signInWithPassword(
     }
     const membership = await activeMembershipFor(tx, user.id);
     if (!membership) {
+      // Waiting on a join approval: give an identity-only session for the waiting screen (no clinic data).
+      const [pending] = await tx.select({ id: joinRequests.id }).from(joinRequests)
+        .where(and(eq(joinRequests.userId, user.id), eq(joinRequests.status, "pending"))).limit(1);
+      if (pending) {
+        const { token, expiresAt } = await createSessionRecord(tx, { userId: user.id, clinicId: null, userAgent: meta.userAgent });
+        await recordAuthEvent(tx, { action: "auth.sign_in", actorUserId: user.id, metadata: { pendingJoin: true }, ipHash: meta.ipHash });
+        return { ok: true, pending: true, token, expiresAt, userId: user.id };
+      }
       await recordAuthEvent(tx, { action: "auth.sign_in_failed", actorUserId: user.id, metadata: { reason: "no_active_clinic" }, ipHash: meta.ipHash });
       return { ok: false, error: "Your account isn't active in any clinic workspace. Ask your clinic administrator, or your demo workspace may have expired." };
     }

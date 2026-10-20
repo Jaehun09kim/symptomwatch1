@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFormAction } from "@/hooks/use-form-action";
-import { attachJoinAction, enterClinicAction, startJoinAction, verifyEmailAction, withdrawJoinAction, type FormState } from "@/app/(auth)/actions";
+import { attachJoinAction, continueJoinAction, enterClinicAction, startJoinAction, verifyEmailAction, withdrawJoinAction, type FormState } from "@/app/(auth)/actions";
 import { CheckboxField, FormMessage, SubmitButton, TextField } from "@/components/forms/fields";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +63,17 @@ export function VerifyEmailForm({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       <FormMessage status={state.status} message={state.message} />
       <SubmitButton pending={pending} className="w-full" pendingLabel="Confirming…">Confirm my email</SubmitButton>
+    </form>
+  );
+}
+
+/** On the check-email page: finish once the email was confirmed (possibly on another device). */
+export function ContinueJoinForm() {
+  const [state, onSubmit, pending] = useFormAction(continueJoinAction, idle);
+  return (
+    <form onSubmit={onSubmit} className="space-y-3">
+      <FormMessage status={state.status} message={state.message} />
+      <SubmitButton pending={pending} className="w-full" pendingLabel="Checking…">I&rsquo;ve confirmed my email — continue</SubmitButton>
     </form>
   );
 }

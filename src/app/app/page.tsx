@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ClipboardCheck, Inbox, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, Inbox } from "lucide-react";
+import { ClinicalAccessNotice } from "@/components/app/clinical-access-notice";
 import { HorizontalBarChart, WeeklyTrendChart } from "@/components/charts/dashboard-charts";
 import { PatientsPanel } from "@/components/app/patients/patients-panel";
 import { EmptyState, PageHeader } from "@/components/app/primitives/layout";
@@ -13,7 +14,7 @@ import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import { RunDetectionButton } from "@/components/app/review/flag-review";
 import { listFlags, getLastRun } from "@/lib/services/detection";
 import { listTasks } from "@/lib/services/tasks";
-import { roleLabel, ruleLabel, taskCategoryLabel } from "@/lib/labels";
+import { ruleLabel, taskCategoryLabel } from "@/lib/labels";
 import { listRecentClinicalGrants } from "@/lib/services/join-codes";
 import { getDashboardSummary } from "@/lib/services/dashboard";
 
@@ -60,21 +61,7 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
         <p role="status" className="rounded-md border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
       ) : null}
       {clinical ? <DataFreshness lastImport={lastImport} lastRun={lastRun} /> : null}
-      {grants.length ? (
-        <section aria-labelledby="new-clinical-access" className="rounded-lg border border-brand/25 bg-brand-soft px-4 py-3 text-sm text-body">
-          <h2 id="new-clinical-access" className="flex items-center gap-2 font-semibold text-navy"><ShieldCheck className="size-4 text-brand" aria-hidden />New clinical access</h2>
-          <ul className="mt-1.5 space-y-1">
-            {grants.slice(0, 5).map((grant, index) => (
-              <li key={index}>
-                <strong className="font-medium text-navy">{grant.userName}</strong> was given {roleLabel[grant.role]} access{" "}
-                {grant.via === "join" ? (grant.grantedByName ? `when ${grant.grantedByName} approved their join request` : "by joining with an instant code") : `by ${grant.grantedByName ?? "a manager"}`}
-                {" "}· {formatTimelineDate(grant.createdAt)}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1.5 text-xs text-slate-600">Shown to physicians for 14 days. If you don&rsquo;t recognize someone, tell your clinic&rsquo;s manager.</p>
-        </section>
-      ) : null}
+      <ClinicalAccessNotice grants={grants} />
 
       <section aria-labelledby="next-work" className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

@@ -25,7 +25,8 @@ export function JoinCodePanel() {
   useToastResult(cancelled);
 
   const code = created?.ok ? created.joinCode : undefined;
-  const isCancelled = Boolean(code && cancelled?.ok);
+  // Cancellation belongs to the code it was for, not to whatever code is shown next.
+  const isCancelled = Boolean(code && cancelled?.ok && cancelled.cancelledCodeId === code.id);
   const isExpired = Boolean(code && expiredId === code.id);
   const live = code && !isCancelled && !isExpired;
 

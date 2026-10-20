@@ -12,7 +12,7 @@ import {
 } from "@/lib/auth/accounts";
 import { clearSessionCookie, getCurrentSession, SESSION_COOKIE, setSessionCookie } from "@/lib/auth/current";
 import { deleteSessionByToken, resolveSession } from "@/lib/auth/session-store";
-import { attachJoinAccount, enterApprovedClinic, startJoin, verifyEmailAndJoin, withdrawJoin, type JoinStep } from "@/lib/auth/joining";
+import { attachJoinAccount, continueJoin, enterApprovedClinic, startJoin, verifyEmailAndJoin, withdrawJoin, type JoinStep } from "@/lib/auth/joining";
 import { getEnv } from "@/lib/env";
 import type { MemberRole } from "@/lib/labels";
 import { rateLimiter, RATE_LIMITS } from "@/lib/security/rate-limit";
@@ -61,6 +61,10 @@ export async function signInAction(_previous: FormState, form: FormData): Promis
 
   const result = await signInWithPassword(parsed.data, meta);
   if (!result.ok) return { status: "error", message: result.error };
+  if ("pending" in result) {
+    await rotateSession(result);
+    redirect("/join/waiting");
+  }
   const session = await rotateSession(result);
   redirect(safeNext(form.get("next")) ?? landingFor(session?.role));
 }
@@ -198,6 +202,7 @@ async function landJoinStep(step: JoinStep): Promise<FormState> {
     return step.field ? { status: "error", fieldErrors: { [step.field]: step.error } } : { status: "error", message: step.error };
   }
   if (step.next === "verify_email") redirect(`/join/check-email?email=${encodeURIComponent(step.email)}`);
+  if (step.next === "verified") redirect("/join/check-email?confirmed=1");
   await clearJoinCookie();
   if (step.next === "waiting") {
     await rotateSession(step.session);
@@ -234,7 +239,14 @@ export async function attachJoinAction(_previous: FormState, form: FormData): Pr
 }
 
 export async function verifyEmailAction(_previous: FormState, form: FormData): Promise<FormState> {
-  return landJoinStep(await verifyEmailAndJoin(String(form.get("token") ?? ""), await requestMeta()));
+  return landJoinStep(await verifyEmailAndJoin(String(form.get("token") ?? ""), await readJoinCookie(), await requestMeta()));
+}
+
+/** "I've confirmed my email" on the check-email page, from the browser that entered the code. */
+export async function continueJoinAction(): Promise<FormState> {
+  const token = await readJoinCookie();
+  if (!token) return { status: "error", message: "This join has expired. Ask your clinic for a new code." };
+  return landJoinStep(await continueJoin(token, await requestMeta()));
 }
 
 export async function enterClinicAction(_previous: FormState, form: FormData): Promise<FormState> {
