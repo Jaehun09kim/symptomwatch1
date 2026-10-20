@@ -63,6 +63,7 @@ A blind, read-only Codex review of the engine and the security model found, and 
 - "Manages the clinic" (`memberships.can_manage`) alone grants staff management, the audit log and demo reset; job roles never do. It is read from the membership row on every request (sessions and RLS), never from a GUC, cookie or form.
 - RLS: management policies use `app.current_can_manage()` (SECURITY DEFINER); a trigger refuses changes to one's own role or flag; services also refuse self-changes.
 - Membership mutations lock the clinic's rows and re-check the actor after the lock; a clinic keeps at least one active non-placeholder manager across disable and un-flag.
+- The database enforces the same rules (0010): the tenant path cannot delete memberships, inserts cannot add yourself or grant management, updates cannot move a membership to another person or clinic, change your own role/flag/status, or leave a clinic without an active human manager (per-clinic advisory lock). Access changes are refused while viewing as a colleague.
 - Invitations never grant the flag; managers grant it after the person joins. Every role change that grants clinical access is audited with `clinicalGrant: true`.
 
 ## Known gaps (prototype)

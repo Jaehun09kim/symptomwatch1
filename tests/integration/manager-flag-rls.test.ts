@@ -90,4 +90,37 @@ describe("0009 manager flag: row-level security", () => {
     await expect(rows(db, desk, sql`UPDATE memberships SET can_manage = false WHERE clinic_id = ${desk.clinicId} AND user_id = ${desk.userId} RETURNING id`)).rejects.toThrow();
     await setCanManage(db, desk, false);
   });
+
+  it("tenant path cannot delete memberships or replace one's own", async () => {
+    await setCanManage(db, desk, true);
+    await expect(rows(db, desk, sql`DELETE FROM memberships WHERE clinic_id = ${deskTwo.clinicId} AND user_id = ${deskTwo.userId} RETURNING id`)).rejects.toThrow();
+    // Codex review: delete-and-reinsert one's own row in one statement bypassed the UPDATE-only trigger.
+    await expect(rows(db, desk, sql`
+      WITH gone AS (DELETE FROM memberships WHERE clinic_id = ${desk.clinicId} AND user_id = ${desk.userId} RETURNING clinic_id, user_id)
+      INSERT INTO memberships (clinic_id, user_id, role, status, can_manage) SELECT clinic_id, user_id, 'physician', 'active', true FROM gone RETURNING id`)).rejects.toThrow();
+    expect((await withSystem((tx) => tx.execute(sql`SELECT role FROM memberships WHERE clinic_id = ${desk.clinicId} AND user_id = ${desk.userId}`), db) as unknown as { rows: Array<{ role: string }> }).rows[0].role).toBe("staff");
+    await setCanManage(db, desk, false);
+  });
+
+  it("tenant inserts cannot grant management and identity columns are immutable", async () => {
+    await setCanManage(db, desk, true);
+    await expect(rows(db, desk, sql`UPDATE memberships SET user_id = ${desk.userId} WHERE clinic_id = ${deskTwo.clinicId} AND user_id = ${deskTwo.userId} RETURNING id`)).rejects.toThrow();
+    const outsider = (await withSystem((tx) => tx.execute(sql`INSERT INTO users (email, display_name) VALUES ('outsider@example.test', 'Outsider') RETURNING id`), db) as unknown as { rows: Array<{ id: string }> }).rows[0].id;
+    await expect(rows(db, desk, sql`INSERT INTO memberships (clinic_id, user_id, role, can_manage) VALUES (${desk.clinicId}, ${outsider}, 'staff', true) RETURNING id`)).rejects.toThrow();
+    await setCanManage(db, desk, false);
+  });
+
+  it("the last human manager survives direct SQL", async () => {
+    const admin = await contextFor(db, "hv-admin-shah");
+    // Self-disable is a self-change.
+    await expect(rows(db, admin, sql`UPDATE memberships SET status = 'disabled' WHERE clinic_id = ${admin.clinicId} AND user_id = ${admin.userId} RETURNING id`)).rejects.toThrow();
+    // With two human managers, one may remove the other's management.
+    await setCanManage(db, desk, true);
+    expect(await rows(db, desk, sql`UPDATE memberships SET can_manage = false WHERE clinic_id = ${admin.clinicId} AND user_id = ${admin.userId} RETURNING id`)).toHaveLength(1);
+    // Restore admin, then admin removes desk's management.
+    await withSystem((tx) => tx.execute(sql`UPDATE memberships SET can_manage = true WHERE clinic_id = ${admin.clinicId} AND user_id = ${admin.userId}`), db);
+    await expect(rows(db, admin, sql`UPDATE memberships SET can_manage = false WHERE clinic_id = ${desk.clinicId} AND user_id = ${desk.userId} RETURNING id`)).resolves.toHaveLength(1);
+    // Desk is no longer a manager, so RLS filters the update out entirely (0 rows) — admin keeps access.
+    expect(await rows(db, desk, sql`UPDATE memberships SET can_manage = false WHERE clinic_id = ${admin.clinicId} AND user_id = ${admin.userId} RETURNING id`)).toHaveLength(0);
+  });
 });

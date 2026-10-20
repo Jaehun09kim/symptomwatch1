@@ -20,6 +20,19 @@ function requireAdmin(ctx: AppContext): void {
   if (!can(ctx, "staff.manage")) throw new ServiceError(NOT_MANAGER);
 }
 
+/**
+ * Access changes act for a human. While a sandbox manager is "viewing as" a
+ * colleague, the effective user isn't the person deciding, so refuse outright
+ * (Codex review: self-checks compared against the colleague, not the human).
+ */
+function requireActingAsSelf(ctx: AppContext): void {
+  if (ctx.actorUserId !== ctx.userId) throw new ServiceError("Access changes aren't available while viewing as a colleague.");
+}
+
+function isSelf(ctx: AppContext, userId: string): boolean {
+  return userId === ctx.userId || userId === ctx.actorUserId;
+}
+
 export interface InvitationRow {
   id: string;
   email: string;
@@ -137,7 +150,8 @@ export async function changeMemberRole(
   database?: DatabaseHandle,
 ): Promise<void> {
   requireAdmin(ctx);
-  if (input.userId === ctx.userId) throw new ServiceError(SELF_CHANGE);
+  requireActingAsSelf(ctx);
+  if (isSelf(ctx, input.userId)) throw new ServiceError(SELF_CHANGE);
   await withTenant(ctx, async (tx) => {
     const member = findMember(await lockClinicMemberships(tx, ctx), input.userId);
     if (member.role === input.role) return;
@@ -156,7 +170,8 @@ export async function setMemberCanManage(
   database?: DatabaseHandle,
 ): Promise<void> {
   requireAdmin(ctx);
-  if (input.userId === ctx.userId) throw new ServiceError(SELF_CHANGE);
+  requireActingAsSelf(ctx);
+  if (isSelf(ctx, input.userId)) throw new ServiceError(SELF_CHANGE);
   await withTenant(ctx, async (tx) => {
     const rows = await lockClinicMemberships(tx, ctx);
     const member = findMember(rows, input.userId);
@@ -174,7 +189,8 @@ export async function setMemberStatus(
   database?: DatabaseHandle,
 ): Promise<void> {
   requireAdmin(ctx);
-  if (input.userId === ctx.userId && input.status === "disabled") throw new ServiceError("You can't disable your own access.");
+  requireActingAsSelf(ctx);
+  if (isSelf(ctx, input.userId)) throw new ServiceError(input.status === "disabled" ? "You can't disable your own access." : SELF_CHANGE);
   await withTenant(ctx, async (tx) => {
     const rows = await lockClinicMemberships(tx, ctx);
     const member = findMember(rows, input.userId);

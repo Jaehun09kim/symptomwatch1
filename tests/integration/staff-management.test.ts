@@ -1,9 +1,10 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { issueResetLinkForMember, registerAccount } from "@/lib/auth/accounts";
 import type { AppContext } from "@/lib/authz/context";
 import { auditLogs, memberships, users } from "@/lib/db/schema";
 import { withSystem } from "@/lib/db/system";
+import { withTenant } from "@/lib/db/tenant";
 import type { DatabaseHandle } from "@/lib/db/types";
 import { changeMemberRole, inviteStaff, setMemberCanManage, setMemberStatus } from "@/lib/services/staff";
 import { contextFor, createSeededDatabase } from "../helpers/seeded";
@@ -118,5 +119,23 @@ describe("membership management with the manager flag", () => {
     expect((await lastAudit(db, admin.clinicId, "membership.role_changed"))?.metadata).toMatchObject({ from: "staff", to: "physician", clinicalGrant: true });
     await changeMemberRole(admin, { userId: desk.userId, role: "staff" }, db);
     expect((await lastAudit(db, admin.clinicId, "membership.role_changed"))?.metadata).not.toHaveProperty("clinicalGrant");
+  });
+
+  it("the last human manager survives a placeholder manager's direct SQL", async () => {
+    const { owner, placeholderAdmin } = await sandbox(db, "sql-last-manager@example.test");
+    const sqlAs = (ctx: AppContext, query: ReturnType<typeof sql>) => withTenant(ctx, (tx) => tx.execute(query), db);
+    await expect(sqlAs(placeholderAdmin, sql`UPDATE memberships SET can_manage = false WHERE clinic_id = ${owner.clinicId} AND user_id = ${owner.userId}`)).rejects.toThrow();
+    await expect(sqlAs(placeholderAdmin, sql`UPDATE memberships SET status = 'disabled' WHERE clinic_id = ${owner.clinicId} AND user_id = ${owner.userId}`)).rejects.toThrow();
+  });
+
+  it("view-as cannot change anyone's access", async () => {
+    const { owner, placeholderAdmin } = await sandbox(db, "view-as-owner@example.test");
+    // The human owner, viewing as the placeholder manager.
+    const viewing: AppContext = { ...placeholderAdmin, actorUserId: owner.userId };
+    const VIEW_AS = "Access changes aren't available while viewing as a colleague.";
+    await expect(changeMemberRole(viewing, { userId: owner.userId, role: "physician" }, db)).rejects.toThrow(VIEW_AS);
+    await expect(setMemberCanManage(viewing, { userId: owner.userId, canManage: false }, db)).rejects.toThrow(VIEW_AS);
+    await expect(setMemberStatus(viewing, { userId: owner.userId, status: "disabled" }, db)).rejects.toThrow(VIEW_AS);
+    expect((await membership(db, owner.clinicId, owner.userId)).role).toBe("clinic_admin");
   });
 });

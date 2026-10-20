@@ -14,12 +14,15 @@ export const metadata: Metadata = { title: "Staff" };
 async function Staff() {
   const { ctx, session } = await requirePermission("staff.manage");
   const [members, invitations] = await Promise.all([listMembers(ctx), listInvitations(ctx)]);
+  // Access changes act for a human; while viewing as a colleague they're refused server-side, so don't offer them.
+  const viewingAs = session.originalUserId !== null;
   const invitationStatus = (invite: (typeof invitations)[number]) =>
     invite.acceptedAt ? "Accepted" : invite.revokedAt ? "Revoked" : isPast(invite.expiresAt) ? "Expired" : "Pending";
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Staff & access" description="Who can use this clinic workspace, and what each role can see." actions={<InviteDialog />} />
+      <PageHeader title="Staff & access" description="Who can use this clinic workspace, and what each role can see." actions={viewingAs ? null : <InviteDialog />} />
+      {viewingAs ? <p role="status" className="rounded-md border border-border bg-surface px-4 py-3 text-sm text-body">You&rsquo;re viewing as a colleague. Return to your own account to change anyone&rsquo;s access.</p> : null}
       <section aria-labelledby="members-heading" className="rounded-xl border border-border bg-white shadow-soft">
         <h2 id="members-heading" className="border-b border-border p-4 text-base font-semibold">Members ({members.length})</h2>
         <ul className="divide-y divide-border">
@@ -37,11 +40,11 @@ async function Staff() {
                   <p className="truncate text-sm text-slate-500">{member.email} · {member.status === "active" ? "Active" : "Disabled"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <RoleSelect userId={member.userId} role={member.role} disabled={self} />
-                  <ManageToggle userId={member.userId} name={member.displayName} canManage={member.canManage} disabled={self} />
-                  {!self ? <StatusToggle userId={member.userId} status={member.status} /> : null}
+                  <RoleSelect userId={member.userId} role={member.role} disabled={self || viewingAs} />
+                  <ManageToggle userId={member.userId} name={member.displayName} canManage={member.canManage} disabled={self || viewingAs} />
+                  {!self && !viewingAs ? <StatusToggle userId={member.userId} status={member.status} /> : null}
                   {/* Manager-issued reset links exist only in demo workspaces; real clinics use Forgot password. */}
-                  {session.isSandbox && !member.isPlaceholder && !self ? <ResetLinkDialog userId={member.userId} name={member.displayName} /> : null}
+                  {session.isSandbox && !viewingAs && !member.isPlaceholder && !self ? <ResetLinkDialog userId={member.userId} name={member.displayName} /> : null}
                 </div>
               </li>
             );
