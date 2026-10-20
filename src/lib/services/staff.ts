@@ -8,6 +8,7 @@ import { withTenant } from "@/lib/db/tenant";
 import type { DatabaseHandle, DbTransaction } from "@/lib/db/types";
 import type { MemberRole } from "@/lib/labels";
 import { recordAudit } from "./audit";
+import { CLINICAL_ROLES, recordClinicalGrant } from "./clinical-grants";
 import { ServiceError } from "./errors";
 
 const INVITE_DAYS = 7;
@@ -25,6 +26,12 @@ function requireAdmin(ctx: AppContext): void {
  * colleague, the effective user isn't the person deciding, so refuse outright
  * (Codex review: self-checks compared against the colleague, not the human).
  */
+/** Managers acting as themselves (not while viewing as a colleague). */
+export function requireManagerActingAsSelf(ctx: AppContext): void {
+  requireAdmin(ctx);
+  requireActingAsSelf(ctx);
+}
+
 function requireActingAsSelf(ctx: AppContext): void {
   if (ctx.actorUserId !== ctx.userId) throw new ServiceError("Access changes aren't available while viewing as a colleague.");
 }
@@ -107,14 +114,14 @@ export async function revokeInvitation(ctx: AppContext, invitationId: string, da
   }, database);
 }
 
-interface LockedMember { userId: string; role: MemberRole; status: "active" | "disabled"; canManage: boolean; isPlaceholder: boolean }
+export interface LockedMember { userId: string; role: MemberRole; status: "active" | "disabled"; canManage: boolean; isPlaceholder: boolean }
 
 /**
  * Serializes membership management per clinic: locks every membership row, then
  * re-checks that the actor is still an active manager (a concurrent change may
  * have removed them while they waited for the lock).
  */
-async function lockClinicMemberships(tx: DbTransaction, ctx: AppContext): Promise<LockedMember[]> {
+export async function lockClinicMemberships(tx: DbTransaction, ctx: AppContext): Promise<LockedMember[]> {
   const rows = await tx.select({
     userId: memberships.userId,
     role: memberships.role,
@@ -142,7 +149,6 @@ function findMember(rows: LockedMember[], userId: string): LockedMember {
   return member;
 }
 
-const CLINICAL_ROLES: ReadonlySet<MemberRole> = new Set(["physician", "clinic_admin"]);
 
 export async function changeMemberRole(
   ctx: AppContext,
@@ -157,10 +163,11 @@ export async function changeMemberRole(
     if (member.role === input.role) return;
     await tx.update(memberships).set({ role: input.role })
       .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.userId, input.userId)));
-    // Granting clinical access is recorded distinctly so physicians can be shown who was let in (M2).
+    // Granting clinical access is recorded distinctly so physicians can be shown who was let in.
     const clinicalGrant = CLINICAL_ROLES.has(input.role) && !CLINICAL_ROLES.has(member.role);
     await recordAudit(tx, ctx, "membership.role_changed", { type: "user", id: input.userId },
       { from: member.role, to: input.role, ...(clinicalGrant ? { clinicalGrant: true } : {}) });
+    if (clinicalGrant) await recordClinicalGrant(tx, { clinicId: ctx.clinicId, userId: input.userId, role: input.role, grantedBy: ctx.userId, via: "role_change" });
   }, database);
 }
 

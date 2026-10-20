@@ -104,6 +104,17 @@ BEGIN
 END
 $$;
 
+-- Managers may see who asked to join their clinic (name, email, verified) — not other users.
+DROP POLICY users_select ON users;
+CREATE POLICY users_select ON public.users FOR SELECT TO sw_app USING (
+  app.is_active_member(app.current_clinic_id())
+  AND (
+    EXISTS (SELECT 1 FROM public.memberships m WHERE m.user_id = users.id AND m.clinic_id = app.current_clinic_id())
+    OR (app.current_can_manage() AND EXISTS (
+      SELECT 1 FROM public.join_requests jr WHERE jr.user_id = users.id AND jr.clinic_id = app.current_clinic_id()))
+  )
+);
+
 GRANT SELECT, INSERT ON join_codes TO sw_app;
 GRANT UPDATE (revoked_at) ON join_codes TO sw_app;
 GRANT SELECT ON join_requests TO sw_app;
