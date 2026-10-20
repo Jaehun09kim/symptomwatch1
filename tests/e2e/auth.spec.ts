@@ -39,12 +39,19 @@ test.describe("authentication", () => {
     await expect(page).toHaveURL(/\/app\?welcome=1/);
     await expect(page.getByText("Your private demo clinic is ready.")).toBeVisible();
     await expect(page.getByText("Coastline Clinic — DEMO").first()).toBeVisible();
-    await expect(page.getByText("Total demo patients").locator("..")).toContainText("30");
+    await expect(page.getByRole("link", { name: "30 demo patients" })).toBeVisible();
   });
 
-  test("admin-issued reset link lets a staff member choose a new password", async ({ page, browser }) => {
+  test("a demo-workspace manager's reset link lets a staff member choose a new password", async ({ page, browser }) => {
+    // Manager-issued reset links exist only in private demo workspaces (shared clinics stand in for real ones).
+    await page.goto("/sign-up");
+    await page.getByLabel("Your name").fill("Workspace Manager");
+    await page.getByLabel("Email").fill(`manager.${Date.now()}@example.test`);
+    await page.getByLabel("Password", { exact: true }).fill("a-long-demo-password");
+    await page.getByLabel(/I understand this is a demo/).check();
+    await page.getByRole("button", { name: "Create demo account" }).click();
+    await expect(page).toHaveURL(/\/app\?welcome=1/);
     // Create a real (non-placeholder) staff account through an invitation first.
-    await signIn(page, USERS.admin);
     await page.goto("/app/staff");
     await page.getByRole("button", { name: "Invite staff" }).click();
     const email = `nurse.${Date.now()}@example.test`;

@@ -10,7 +10,7 @@ export type TaskCategory =
   | "admin_other"
   | "clinical_review";
 export type MemberRole = "clinic_admin" | "physician" | "staff";
-export type FlagStatus = "open" | "confirmed" | "dismissed" | "resolved_by_data";
+export type FlagStatus = "open" | "confirmed" | "dismissed" | "resolved_by_data" | "suppressed";
 
 export const taskStatusLabel: Record<TaskStatus, string> = {
   pending: "Pending",
@@ -29,7 +29,7 @@ export const taskCategoryLabel: Record<TaskCategory, string> = {
 };
 
 export const roleLabel: Record<MemberRole, string> = {
-  clinic_admin: "Clinic admin",
+  clinic_admin: "Practice admin",
   physician: "Physician",
   staff: "Front desk",
 };
@@ -53,6 +53,25 @@ export const flagStatusLabel: Record<FlagStatus, string> = {
   confirmed: "Gap confirmed",
   dismissed: "Dismissed",
   resolved_by_data: "Resolved by new data",
+  suppressed: "Rule turned off",
+};
+
+export type DismissReason = "expected" | "addressed_elsewhere" | "not_clinically_relevant" | "data_error" | "other";
+
+export const dismissReasonLabel: Record<DismissReason, string> = {
+  expected: "Expected — the gap is intentional or planned",
+  addressed_elsewhere: "Addressed elsewhere — documented outside SymptomWatch",
+  not_clinically_relevant: "Not clinically relevant for this patient",
+  data_error: "Data error — the record is wrong or incomplete",
+  other: "Other",
+};
+
+export const dismissReasonShortLabel: Record<DismissReason, string> = {
+  expected: "Expected",
+  addressed_elsewhere: "Addressed elsewhere",
+  not_clinically_relevant: "Not relevant",
+  data_error: "Data error",
+  other: "Other",
 };
 
 export const encounterTypeLabel = {

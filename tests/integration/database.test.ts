@@ -72,12 +72,12 @@ describe("database isolation and authorization", () => {
       INSERT INTO clinics(id, name, slug) VALUES
         ('${clinicA}', 'Fixture A DEMO', 'fixture-a'),
         ('${clinicB}', 'Fixture B DEMO', 'fixture-b');
-      INSERT INTO memberships(clinic_id, user_id, role, status) VALUES
-        ('${clinicA}', '${admin.userId}', 'clinic_admin', 'active'),
-        ('${clinicA}', '${physician.userId}', 'physician', 'active'),
-        ('${clinicA}', '${staff.userId}', 'staff', 'active'),
-        ('${clinicA}', '${disabled.userId}', 'physician', 'disabled'),
-        ('${clinicB}', '${otherAdmin.userId}', 'clinic_admin', 'active');
+      INSERT INTO memberships(clinic_id, user_id, role, status, can_manage) VALUES
+        ('${clinicA}', '${admin.userId}', 'clinic_admin', 'active', true),
+        ('${clinicA}', '${physician.userId}', 'physician', 'active', false),
+        ('${clinicA}', '${staff.userId}', 'staff', 'active', false),
+        ('${clinicA}', '${disabled.userId}', 'physician', 'disabled', false),
+        ('${clinicB}', '${otherAdmin.userId}', 'clinic_admin', 'active', true);
       INSERT INTO invitations(clinic_id, email, role, token_hash, invited_by, expires_at) VALUES
         ('${clinicA}', 'invite-a@example.test', 'staff', 'token-a', '${admin.userId}', now() + interval '1 day'),
         ('${clinicB}', 'invite-b@example.test', 'staff', 'token-b', '${otherAdmin.userId}', now() + interval '1 day');

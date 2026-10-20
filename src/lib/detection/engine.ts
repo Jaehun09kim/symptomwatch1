@@ -1,4 +1,4 @@
-import { RULES } from "./rules";
+import { RULES, type Rule } from "./rules";
 import {
   DEFAULT_RULE_CONFIG,
   RULES_VERSION,
@@ -6,14 +6,17 @@ import {
   type DetectionProvider,
   type Finding,
   type PatientSnapshot,
+  type RuleId,
 } from "./types";
 
-/** Runs every v1 rule. Patients whose care was transferred out produce no findings (§6 global suppression). */
+/** Runs every enabled v1 rule. Patients whose care was transferred out produce no findings (§6 global suppression). */
 export function runRules(patients: PatientSnapshot[], ctx: DetectionContext): Finding[] {
   const findings: Finding[] = [];
   for (const patient of patients) {
     if (patient.careStatus === "transferred_out") continue;
-    for (const rule of Object.values(RULES)) findings.push(...rule(patient, ctx));
+    for (const [ruleId, rule] of Object.entries(RULES) as Array<[RuleId, Rule]>) {
+      if (!ctx.disabledRules?.includes(ruleId)) findings.push(...rule(patient, ctx));
+    }
   }
   return findings.sort((a, b) => a.fingerprint.localeCompare(b.fingerprint));
 }

@@ -12,7 +12,12 @@ export function PatientFilters({ physicians, showReviewFilter }: { physicians: A
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
-  const [q, setQ] = useState(params.get("q") ?? "");
+  const query = params.get("q") ?? "";
+  const [search, setSearch] = useState({ query, draft: query });
+  // Navigation (including Clear filters and Back) must also reset the visible input.
+  if (search.query !== query) setSearch({ query, draft: query });
+  const q = search.query === query ? search.draft : query;
+  const setQ = (draft: string) => setSearch({ query, draft });
 
   const update = (changes: Record<string, string>) => {
     const next = new URLSearchParams(params.toString());
@@ -31,7 +36,7 @@ export function PatientFilters({ physicians, showReviewFilter }: { physicians: A
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce on the text only
   }, [q]);
 
-  const select = cn(controlClass, "h-10 w-auto min-w-0 pr-8 text-sm");
+  const select = cn(controlClass, "h-11 w-auto min-w-0 rounded-md bg-background pr-8 text-sm");
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center" role="search" aria-label="Filter patients">
       <div className="relative md:w-72">
@@ -42,7 +47,7 @@ export function PatientFilters({ physicians, showReviewFilter }: { physicians: A
           value={q}
           onChange={(event) => setQ(event.target.value)}
           placeholder="Search name or DEMO-MRN"
-          className={cn(controlClass, "h-10 pl-9 pr-9 text-sm")}
+          className={cn(controlClass, "h-11 rounded-md bg-background pl-9 pr-9 text-sm")}
         />
         {q ? (
           <button type="button" onClick={() => setQ("")} className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-slate-400 hover:text-navy" aria-label="Clear search">
@@ -54,7 +59,7 @@ export function PatientFilters({ physicians, showReviewFilter }: { physicians: A
         <label className="sr-only" htmlFor="patient-status">Status</label>
         <select id="patient-status" className={select} value={params.get("status") ?? "all"} onChange={(event) => update({ status: event.target.value === "all" ? "" : event.target.value })}>
           <option value="all">All patients</option>
-          {showReviewFilter ? <option value="needs_review">Needs review</option> : null}
+          {showReviewFilter ? <><option value="awaiting_review">Awaiting review</option><option value="needs_review">Open or confirmed gaps</option></> : null}
           <option value="open_tasks">Has open tasks</option>
           <option value="clear">No open items</option>
         </select>

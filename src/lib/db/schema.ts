@@ -80,6 +80,8 @@ export const memberships = pgTable("memberships", {
   userId: uuid("user_id").notNull().references(() => users.id),
   role: text("role", { enum: roles }).notNull(),
   status: text("status", { enum: ["active", "disabled"] }).notNull().default("active"),
+  /** "Manages the clinic": staff, audit log, demo reset. Separate from the job role (0009). */
+  canManage: boolean("can_manage").notNull().default(false),
   seedKey: text("seed_key"),
   createdAt: createdAt(),
 }, (t) => [
@@ -102,6 +104,7 @@ export const invitations = pgTable("invitations", {
   unique().on(t.clinicId, t.id),
   check("invitations_role_check", sql`${t.role} IN ('clinic_admin', 'physician', 'staff')`),
   foreignKey({ columns: [t.clinicId, t.invitedBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
+  uniqueIndex("invitations_one_outstanding").on(t.clinicId, t.email).where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
 ]).enableRLS();
 
 export const patients = pgTable("patients", {
@@ -195,6 +198,25 @@ export const symptomObservations = pgTable("symptom_observations", {
   index("symptom_observations_patient_date_idx").on(t.clinicId, t.patientId, t.observedAt),
 ]).enableRLS();
 
+export const importBatches = pgTable("import_batches", {
+  id: id(),
+  clinicId: clinicId(),
+  kind: text("kind", { enum: ["lab_orders", "referrals"] }).notNull(),
+  filename: text("filename").notNull(),
+  rowCount: integer("row_count").notNull(),
+  createdCount: integer("created_count").notNull(),
+  updatedCount: integer("updated_count").notNull(),
+  unchangedCount: integer("unchanged_count").notNull(),
+  errorCount: integer("error_count").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: createdAt(),
+}, (t) => [
+  unique().on(t.clinicId, t.id),
+  check("import_batches_kind_check", sql`${t.kind} IN ('lab_orders', 'referrals')`),
+  foreignKey({ columns: [t.clinicId, t.createdBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
+  index("import_batches_clinic_date_idx").on(t.clinicId, t.createdAt),
+]).enableRLS();
+
 export const labOrders = pgTable("lab_orders", {
   id: id(),
   clinicId: clinicId(),
@@ -210,6 +232,8 @@ export const labOrders = pgTable("lab_orders", {
   statusReason: text("status_reason"),
   symptomCode: text("symptom_code"),
   seedKey: text("seed_key"),
+  externalRef: text("external_ref"),
+  importBatchId: uuid("import_batch_id"),
 }, (t) => [
   unique().on(t.clinicId, t.id), unique().on(t.clinicId, t.seedKey),
   check("lab_orders_expected_within_days_check", sql`${t.expectedWithinDays} >= 0`),
@@ -217,6 +241,8 @@ export const labOrders = pgTable("lab_orders", {
   foreignKey({ columns: [t.clinicId, t.patientId], foreignColumns: [patients.clinicId, patients.id] }).onDelete("cascade"),
   foreignKey({ columns: [t.clinicId, t.encounterId], foreignColumns: [encounters.clinicId, encounters.id] }),
   index("lab_orders_patient_idx").on(t.clinicId, t.patientId),
+  uniqueIndex("lab_orders_external_ref_idx").on(t.clinicId, t.externalRef).where(sql`${t.externalRef} IS NOT NULL`),
+  foreignKey({ name: "lab_orders_import_batch_fkey", columns: [t.clinicId, t.importBatchId], foreignColumns: [importBatches.clinicId, importBatches.id] }),
 ]).enableRLS();
 
 export const referrals = pgTable("referrals", {
@@ -235,6 +261,8 @@ export const referrals = pgTable("referrals", {
   statusReason: text("status_reason"),
   symptomCode: text("symptom_code"),
   seedKey: text("seed_key"),
+  externalRef: text("external_ref"),
+  importBatchId: uuid("import_batch_id"),
 }, (t) => [
   unique().on(t.clinicId, t.id), unique().on(t.clinicId, t.seedKey),
   check("referrals_expected_within_days_check", sql`${t.expectedWithinDays} >= 0`),
@@ -242,6 +270,8 @@ export const referrals = pgTable("referrals", {
   foreignKey({ columns: [t.clinicId, t.patientId], foreignColumns: [patients.clinicId, patients.id] }).onDelete("cascade"),
   foreignKey({ columns: [t.clinicId, t.encounterId], foreignColumns: [encounters.clinicId, encounters.id] }),
   index("referrals_patient_idx").on(t.clinicId, t.patientId),
+  uniqueIndex("referrals_external_ref_idx").on(t.clinicId, t.externalRef).where(sql`${t.externalRef} IS NOT NULL`),
+  foreignKey({ name: "referrals_import_batch_fkey", columns: [t.clinicId, t.importBatchId], foreignColumns: [importBatches.clinicId, importBatches.id] }),
 ]).enableRLS();
 
 export const detectionRuns = pgTable("detection_runs", {
@@ -276,19 +306,26 @@ export const detectionFlags = pgTable("detection_flags", {
   evidence: jsonb("evidence").$type<EvidenceRef[]>().notNull().default(sql`'[]'::jsonb`),
   missingInfo: jsonb("missing_info").$type<MissingInfo[]>().notNull().default(sql`'[]'::jsonb`),
   evidenceHash: text("evidence_hash").notNull(),
-  status: text("status", { enum: ["open", "confirmed", "dismissed", "resolved_by_data"] }).notNull().default("open"),
+  status: text("status", { enum: ["open", "confirmed", "dismissed", "resolved_by_data", "suppressed"] }).notNull().default("open"),
   firstDetectedAt: time("first_detected_at").notNull().defaultNow(),
   lastDetectedAt: time("last_detected_at").notNull().defaultNow(),
   reviewedBy: uuid("reviewed_by"),
   reviewedAt: time("reviewed_at"),
   reviewNote: text("review_note"),
+  reviewReason: text("review_reason", { enum: ["expected", "addressed_elsewhere", "not_clinically_relevant", "data_error", "other"] }),
+  snoozedUntil: time("snoozed_until"),
+  snoozedBy: uuid("snoozed_by"),
+  snoozeNote: text("snooze_note"),
 }, (t) => [
   unique().on(t.clinicId, t.id), unique().on(t.clinicId, t.fingerprint),
   check("detection_flags_rule_id_check", sql`${t.ruleId} IN ('overdue-follow-up', 'lab-result-missing', 'referral-outcome-missing', 'persistent-symptom-unresolved')`),
   check("detection_flags_subject_type_check", sql`${t.subjectType} IN ('encounter', 'lab_order', 'referral', 'symptom')`),
   check("detection_flags_evidence_check", sql`jsonb_typeof(${t.evidence}) = 'array'`),
   check("detection_flags_missing_info_check", sql`jsonb_typeof(${t.missingInfo}) = 'array'`),
-  check("detection_flags_status_check", sql`${t.status} IN ('open', 'confirmed', 'dismissed', 'resolved_by_data')`),
+  check("detection_flags_status_check", sql`${t.status} IN ('open', 'confirmed', 'dismissed', 'resolved_by_data', 'suppressed')`),
+  check("detection_flags_review_reason_check", sql`${t.reviewReason} IN ('expected', 'addressed_elsewhere', 'not_clinically_relevant', 'data_error', 'other')`),
+  foreignKey({ name: "detection_flags_snoozed_by_fkey", columns: [t.clinicId, t.snoozedBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
+  index("detection_flags_clinic_status_idx").on(t.clinicId, t.status, t.snoozedUntil),
   foreignKey({ columns: [t.clinicId, t.patientId], foreignColumns: [patients.clinicId, patients.id] }).onDelete("cascade"),
   foreignKey({ columns: [t.clinicId, t.reviewedBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
   index("detection_flags_patient_idx").on(t.clinicId, t.patientId),
@@ -342,16 +379,31 @@ export const flagEvents = pgTable("flag_events", {
   id: id(),
   clinicId: clinicId(),
   flagId: uuid("flag_id").notNull(),
-  eventType: text("event_type", { enum: ["created", "updated", "confirmed", "dismissed", "reopened", "reopened_evidence_changed", "resolved_by_data", "feedback"] }).notNull(),
+  eventType: text("event_type", { enum: ["created", "updated", "confirmed", "dismissed", "reopened", "reopened_evidence_changed", "resolved_by_data", "feedback", "snoozed", "unsnoozed", "suppressed"] }).notNull(),
   actorUserId: uuid("actor_user_id"),
   note: text("note"),
   createdAt: createdAt(),
 }, (t) => [
   unique().on(t.clinicId, t.id),
-  check("flag_events_event_type_check", sql`${t.eventType} IN ('created', 'updated', 'confirmed', 'dismissed', 'reopened', 'reopened_evidence_changed', 'resolved_by_data', 'feedback')`),
+  check("flag_events_event_type_check", sql`${t.eventType} IN ('created', 'updated', 'confirmed', 'dismissed', 'reopened', 'reopened_evidence_changed', 'resolved_by_data', 'feedback', 'snoozed', 'unsnoozed', 'suppressed')`),
   foreignKey({ columns: [t.clinicId, t.flagId], foreignColumns: [detectionFlags.clinicId, detectionFlags.id] }).onDelete("cascade"),
   foreignKey({ columns: [t.clinicId, t.actorUserId], foreignColumns: [memberships.clinicId, memberships.userId] }),
   index("flag_events_flag_date_idx").on(t.clinicId, t.flagId, t.createdAt),
+]).enableRLS();
+
+export const clinicRuleSettings = pgTable("clinic_rule_settings", {
+  clinicId: uuid("clinic_id").primaryKey().references(() => clinics.id, { onDelete: "cascade" }),
+  overdueGraceDays: integer("overdue_grace_days").notNull().default(14),
+  labGraceDays: integer("lab_grace_days").notNull().default(7),
+  referralSentGraceDays: integer("referral_sent_grace_days").notNull().default(14),
+  referralRecordsDays: integer("referral_records_days").notNull().default(14),
+  symptomMinEncounters: integer("symptom_min_encounters").notNull().default(2),
+  symptomMinSpanDays: integer("symptom_min_span_days").notNull().default(28),
+  disabledRules: text("disabled_rules").array().notNull().default(sql`'{}'`),
+  updatedBy: uuid("updated_by"),
+  updatedAt: time("updated_at").notNull().defaultNow(),
+}, (t) => [
+  foreignKey({ columns: [t.clinicId, t.updatedBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
 ]).enableRLS();
 
 export const auditLogs = pgTable("audit_logs", {

@@ -1,3 +1,4 @@
+import { bundledMigrations } from "@/lib/db/migrations.generated";
 /**
  * Exercises the hosted code path (postgres.js over the Postgres wire protocol)
  * without Docker: PGlite is served on a local TCP socket. Covers migrations,
@@ -40,7 +41,7 @@ describe("postgres driver (wire protocol)", () => {
   });
 
   it("applies migrations idempotently over the wire", async () => {
-    expect(await migrate(db)).toBe(5);
+    expect(await migrate(db)).toBe(bundledMigrations.length);
   });
 
   it("enforces tenant isolation through SET LOCAL ROLE and RLS", async () => {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy & data policy",
@@ -15,8 +16,8 @@ const sections: { title: string; body: React.ReactNode }[] = [
           detail in it is fictional. <strong>Entering real patient information is prohibited.</strong>
         </p>
         <p>
-          Guard rails back this up: patient records can only be created from the synthetic dataset, there is no file
-          upload anywhere, phone numbers must use the fictional 555-01xx range, and free-text fields reject things that
+          Guard rails back this up: patient records can only be created from the synthetic dataset, CSV imports
+          accept only demo record numbers from the current clinic, phone numbers must use the fictional 555-01xx range, and free-text fields reject things that
           look like Social Security numbers, real phone numbers, email addresses, outside medical record numbers, dates
           of birth, or pasted clinical documents. These checks reduce risk; they cannot guarantee that text contains no
           real information, so the responsibility not to enter it remains yours.
@@ -52,16 +53,16 @@ const sections: { title: string; body: React.ReactNode }[] = [
     body: (
       <p>
         Workspaces created from “Try Demo” expire after seven days and are deleted. Any demo clinic administrator can
-        reset their workspace to the original synthetic data at any time. Audit history is retained separately.
+        reset their workspace to the original synthetic data at any time. Audit history is kept when a workspace is deleted and is not automatically deleted in this prototype. See <Link href="/safety#stores" className="font-medium text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">what SymptomWatch stores</Link>.
       </p>
     ),
   },
   {
-    title: "Not HIPAA-compliant — yet",
+    title: "Not HIPAA-compliant",
     body: (
       <>
         <p>
-          The prototype includes security controls designed with healthcare in mind — clinic-level data isolation
+          The prototype includes security controls designed with healthcare in mind: clinic-level data isolation
           enforced by the database, role-based permissions, audit logging, hashed credentials, and input validation.
           Implementing these controls does not make a system HIPAA-compliant.
         </p>
@@ -70,8 +71,8 @@ const sections: { title: string; body: React.ReactNode }[] = [
           business associate agreements with every vendor that touches data, multi-factor authentication, independent
           penetration testing, backup and disaster-recovery procedures, California privacy-law review (including CMIA),
           an FDA clinical-decision-support analysis, and clinical validation on de-identified data under appropriate
-          review. The full list lives in the project&rsquo;s clinical deployment checklist
-          (<code className="rounded bg-surface px-1 text-sm">docs/CLINICAL_DEPLOYMENT_CHECKLIST.md</code>).
+          review. We keep the full list as a clinical deployment checklist and are glad to walk through it; just{" "}
+          <Link href="/contact" className="font-medium text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">ask</Link>.
         </p>
       </>
     ),
@@ -80,17 +81,16 @@ const sections: { title: string; body: React.ReactNode }[] = [
 
 export default function PrivacyPage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <p className="text-sm font-semibold text-brand">Trust</p>
-      <h1 className="mt-2 text-4xl font-semibold">Privacy &amp; data policy</h1>
-      <p className="mt-4 text-lg text-body">
+    <article className="mx-auto max-w-3xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
+      <h1 className="display-heading text-[2.6rem] sm:text-6xl">Privacy &amp; data policy</h1>
+      <p className="lead mt-6">
         Plain-language rules for the SymptomWatch demonstration prototype. Last updated October 2026.
       </p>
-      <div className="mt-12 space-y-10">
+      <div className="mt-14 border-b border-border">
         {sections.map((section) => (
-          <section key={section.title} aria-labelledby={section.title}>
-            <h2 id={section.title} className="text-xl font-semibold">{section.title}</h2>
-            <div className="mt-3 space-y-3 leading-relaxed text-body">{section.body}</div>
+          <section key={section.title} aria-labelledby={section.title} className="grid gap-3 border-t border-border py-8 sm:grid-cols-[12rem_1fr] sm:gap-8">
+            <h2 id={section.title} className="text-[1.05rem] font-medium tracking-[-0.015em]">{section.title}</h2>
+            <div className="space-y-3 leading-relaxed text-body">{section.body}</div>
           </section>
         ))}
       </div>

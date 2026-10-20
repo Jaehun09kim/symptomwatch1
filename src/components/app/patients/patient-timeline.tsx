@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Check, ClipboardList } from "lucide-react";
+import Link from "next/link";
+import { EmptyState } from "@/components/app/primitives/layout";
 import { TimelineItem } from "@/components/app/primitives/timeline-item";
 import { Button } from "@/components/ui/button";
 import { sortTimeline, type TimelineEvent, type TimelineFilter } from "@/lib/timeline";
@@ -49,10 +51,10 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
     });
 
   return (
-    <section aria-labelledby="timeline-heading" className="rounded-xl border border-border bg-white p-5 shadow-soft">
+    <section aria-labelledby="timeline-heading" className="border-t border-border py-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="timeline-heading" className="text-base font-semibold">Timeline</h2>
-        <Button variant="outline" size="sm" onClick={() => setDirection((value) => (value === "desc" ? "asc" : "desc"))}>
+        <Button variant="outline" size="sm" className="min-h-10" onClick={() => setDirection((value) => (value === "desc" ? "asc" : "desc"))}>
           {direction === "desc" ? <ArrowDownWideNarrow aria-hidden /> : <ArrowUpNarrowWide aria-hidden />}
           {direction === "desc" ? "Newest first" : "Oldest first"}
         </Button>
@@ -67,17 +69,20 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
               aria-pressed={on}
               onClick={() => toggle(filter.key)}
               className={cn(
-                "inline-flex h-8 items-center rounded-full border px-3 text-xs font-medium transition",
-                on ? "border-brand/30 bg-brand-soft text-brand-hover" : "border-border bg-white text-slate-500 line-through",
+                "inline-flex min-h-11 items-center gap-2 rounded-sm border px-3 text-xs font-medium transition",
+                on ? "border-brand bg-brand-soft text-brand-hover" : "border-input bg-background text-body hover:bg-surface",
               )}
             >
+              <span className={cn("grid size-4 place-items-center rounded-sm border", on ? "border-brand bg-brand text-white" : "border-input")} aria-hidden>
+                {on ? <Check className="size-3" /> : null}
+              </span>
               {filter.label}
             </button>
           );
         })}
       </div>
       {!clinical ? (
-        <p className="mt-3 rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-slate-600">
+        <p className="mt-3 rounded-md border border-border bg-surface px-3 py-2 text-xs text-slate-600">
           Front-desk view: visits, symptoms, lab orders, referral reasons, and review flags are limited to clinical roles.
         </p>
       ) : null}
@@ -91,6 +96,7 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
             title={event.upcoming ? `${event.title} (upcoming)` : event.title}
             meta={event.meta}
             provenance={event.provenance}
+            outcome={event.outcome}
             highlighted={highlight === event.anchor}
             isLast={index === visible.length - 1}
           >
@@ -107,7 +113,10 @@ export function PatientTimeline({ events, clinical }: { events: TimelineEvent[];
           </TimelineItem>
         ))}
       </ol>
-      {visible.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No events for the selected types.</p> : null}
+      {visible.length === 0 ? <EmptyState icon={ClipboardList}
+        title={events.length ? "No events match these filters" : "No visible records yet"}
+        description={events.length ? "Show all event types to see the patient’s history." : clinical ? "Import fictional records to build this timeline." : "Administrative appointments, referrals, and tasks will appear here."}
+        action={events.length ? <Button variant="outline" className="min-h-11" onClick={() => setHidden(new Set())}>Clear filters</Button> : clinical ? <Link href="/app/import" className="inline-flex min-h-11 items-center text-brand underline">Import records</Link> : <Link href="/app/queue" className="inline-flex min-h-11 items-center text-brand underline">Open follow-up queue</Link>} /> : null}
     </section>
   );
 }

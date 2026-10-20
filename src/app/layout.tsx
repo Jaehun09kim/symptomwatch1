@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { DemoBanner } from "@/components/app/primitives/layout";
+import { MotionProvider } from "@/components/motion/motion-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getEnv } from "@/lib/env";
 import "./globals.css";
@@ -11,7 +12,7 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL(getEnv().APP_BASE_URL),
-  title: { default: "SymptomWatch — Close the follow-up loops that slip through the cracks", template: "%s · SymptomWatch" },
+  title: { default: "SymptomWatch — Follow-up coordination for small clinics", template: "%s · SymptomWatch" },
   description,
   applicationName: "SymptomWatch",
   openGraph: {
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "SymptomWatch", description },
 };
 
-export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#f8f9fa", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -36,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <DemoBanner />
-        {children}
+        <MotionProvider>{children}</MotionProvider>
         <Toaster position="top-center" />
       </body>
     </html>

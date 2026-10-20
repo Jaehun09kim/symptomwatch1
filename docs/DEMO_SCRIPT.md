@@ -15,11 +15,19 @@ Say up front: *"Everything you'll see is fictional — invented patients, invent
 
 ## 2. The physician's morning (3 min)
 1. Sign in as **Dr. Maya Rivera** — `physician@harborview.demo.test` / `SymptomWatch-Demo-2026` (or click **Use** next to her name).
-2. **Dashboard:** read the cards — open follow-ups, patients needing review, overdue admin tasks, pending labs, pending specialist records. Note the throughput chart and *"Show data table"*.
+2. **Dashboard:** start with *Review next* (the oldest open flags), then the four cards — overdue admin tasks, patients needing review, lab gaps awaiting review, open records requests; each opens exactly what it counts. Note the throughput chart and *"Show data table"*.
 3. Open **Review flags**. *"These aren't diagnoses or urgency scores — they're documentation questions, listed by when they were found."*
 4. Open the **Rachel Kim** flag (*No documented follow-up visit…*). Walk through **Why flagged**, **Supporting entries**, and **Missing or uncertain**.
 5. Click a supporting entry → the patient timeline opens with that entry highlighted. Point out the three labels: **Documented**, **Not documented**, **Rule-inferred · needs review**.
 6. Back on Review: **Confirm gap** → leave *"Create a follow-up task"* checked → type *"Reach patient to rebook"*, type *Call to make*, assign **Daniel Okafor** → Confirm.
+7. Pick a referral flag → **Snooze** two weeks with *"Specialist office says the note is coming"*. It moves to the **Snoozed** tab. *"If the record changes before then, it comes back on its own."*
+8. Open **Detection rules**: *"If a rule is too noisy for your clinic, a physician can lengthen its grace period or turn it off. Signal quality shows how often each rule's flags were confirmed versus dismissed, and why."*
+
+## 2b. Bring in an export instead of re-typing (2 min)
+1. Still as Dr. Rivera: **Import records → Lab orders → Use a sample export from this clinic.** *"This is what a lab-orders report out of your EHR looks like."* Optionally click **Download this file** to show the raw CSV.
+2. Point at **Match columns**: familiar headers matched automatically, with the first row beside each field.
+3. **Preview import**: walk through *Update* (results now on file), *New*, *No change*, and the three **Problems** — an unknown MRN, an impossible date, and a name that doesn't match the MRN. *"It refuses wrong-patient rows rather than guessing."*
+4. **Import** → the summary shows how many lab gaps closed and whether any new ones appeared. Open **Review flags** to show them.
 
 ## 3. What the rules deliberately *don't* flag (1 min)
 Open a few patients from **Patients**:

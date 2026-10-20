@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ScanSearch, UsersRound } from "lucide-react";
-import { FictionalTag } from "@/components/app/primitives/badges";
+import { ChevronLeft, ChevronRight, UsersRound } from "lucide-react";
 import { EmptyState } from "@/components/app/primitives/layout";
 import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
 import type { AppContext } from "@/lib/authz/context";
@@ -12,7 +11,7 @@ import { PatientFilters } from "./patient-filters";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-const STATUS = new Set<PatientStatusFilter>(["all", "needs_review", "open_tasks", "clear"]);
+const STATUS = new Set<PatientStatusFilter>(["all", "needs_review", "awaiting_review", "open_tasks", "clear"]);
 const SORTS = new Set<PatientSort>(["name", "mrn", "open_tasks", "flags", "next_due"]);
 const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
 
@@ -52,10 +51,11 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
   const physicians = members.filter((member) => member.role === "physician").map((member) => ({ id: member.userId, name: member.displayName }));
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const now = new Date();
+  const filtered = Boolean(query.q || query.physicianId || query.status !== "all" || (query.page ?? 1) > 1);
 
   return (
-    <section aria-labelledby="patients-heading" className="rounded-xl border border-border bg-white shadow-soft">
-      <div className="space-y-3 border-b border-border p-4">
+    <section aria-labelledby="patients-heading" className="border-y border-border">
+      <div className="space-y-4 border-b border-border py-4">
         <div className="flex items-baseline justify-between gap-2">
           <h2 id="patients-heading" className="text-base font-semibold">Patients <span className="font-normal text-slate-500">({total})</span></h2>
           <p className="text-xs text-slate-500">All records fictional</p>
@@ -63,7 +63,10 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
         <PatientFilters physicians={physicians} showReviewFilter={clinical} />
       </div>
       {rows.length === 0 ? (
-        <EmptyState className="m-4 border-0" icon={UsersRound} title="No patients match these filters" description="Try clearing the search or choosing a different status." />
+        <EmptyState className="m-4 border-0" icon={UsersRound}
+          title={filtered ? "No patients match these filters" : "No patients yet"}
+          description={filtered ? "Clear the filters to see your clinic’s patients." : "Import fictional records to start tracking follow-ups."}
+          action={filtered ? <Link href={basePath} className="inline-flex min-h-11 items-center text-brand underline">Clear filters</Link> : can(ctx.role, "records.import") ? <Link href="/app/import" className="inline-flex min-h-11 items-center text-brand underline">Import records</Link> : <p className="text-sm text-body">Ask a physician or clinic administrator to import records.</p>} />
       ) : (
         <div tabIndex={0} role="region" aria-label="Patient table" className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left text-sm">
@@ -92,7 +95,7 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
                         {row.careStatus === "transferred_out" ? " · Care transferred" : ""}
                       </p>
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-body"><span className="flex items-center gap-2">{row.demoMrn}<FictionalTag /></span></td>
+                    <td className="px-4 py-3 tabular-nums text-body"><span className="font-mono text-xs">{row.demoMrn}</span></td>
                     <td className="px-4 py-3 text-body">{row.physicianName ?? "—"}</td>
                     <td className="px-4 py-3 tabular-nums text-body">{row.openTasks}</td>
                     <td className={cn("px-4 py-3 tabular-nums", overdue ? "font-medium text-attention" : "text-body")}>
@@ -101,8 +104,8 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
                     {clinical ? (
                       <td className="px-4 py-3">
                         {row.openFlags ? (
-                          <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-brand/30 bg-brand-soft px-2.5 text-xs font-medium text-brand-hover">
-                            <ScanSearch className="size-3.5" aria-hidden /> {row.openFlags} possible gap{row.openFlags === 1 ? "" : "s"}
+                          <span className="text-xs font-medium text-brand-hover">
+                            {row.openFlags} possible gap{row.openFlags === 1 ? "" : "s"}
                           </span>
                         ) : (
                           <span className="text-xs text-slate-500">—</span>
@@ -121,11 +124,11 @@ export async function PatientsPanel({ ctx, params, basePath }: { ctx: AppContext
           <span className="text-slate-500">Page {page} of {pages}</span>
           <div className="flex gap-2">
             <Link aria-disabled={page <= 1} tabIndex={page <= 1 ? -1 : undefined} href={pageHref(basePath, params, page - 1)}
-              className={cn("inline-flex h-9 items-center gap-1 rounded-[10px] border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page <= 1 && "pointer-events-none opacity-40")}>
+              className={cn("inline-flex h-11 items-center gap-1 rounded-md border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page <= 1 && "pointer-events-none opacity-40")}>
               <ChevronLeft className="size-4" aria-hidden /> Previous
             </Link>
             <Link aria-disabled={page >= pages} tabIndex={page >= pages ? -1 : undefined} href={pageHref(basePath, params, page + 1)}
-              className={cn("inline-flex h-9 items-center gap-1 rounded-[10px] border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page >= pages && "pointer-events-none opacity-40")}>
+              className={cn("inline-flex h-11 items-center gap-1 rounded-md border border-slate-300 px-3 font-medium text-navy hover:bg-surface", page >= pages && "pointer-events-none opacity-40")}>
               Next <ChevronRight className="size-4" aria-hidden />
             </Link>
           </div>

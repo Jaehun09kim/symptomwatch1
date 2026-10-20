@@ -147,6 +147,8 @@ export const DEFAULT_RULE_CONFIG: RuleConfig = {
 export interface DetectionContext {
   asOf: IsoDate;
   config: RuleConfig;
+  /** Rules a clinic has turned off; they produce no findings. */
+  disabledRules?: readonly RuleId[];
 }
 
 export interface DetectionProvider {

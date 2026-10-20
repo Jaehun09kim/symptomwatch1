@@ -1,45 +1,33 @@
+import type { Viewport } from "next";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 
-const points = [
-  "Every patient and record is fictional",
-  "No calls, texts, or emails are sent to patients",
-  "Rule-based detection; external AI disabled",
+const POINTS = [
+  "Review flagged lab results, referrals, and missed follow-ups",
+  "Assign calls and records requests to the front desk",
+  "Import an EHR export and watch gaps close",
 ];
+
+export const viewport: Viewport = { themeColor: "#08090a" };
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <aside className="relative hidden overflow-hidden bg-navy p-12 text-white lg:flex lg:flex-col">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(40rem_24rem_at_100%_0%,rgb(29_95_209/0.45),transparent),radial-gradient(30rem_20rem_at_0%_100%,rgb(14_159_142/0.35),transparent)]"
-        />
-        <Link href="/" className="relative rounded-md [&_span]:text-white" aria-label="SymptomWatch home">
-          <Logo />
-        </Link>
-        <div className="relative mt-auto max-w-md">
-          <p className="text-3xl font-semibold leading-tight text-white">
-            The follow-up loops that slip through the cracks, in one calm view.
-          </p>
-          <ul className="mt-8 space-y-3 text-slate-200">
-            {points.map((point) => (
-              <li key={point} className="flex items-center gap-3">
-                <CheckCircle2 className="size-5 shrink-0 text-teal" aria-hidden />
-                {point}
-              </li>
+    <div className="dark marketing-root grid flex-1 bg-background text-body lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <aside className="hidden flex-col border-r border-border bg-sidebar p-10 lg:flex xl:p-16">
+        <Link href="/" className="self-start rounded-md" aria-label="SymptomWatch home"><Logo markClassName="size-6" /></Link>
+        <div className="my-auto max-w-md py-16">
+          <p className="display-heading mt-4 text-[2.5rem] text-navy">The SymptomWatch demo</p>
+          <ul className="mt-8 divide-y divide-border border-y border-border">
+            {POINTS.map((line) => (
+              <li key={line} className="py-3.5 text-[0.9375rem] leading-relaxed">{line}</li>
             ))}
           </ul>
+          <p className="mt-6 text-[0.9375rem] leading-relaxed text-muted-foreground">Every patient and record is fictional. No calls, texts, or emails are sent to patients. Detection is rule-based; external AI is disabled.</p>
         </div>
-        <p className="relative mt-12 text-xs text-slate-400">
-          Research &amp; demonstration prototype · Not clinically validated · Not HIPAA-compliant
-        </p>
+        <p className="meta-label border-t border-border pt-5 leading-relaxed">Research and demonstration prototype.<br />Not clinically validated. Not HIPAA-compliant.</p>
       </aside>
-      <main id="main" className="flex flex-col px-4 py-10 sm:px-8">
-        <Link href="/" className="mb-10 self-start rounded-md lg:hidden" aria-label="SymptomWatch home">
-          <Logo />
-        </Link>
+      <main id="main" className="flex flex-col px-5 py-10 sm:px-8 lg:py-16">
+        <Link href="/" className="mb-10 self-start rounded-md lg:hidden" aria-label="SymptomWatch home"><Logo markClassName="size-6" /></Link>
         <div className="mx-auto w-full max-w-md flex-1 lg:flex lg:flex-col lg:justify-center">{children}</div>
       </main>
     </div>

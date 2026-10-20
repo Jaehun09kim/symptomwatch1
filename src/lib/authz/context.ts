@@ -10,4 +10,6 @@ export interface AppContext {
   actorUserId: string;
   clinicId: string;
   role: MemberRole;
+  /** "Manages the clinic", read from the membership server-side. */
+  canManage: boolean;
 }

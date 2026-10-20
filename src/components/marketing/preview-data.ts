@@ -12,12 +12,9 @@ const clinicTasks = tasks.filter((task) => task.clinic === clinic);
 export const previewStats = {
   patients: clinicPatients.length,
   openTasks: clinicTasks.filter((task) => task.status !== "completed").length,
-  pendingLabs: clinicPatients.flatMap((patient) => patient.labs ?? []).filter((lab) => lab.status === "ordered" || lab.status === "collected").length,
-  pendingRecords: clinicPatients
-    .flatMap((patient) => patient.referrals ?? [])
-    .filter((referral) => ["sent", "scheduled", "seen"].includes(referral.status)).length,
+  // Same definition as the dashboard's "Open records requests".
+  openRecordRequests: clinicTasks.filter((task) => task.category === "request_records" && task.status !== "completed").length,
 };
-
 /** Dates in previews are anchored to the fixed evaluation reference date. */
 export const previewDate = (offset: number) => dateAtOffset(EVALUATION_REFERENCE_DATE, offset);
 
@@ -25,6 +22,13 @@ export function previewPatientName(key: string): string {
   const patient = patients.find((entry) => entry.key === key);
   if (!patient) throw new Error(`Unknown preview patient ${key}`);
   return `${patient.firstName} ${patient.lastName}`;
+}
+
+/** Same numbering the demo seed uses: patients sorted by key, DEMO-00001 upward. */
+export function previewMrn(key: string): string {
+  const index = [...clinicPatients].sort((a, b) => a.key.localeCompare(b.key)).findIndex((patient) => patient.key === key);
+  if (index < 0) throw new Error(`Unknown preview patient ${key}`);
+  return `DEMO-${String(index + 1).padStart(5, "0")}`;
 }
 
 export const previewQueue = clinicTasks

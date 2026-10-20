@@ -30,7 +30,8 @@
 ### Input & data safety
 - Zod validation on every action and service input.
 - PHI tripwire (`src/lib/validation/phi-guard.ts`) on all free text: rejects SSN patterns, non-fictional phone numbers, emails in clinical text, outside MRNs, dates of birth, and pasted documents.
-- Database constraints: `patients.is_synthetic = true`, fictional `555-01xx` phones, `DEMO-#####` MRNs. No file uploads exist.
+- Database constraints: `patients.is_synthetic = true`, fictional `555-01xx` phones, `DEMO-#####` MRNs.
+- CSV import (v0.2): the file is read in the browser and sent as text (≤ 512 KB, ≤ 1,000 rows); nothing is stored as a file. Rows must use demo MRNs of the current clinic, free text passes the PHI tripwire, an optional name column only checks for wrong-patient rows and is discarded, and every batch is audited. Lab imports are physician-only.
 - External AI hard kill switch: startup fails unless `EXTERNAL_AI_ENABLED=false`; the LLM provider stub throws.
 
 ### Audit
@@ -45,6 +46,26 @@
 - Secrets only in environment variables; `.env*` git-ignored (except `.env.example`); `npm run setup` generates a random `SESSION_SECRET` into `.env.local` with mode 600.
 - `npm audit --omit=dev`: **0 vulnerabilities** (2026-10-17). Development-only tooling (shadcn CLI, esbuild via drizzle-kit) has advisories that do not ship in the server bundle.
 
+## Independent review (Codex, 2026-10-17)
+
+A blind, read-only Codex review of the engine and the security model found, and we fixed:
+
+| Finding | Fix |
+|---|---|
+| Admin-issued reset links work on the *global* account, so one clinic's admin could take over a person who also belongs to another clinic | Refused for members of any other clinic (they must self-serve) and for disabled members |
+| A "view as" session survived the human admin losing access | Session resolution requires the original actor to still be an active admin of that clinic |
+| Concurrent invitations could leave two usable links; accepting could change an existing membership's role/status | Unique index on outstanding invitations (`0007`); acceptance never modifies an existing membership |
+| Other outstanding reset links stayed valid after a reset | A reset invalidates every outstanding link for the account |
+| Detection could overwrite a physician's concurrent review | Reviews and runs share a per-clinic advisory lock |
+
+## Manager flag (onboarding M1, 2026-10-19)
+
+- "Manages the clinic" (`memberships.can_manage`) alone grants staff management, the audit log and demo reset; job roles never do. It is read from the membership row on every request (sessions and RLS), never from a GUC, cookie or form.
+- RLS: management policies use `app.current_can_manage()` (SECURITY DEFINER); a trigger refuses changes to one's own role or flag; services also refuse self-changes.
+- Membership mutations lock the clinic's rows and re-check the actor after the lock; a clinic keeps at least one active non-placeholder manager across disable and un-flag.
+- The database enforces the same rules (0010): the tenant path cannot delete memberships, inserts cannot add yourself or grant management, updates cannot move a membership to another person or clinic, change your own role/flag/status, or leave a clinic without an active human manager (per-clinic advisory lock). Access changes are refused while viewing as a colleague.
+- Invitations never grant the flag; managers grant it after the person joins. Every role change that grants clinical access is audited with `clinicalGrant: true`.
+
 ## Known gaps (prototype)
 
 | Gap | Risk | Production fix |
@@ -52,11 +73,17 @@
 | CSP allows `'unsafe-inline'` scripts (static CSP keeps pages prerenderable) | XSS impact not mitigated by CSP | Nonce- or hash-based CSP |
 | In-memory, per-instance rate limits | Distributed brute force | Shared store (Redis/Upstash) or edge WAF |
 | No MFA, no SSO | Account takeover via password reuse | TOTP/WebAuthn, enforced for admins; SAML/OIDC |
-| No email transport; admin-issued reset links | Admin must relay the link securely | BAA-covered transactional email |
+| No email transport; manager-issued reset links in demo workspaces only (refused in non-sandbox clinics since M1) | A manager who can mint a password could impersonate the member; real clinics must self-serve | BAA-covered transactional email for self-service recovery |
+| Last-manager guard concurrency verified only on PGlite (serialized transactions) | A true race on hosted Postgres is untested | Re-run the concurrency test against real Postgres before real clinics |
 | Column-level redaction lives in the service layer | A new service could leak a clinical column to front desk | Views or column privileges per role; tests per new service |
 | PHI tripwire is heuristic | Real data could still be typed in | Organizational controls; real-data mode would need a different design entirely |
 | Single-region, no backups/DR configured | Data loss in a hosted demo | Managed backups, PITR, tested restore |
 | `sw_app` context asserted by trusted server code | Arbitrary SQL as `sw_app` could assert another user id | The server is the boundary; no direct DB access for clients |
+| The app connects as the table owner and drops to `sw_app` with `SET LOCAL ROLE`; arbitrary SQL could `SET ROLE NONE` or rewrite `app.user_id`/`app.clinic_id` (Codex review) | RLS is not a boundary against SQL injection | Separate owner (migrations) and runtime credentials; runtime login role = `sw_app`; derive identity from signed claims |
+| Staff have row-level SELECT on `referrals` including clinical columns; redaction is in the service layer (Codex review) | A new query could expose referral reasons to front desk | Split clinical referral fields into a clinically-protected table or a restricted view |
+| Rate limits trust `X-Forwarded-For` and prune buckets with the current request's window (Codex review) | IP-based limits can be bypassed behind a permissive proxy | Ingress-provided client IP, shared atomic counters, per-bucket expiry |
+| `/dev/outbox` is gated only by `NODE_ENV !== "production"` | A publicly reachable non-production deployment would expose reset/invite links | Restrict to localhost or authenticated developers |
+| Flag events record the effective (viewed-as) user, not the human actor; the audit log records both | Review history in sandboxes can't show who really clicked | Store actor and effective user on flag events |
 | No independent penetration test or threat model | Unknown unknowns | Formal threat model + third-party pen test |
 
 ## Reporting

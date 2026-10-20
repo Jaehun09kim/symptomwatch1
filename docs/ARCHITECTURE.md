@@ -82,7 +82,7 @@ All tenant tables carry `clinic_id uuid not null` and are protected by RLS. Full
 
 **Tenant tables (RLS):**
 - `clinics` (id, name, slug, is_sandbox, owner_user_id, expires_at, created_at)
-- `memberships` (id, clinic_id, user_id, role `clinic_admin|physician|staff`, status `active|disabled`, created_at) unique (clinic_id, user_id)
+- `memberships` (id, clinic_id, user_id, role `clinic_admin|physician|staff`, status `active|disabled`, can_manage boolean, created_at) unique (clinic_id, user_id). `role` is the job role (labelled Practice admin / Physician / Front desk); `can_manage` is "manages the clinic" (0009).
 - `invitations` (id, clinic_id, email, role, token_hash, invited_by, expires_at, accepted_at, revoked_at)
 - `patients` (id, clinic_id, demo_mrn `DEMO-#####`, first_name, last_name, date_of_birth, sex, phone (555-01xx only), primary_physician_id, care_status `active|transferred_out`, is_synthetic **check (is_synthetic = true)**, seed_key, created_at)
 - `encounters` (id, clinic_id, patient_id, occurred_at, encounter_type, provider_id, chief_complaint, assessment, plan, follow_up_kind `interval|as_needed|none`, follow_up_interval_days, seed_key)
@@ -112,8 +112,8 @@ clinic_id = app.current_clinic_id() AND app.is_active_member(clinic_id)
 Role-restricted tables add `AND app.current_role() IN ('clinic_admin','physician')`:
 `encounters`, `symptom_observations`, `lab_orders`, `detection_flags`, `flag_feedback`, `detection_runs`.
 `tasks` with `category = 'clinical_review'` are invisible to `staff`.
-`audit_logs`: SELECT for `clinic_admin` only; INSERT for any member; no UPDATE/DELETE.
-`memberships`/`invitations` writes: `clinic_admin` only.
+`audit_logs`: SELECT for managers only (`app.current_can_manage()`); INSERT for any member; no UPDATE/DELETE.
+`memberships`/`invitations` writes and `clinics` updates: managers only (`app.current_can_manage()`, 0009). Trigger `memberships_protect_self` refuses any change to one's own role or manager flag on the tenant path.
 
 Column-level minimization (e.g. hiding `referrals.reason` and `outcome_summary` from front-desk staff) is done in the service layer projections; documented as a known limitation of row-level policies.
 
@@ -133,11 +133,13 @@ On Supabase, the app role is granted to the connection user; `anon`/`authenticat
 | `flag.read` | ✓ | ✓ | ✗ |
 | `flag.review` (confirm / dismiss / feedback) | ✗ | ✓ | ✗ |
 | `detection.run` | ✓ | ✓ | ✗ |
-| `staff.manage` (invite, change role, disable) | ✓ | ✗ | ✗ |
-| `audit.read` | ✓ | ✗ | ✗ |
-| `demo.reset` / `demo.impersonate_placeholder` (sandbox only) | ✓ | ✗ | ✗ |
+| `staff.manage` (invite, change role, disable) | manager flag | manager flag | manager flag |
+| `audit.read` | manager flag | manager flag | manager flag |
+| `demo.reset` / view-as placeholders (sandbox only) | manager flag | manager flag | manager flag |
 
-Guards: `requireSession()`, `requirePermission(perm)` return a `TenantContext { userId, clinicId, role }`. Every Server Action and data-loading Server Component calls a guard before any service call. Services take `TenantContext` as their first argument and also include `clinic_id` predicates explicitly.
+Since onboarding M1 the three management permissions come only from `memberships.can_manage` ("manages the clinic"), never from the job role: `can(subject, permission)` takes a bare role (role permissions only) or `{ role, canManage }`. A front-desk manager can run staff and audit without clinical access. Membership mutations lock the clinic's membership rows, re-check the actor after the lock, refuse self-changes, and keep at least one active non-placeholder manager.
+
+Guards: `requireSession()`, `requirePermission(perm)` return a `TenantContext { userId, clinicId, role, canManage }` (the flag is read from the membership on every request). Every Server Action and data-loading Server Component calls a guard before any service call. Services take `TenantContext` as their first argument and also include `clinic_id` predicates explicitly.
 
 ## 7. Authentication
 
@@ -230,3 +232,9 @@ Codex reviewed this plan (`codex_review_plan`) before implementation. Adopted ch
 | Rate limits | `RATE_LIMIT_SCALE` multiplies allowances (tests use 50); cannot disable limiting. | Deterministic e2e runs without an "off" switch that could leak into production. |
 | Muted text color | `slate-500` → `#56667c` (≥ 5:1 on every surface). | axe flagged Tailwind's default at 4.47:1. |
 | Timeline anchors | `ev-<kind>-<id>`; visits also carry `ev-symptom_observation-<id>` aliases. | Flag evidence links resolve to the exact charted entry. |
+| Alert controls (v0.2) | `0006_alert_controls.sql`: snooze columns, `review_reason`, `suppressed` status, `clinic_rule_settings` (physician-only writes; trigger lets non-physicians *clear* but never set a snooze). Engine takes `disabledRules`; persistence reads clinic settings (`src/lib/detection/clinic-config.ts`). | Fewer, better flags; tuning is a clinical decision. Evaluation keeps engine defaults. |
+| Review/detection serialization | `lockClinicFlags()` (per-clinic advisory lock) is taken by detection runs *and* physician reviews. | Codex review: a run could overwrite a concurrent review. |
+| Security fixes (v0.2) | Reset links refused for multi-clinic members; view-as requires the human to remain an active admin; `0007` one outstanding invitation per clinic+email; resets invalidate all outstanding tokens. | Codex review findings. |
+| CSV import (v0.2) | `0008_imports.sql` (`import_batches`, `external_ref`, `import_batch_id`; clinical-role INSERT on labs/referrals; lab UPDATE stays physician-only). Pure `src/lib/import/{csv,fields,normalize}.ts`; `src/lib/services/imports.ts` plans, previews, commits (tenant path), and refreshes affected patients' flags in the same transaction. | Data on-ramp without widening the system path; filing results stays a physician action. |
+| Worktrees | `.worktrees/` is git-ignored and excluded from ESLint and `tsc`. If `next dev` ever reload-loops, delete `.next/dev` (stale dev cache). | Parallel Claude/Codex branches. |
+| Manager flag (onboarding M1) | `0009_manager_flag.sql`: `memberships.can_manage` (backfilled from `clinic_admin`), `app.current_can_manage()`, management policies dropped and recreated (permissive policies OR together), self-change trigger. `can()` takes `{ role, canManage }`; sessions carry the flag; view-as requires the human actor to be a manager. Manager-issued reset links only in sandbox clinics. | Approved onboarding design + Codex security review (front-desk owners manage without clinical access; no account takeover via reset links). |

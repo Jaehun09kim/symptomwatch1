@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { MailWarning } from "lucide-react";
 import { AcceptInvitationForm, SignUpForm } from "@/components/auth/auth-forms";
 import { getInvitationPreview } from "@/lib/auth/accounts";
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: "Join a demo clinic", robots: { index
 
 async function InviteContent({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  await connection(); // invitation expiry is checked against the clock: request time only
   const [invitation, session] = await Promise.all([getInvitationPreview(token), getCurrentSession()]);
   if (!invitation) {
     return (
@@ -24,7 +26,7 @@ async function InviteContent({ params }: { params: Promise<{ token: string }> })
   }
   return (
     <div>
-      <h1 className="text-3xl font-semibold">Join {invitation.clinicName}</h1>
+      <h1 className="display-heading text-4xl">Join {invitation.clinicName}</h1>
       <p className="mt-2 text-body">
         {invitation.inviterName} invited <strong className="text-navy">{invitation.email}</strong> to join as{" "}
         <strong className="text-navy">{roleLabel[invitation.role]}</strong>.

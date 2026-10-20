@@ -59,7 +59,7 @@ Never commit these values; `.env*` files are git-ignored except `.env.example`.
 
 ## 4. Deploy and verify
 
-1. Deploy. Then open `https://<your-project>.vercel.app/api/health` → expect `{"status":"ok","driver":"postgres","migrationsApplied":5,"clinics":2}`.
+1. Deploy. Then open `https://<your-project>.vercel.app/api/health` → expect `{"status":"ok","driver":"postgres","migrationsApplied":8,"clinics":2}`.
 2. Click **Try Demo → Start as Physician** → you should land on a private sandbox dashboard with flags on the Review page.
 3. **Create Demo Account** → you become administrator of a 30-patient sandbox.
 4. Check response headers on `/app`: `x-robots-tag: noindex, nofollow` and `cache-control: private, no-store`.

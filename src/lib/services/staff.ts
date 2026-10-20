@@ -12,8 +12,25 @@ import { ServiceError } from "./errors";
 
 const INVITE_DAYS = 7;
 
+const NOT_MANAGER = "Only clinic managers can manage staff.";
+const SELF_CHANGE = "You can't change your own access. Ask another manager.";
+const LAST_MANAGER = "A clinic needs at least one active manager.";
+
 function requireAdmin(ctx: AppContext): void {
-  if (!can(ctx.role, "staff.manage")) throw new ServiceError("Only clinic administrators can manage staff.");
+  if (!can(ctx, "staff.manage")) throw new ServiceError(NOT_MANAGER);
+}
+
+/**
+ * Access changes act for a human. While a sandbox manager is "viewing as" a
+ * colleague, the effective user isn't the person deciding, so refuse outright
+ * (Codex review: self-checks compared against the colleague, not the human).
+ */
+function requireActingAsSelf(ctx: AppContext): void {
+  if (ctx.actorUserId !== ctx.userId) throw new ServiceError("Access changes aren't available while viewing as a colleague.");
+}
+
+function isSelf(ctx: AppContext, userId: string): boolean {
+  return userId === ctx.userId || userId === ctx.actorUserId;
 }
 
 export interface InvitationRow {
@@ -90,15 +107,42 @@ export async function revokeInvitation(ctx: AppContext, invitationId: string, da
   }, database);
 }
 
-/** Locks the clinic's admin rows so two concurrent demotions can't remove the last administrator. */
-async function assertKeepsAnAdmin(tx: DbTransaction, ctx: AppContext, changingUserId: string): Promise<void> {
-  const admins = await tx.select({ userId: memberships.userId }).from(memberships)
-    .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.role, "clinic_admin"), eq(memberships.status, "active")))
-    .for("update");
-  if (admins.length === 1 && admins[0].userId === changingUserId) {
-    throw new ServiceError("A clinic needs at least one active administrator.");
-  }
+interface LockedMember { userId: string; role: MemberRole; status: "active" | "disabled"; canManage: boolean; isPlaceholder: boolean }
+
+/**
+ * Serializes membership management per clinic: locks every membership row, then
+ * re-checks that the actor is still an active manager (a concurrent change may
+ * have removed them while they waited for the lock).
+ */
+async function lockClinicMemberships(tx: DbTransaction, ctx: AppContext): Promise<LockedMember[]> {
+  const rows = await tx.select({
+    userId: memberships.userId,
+    role: memberships.role,
+    status: memberships.status,
+    canManage: memberships.canManage,
+    isPlaceholder: users.isPlaceholder,
+  }).from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(eq(memberships.clinicId, ctx.clinicId))
+    .for("update", { of: memberships });
+  const actor = rows.find((row) => row.userId === ctx.userId);
+  if (!actor || actor.status !== "active" || !actor.canManage) throw new ServiceError(NOT_MANAGER);
+  return rows;
 }
+
+/** Placeholders (fictional sandbox colleagues) can't sign in, so they don't count as the clinic's manager. */
+function assertKeepsAHumanManager(rows: LockedMember[], losingUserId: string): void {
+  const remaining = rows.filter((row) => row.status === "active" && row.canManage && !row.isPlaceholder && row.userId !== losingUserId);
+  if (!remaining.length) throw new ServiceError(LAST_MANAGER);
+}
+
+function findMember(rows: LockedMember[], userId: string): LockedMember {
+  const member = rows.find((row) => row.userId === userId);
+  if (!member) throw new ServiceError("Member not found.");
+  return member;
+}
+
+const CLINICAL_ROLES: ReadonlySet<MemberRole> = new Set(["physician", "clinic_admin"]);
 
 export async function changeMemberRole(
   ctx: AppContext,
@@ -106,15 +150,36 @@ export async function changeMemberRole(
   database?: DatabaseHandle,
 ): Promise<void> {
   requireAdmin(ctx);
+  requireActingAsSelf(ctx);
+  if (isSelf(ctx, input.userId)) throw new ServiceError(SELF_CHANGE);
   await withTenant(ctx, async (tx) => {
-    const [member] = await tx.select({ role: memberships.role }).from(memberships)
-      .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.userId, input.userId)));
-    if (!member) throw new ServiceError("Member not found.");
+    const member = findMember(await lockClinicMemberships(tx, ctx), input.userId);
     if (member.role === input.role) return;
-    if (member.role === "clinic_admin") await assertKeepsAnAdmin(tx, ctx, input.userId);
     await tx.update(memberships).set({ role: input.role })
       .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.userId, input.userId)));
-    await recordAudit(tx, ctx, "membership.role_changed", { type: "user", id: input.userId }, { from: member.role, to: input.role });
+    // Granting clinical access is recorded distinctly so physicians can be shown who was let in (M2).
+    const clinicalGrant = CLINICAL_ROLES.has(input.role) && !CLINICAL_ROLES.has(member.role);
+    await recordAudit(tx, ctx, "membership.role_changed", { type: "user", id: input.userId },
+      { from: member.role, to: input.role, ...(clinicalGrant ? { clinicalGrant: true } : {}) });
+  }, database);
+}
+
+export async function setMemberCanManage(
+  ctx: AppContext,
+  input: { userId: string; canManage: boolean },
+  database?: DatabaseHandle,
+): Promise<void> {
+  requireAdmin(ctx);
+  requireActingAsSelf(ctx);
+  if (isSelf(ctx, input.userId)) throw new ServiceError(SELF_CHANGE);
+  await withTenant(ctx, async (tx) => {
+    const rows = await lockClinicMemberships(tx, ctx);
+    const member = findMember(rows, input.userId);
+    if (member.canManage === input.canManage) return;
+    if (!input.canManage) assertKeepsAHumanManager(rows, input.userId);
+    await tx.update(memberships).set({ canManage: input.canManage })
+      .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.userId, input.userId)));
+    await recordAudit(tx, ctx, "membership.manage_changed", { type: "user", id: input.userId }, { from: member.canManage, to: input.canManage });
   }, database);
 }
 
@@ -124,13 +189,13 @@ export async function setMemberStatus(
   database?: DatabaseHandle,
 ): Promise<void> {
   requireAdmin(ctx);
-  if (input.userId === ctx.userId && input.status === "disabled") throw new ServiceError("You can't disable your own access.");
+  requireActingAsSelf(ctx);
+  if (isSelf(ctx, input.userId)) throw new ServiceError(input.status === "disabled" ? "You can't disable your own access." : SELF_CHANGE);
   await withTenant(ctx, async (tx) => {
-    const [member] = await tx.select({ role: memberships.role, status: memberships.status }).from(memberships)
-      .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.userId, input.userId)));
-    if (!member) throw new ServiceError("Member not found.");
+    const rows = await lockClinicMemberships(tx, ctx);
+    const member = findMember(rows, input.userId);
     if (member.status === input.status) return;
-    if (input.status === "disabled" && member.role === "clinic_admin") await assertKeepsAnAdmin(tx, ctx, input.userId);
+    if (input.status === "disabled" && member.canManage) assertKeepsAHumanManager(rows, input.userId);
     await tx.update(memberships).set({ status: input.status })
       .where(and(eq(memberships.clinicId, ctx.clinicId), eq(memberships.userId, input.userId)));
     await recordAudit(tx, ctx, input.status === "disabled" ? "membership.disabled" : "membership.enabled", { type: "user", id: input.userId });

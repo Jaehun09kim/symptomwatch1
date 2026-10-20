@@ -8,9 +8,10 @@ import { createHash } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { detectionFlags, detectionRuns, flagEvents } from "@/lib/db/schema";
 import type { DbTransaction } from "@/lib/db/types";
+import { readRuleSettings } from "./clinic-config";
 import { getDetectionProvider } from "./engine";
 import { loadPatientSnapshots } from "@/lib/services/snapshots";
-import { DEFAULT_RULE_CONFIG, RULES_VERSION, type Finding } from "./types";
+import { RULES_VERSION, type Finding, type RuleId } from "./types";
 
 export interface DetectionRunSummary {
   patientsEvaluated: number;
@@ -18,6 +19,16 @@ export interface DetectionRunSummary {
   created: number;
   reopened: number;
   resolved: number;
+  /** Flags parked because their rule is turned off in clinic settings. */
+  suppressed: number;
+}
+
+/**
+ * Serializes everything that changes flag state in a clinic — detection runs and
+ * physician reviews — so a run can't overwrite a review it read before commit.
+ */
+export async function lockClinicFlags(tx: DbTransaction, clinicId: string): Promise<void> {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`detection:${clinicId}`}))`);
 }
 
 export function evidenceHash(finding: Pick<Finding, "evidence" | "missingInfo">): string {
@@ -30,6 +41,7 @@ export function evidenceHash(finding: Pick<Finding, "evidence" | "missingInfo">)
 }
 
 type FlagRow = typeof detectionFlags.$inferSelect;
+const CLEAR_SNOOZE = { snoozedUntil: null, snoozedBy: null, snoozeNote: null };
 type EventType = (typeof flagEvents.$inferInsert)["eventType"];
 
 export async function applyDetectionRun(
@@ -41,15 +53,18 @@ export async function applyDetectionRun(
     asOf: Date;
     patientIds?: string[];
     externalAiEnabled?: boolean;
+    /** Event note for flags that stop matching, e.g. after a settings change. */
+    resolvedNote?: string;
   },
 ): Promise<DetectionRunSummary> {
   const { clinicId, actorUserId } = input;
-  // Serialize runs per clinic so concurrent refreshes can't interleave lifecycle transitions.
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`detection:${clinicId}`}))`);
+  await lockClinicFlags(tx, clinicId);
 
   const provider = getDetectionProvider("rules", input.externalAiEnabled ?? false);
+  const settings = await readRuleSettings(tx, clinicId);
+  const disabled = new Set<RuleId>(settings.disabledRules);
   const snapshots = await loadPatientSnapshots(tx, input.patientIds, { clinicId, clinical: true });
-  const findings = await provider.detect(snapshots, { asOf: input.asOf.toISOString(), config: DEFAULT_RULE_CONFIG });
+  const findings = await provider.detect(snapshots, { asOf: input.asOf.toISOString(), config: settings.config, disabledRules: settings.disabledRules });
   const evaluatedIds = snapshots.map((snapshot) => snapshot.patientId);
 
   const existing: FlagRow[] = evaluatedIds.length
@@ -58,7 +73,7 @@ export async function applyDetectionRun(
   const byFingerprint = new Map(existing.map((flag) => [flag.fingerprint, flag]));
   const seen = new Set<string>();
   const events: Array<{ flagId: string; eventType: EventType; note?: string }> = [];
-  const summary: DetectionRunSummary = { patientsEvaluated: snapshots.length, findings: findings.length, created: 0, reopened: 0, resolved: 0 };
+  const summary: DetectionRunSummary = { patientsEvaluated: snapshots.length, findings: findings.length, created: 0, reopened: 0, resolved: 0, suppressed: 0 };
 
   for (const found of findings) {
     seen.add(found.fingerprint);
@@ -91,28 +106,48 @@ export async function applyDetectionRun(
     const changed = current.evidenceHash !== hash;
     let status = current.status;
     let eventType: EventType | null = changed ? "updated" : null;
+    let note: string | undefined;
     if (current.status === "resolved_by_data") {
       status = "open";
       eventType = "reopened";
+    } else if (current.status === "suppressed") {
+      status = "open";
+      eventType = "reopened";
+      note = "The rule was turned back on in clinic settings.";
     } else if (current.status === "dismissed" && changed) {
       status = "open";
       eventType = "reopened_evidence_changed";
     }
     if (status !== current.status) summary.reopened += 1;
-    // A dismissed flag with unchanged evidence keeps its stored evidence as reviewed.
-    if (current.status === "dismissed" && !changed) continue;
-    await tx.update(detectionFlags).set({ ...detectionFields, status })
+    // A dismissed flag with unchanged evidence keeps its stored evidence as reviewed;
+    // only its rule version is kept current (§6.6).
+    if (current.status === "dismissed" && !changed) {
+      if (current.ruleVersion !== found.ruleVersion) {
+        await tx.update(detectionFlags).set({ ruleVersion: found.ruleVersion })
+          .where(and(eq(detectionFlags.clinicId, clinicId), eq(detectionFlags.id, current.id)));
+      }
+      continue;
+    }
+    // New documentation wakes a snoozed flag early.
+    const wake = changed && current.snoozedUntil !== null;
+    await tx.update(detectionFlags).set({ ...detectionFields, status, ...(wake ? CLEAR_SNOOZE : {}) })
       .where(and(eq(detectionFlags.clinicId, clinicId), eq(detectionFlags.id, current.id)));
-    if (eventType) events.push({ flagId: current.id, eventType });
+    if (eventType) events.push({ flagId: current.id, eventType, note });
+    if (wake) events.push({ flagId: current.id, eventType: "unsnoozed", note: "The record changed while the flag was snoozed." });
   }
 
   for (const flag of existing) {
     if (seen.has(flag.fingerprint)) continue;
-    if (flag.status !== "open" && flag.status !== "confirmed") continue;
-    await tx.update(detectionFlags).set({ status: "resolved_by_data" })
+    const ruleOff = disabled.has(flag.ruleId);
+    if (flag.status === "suppressed" ? ruleOff : flag.status !== "open" && flag.status !== "confirmed") continue;
+    const next = ruleOff ? "suppressed" : "resolved_by_data";
+    await tx.update(detectionFlags).set({ status: next, ...CLEAR_SNOOZE })
       .where(and(eq(detectionFlags.clinicId, clinicId), eq(detectionFlags.id, flag.id)));
-    events.push({ flagId: flag.id, eventType: "resolved_by_data", note: "The rule no longer matches the documented record." });
-    summary.resolved += 1;
+    events.push(ruleOff
+      ? { flagId: flag.id, eventType: "suppressed", note: "The rule was turned off in clinic settings." }
+      : { flagId: flag.id, eventType: "resolved_by_data", note: input.resolvedNote ?? "The rule no longer matches the documented record." });
+    if (ruleOff) summary.suppressed += 1;
+    else summary.resolved += 1;
   }
 
   if (events.length) {

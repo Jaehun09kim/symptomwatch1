@@ -9,10 +9,11 @@ import type { AppContext } from "@/lib/authz/context";
 import type { Permission } from "@/lib/authz/permissions";
 import type { MemberRole } from "@/lib/labels";
 import { resetDemoClinic } from "@/lib/services/demo-sandbox";
-import { addFlagFeedback, confirmFlag, dismissFlag, runDetectionForClinic } from "@/lib/services/detection";
+import { addFlagFeedback, confirmFlag, dismissFlag, runDetectionForClinic, snoozeFlag, unsnoozeFlag } from "@/lib/services/detection";
+import { RULE_IDS, updateRuleSettings } from "@/lib/services/rule-settings";
 import { ServiceError } from "@/lib/services/errors";
 import { scheduleAppointment, updateAppointment, updateLab, updateReferral } from "@/lib/services/records";
-import { changeMemberRole, inviteStaff, revokeInvitation, setMemberStatus } from "@/lib/services/staff";
+import { changeMemberRole, inviteStaff, revokeInvitation, setMemberCanManage, setMemberStatus } from "@/lib/services/staff";
 import { createTask, updateTask } from "@/lib/services/tasks";
 import { fieldErrorsFrom, inviteSchema, type FieldErrors } from "@/lib/validation/auth";
 
@@ -69,6 +70,14 @@ export async function updateTaskAction(_previous: ActionResult | null, form: For
   }), "Task updated.");
 }
 
+export async function recordTaskOutcomeAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("task.manage", (ctx) => updateTask(ctx, {
+    taskId: str(form, "taskId") ?? "",
+    outcomeChoice: str(form, "outcomeChoice") ?? "",
+    outcomeNote: str(form, "outcomeNote") ?? "",
+  }), "Outcome recorded.");
+}
+
 export async function updateAppointmentAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
   return run("appointment.manage", (ctx) => updateAppointment(ctx, {
     appointmentId: str(form, "appointmentId") ?? "",
@@ -118,6 +127,13 @@ export async function revokeInvitationAction(_previous: ActionResult | null, for
   return run("staff.manage", (ctx) => revokeInvitation(ctx, str(form, "invitationId") ?? ""), "Invitation revoked.");
 }
 
+export async function setMemberCanManageAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("staff.manage", (ctx) => setMemberCanManage(ctx, {
+    userId: str(form, "userId") ?? "",
+    canManage: str(form, "canManage") === "true",
+  }), "Manager access updated.");
+}
+
 export async function changeRoleAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
   return run("staff.manage", (ctx) => changeMemberRole(ctx, {
     userId: str(form, "userId") ?? "",
@@ -162,14 +178,51 @@ export async function confirmFlagAction(_previous: ActionResult | null, form: Fo
     note: str(form, "note") ?? "",
     createTask: form.get("createTask") === "on",
     taskTitle: str(form, "taskTitle") ?? "",
-    taskCategory: (str(form, "taskCategory") ?? "clinical_review") as never,
-    assigneeId: str(form, "assigneeId") ?? "",
+    taskCategory: str(form, "taskCategory") as never,
+    assigneeId: str(form, "assigneeId"),
     dueDate: str(form, "dueDate") ?? "",
   }), "Gap confirmed.");
 }
 
 export async function dismissFlagAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
-  return run("flag.review", (ctx) => dismissFlag(ctx, { flagId: str(form, "flagId") ?? "", reason: str(form, "reason") ?? "" }), "Flag dismissed.");
+  return run("flag.review", (ctx) => dismissFlag(ctx, {
+    flagId: str(form, "flagId") ?? "",
+    reasonCode: (str(form, "reasonCode") || "other") as never,
+    reason: str(form, "reason") ?? "",
+  }), "Flag dismissed.");
+}
+
+export async function snoozeFlagAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("flag.review", (ctx) => snoozeFlag(ctx, {
+    flagId: str(form, "flagId") ?? "",
+    until: str(form, "until") ?? "",
+    note: str(form, "note") ?? "",
+  }), "Flag snoozed. It will return to the queue on that date, or sooner if the record changes.");
+}
+
+export async function unsnoozeFlagAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("flag.review", (ctx) => unsnoozeFlag(ctx, { flagId: str(form, "flagId") ?? "" }), "Flag is back in the review queue.");
+}
+
+export async function updateRuleSettingsAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return run("detection.configure", async (ctx) => {
+    const summary = await updateRuleSettings(ctx, {
+      overdueGraceDays: str(form, "overdueGraceDays") as never,
+      labGraceDays: str(form, "labGraceDays") as never,
+      referralSentGraceDays: str(form, "referralSentGraceDays") as never,
+      referralRecordsDays: str(form, "referralRecordsDays") as never,
+      symptomMinEncounters: str(form, "symptomMinEncounters") as never,
+      symptomMinSpanDays: str(form, "symptomMinSpanDays") as never,
+      disabledRules: RULE_IDS.filter((rule) => form.get(`enabled:${rule}`) !== "on"),
+    });
+    const parts = [
+      summary.created && `${summary.created} new`,
+      summary.reopened && `${summary.reopened} reopened`,
+      summary.resolved && `${summary.resolved} closed (no longer meet the settings)`,
+      summary.suppressed && `${summary.suppressed} parked (rule turned off)`,
+    ].filter(Boolean);
+    return { ok: true, message: `Settings saved and detection re-run${parts.length ? `: ${parts.join(", ")}` : " — no flags changed"}.` };
+  }, "Settings saved.");
 }
 
 export async function flagFeedbackAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {

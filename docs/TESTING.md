@@ -55,10 +55,10 @@ Accessible text for provenance and status badges; locked metric cards hide value
 | `accessibility.spec.ts` | axe-core WCAG 2.2 AA: no serious/critical violations on 5 public and 6 authenticated pages; skip link; dialog keyboard handling |
 | `responsive.spec.ts` | Mobile (Pixel 7): no horizontal scroll; app navigation sheet works |
 
-## Latest results (2026-10-17)
+## Latest results (2026-10-17, v0.2 branch)
 
-- Vitest: **153 passed** (18 files)
-- Playwright: **27 passed**
+- Vitest: **190 passed** (21 files) — adds alert controls, imports, review-finding regressions, security fixes
+- Playwright: **32 passed** — adds snooze/wake, structured dismissal, review workspace keyboard/URL behavior, rules page axe and mobile checks
 - Evaluation: precision 83.3%, recall 83.3%, F1 83.3%, FPR 4.9% (synthetic; see `evaluation/RESULTS.md`), independently verified in Python
 
 ## Not covered (yet)

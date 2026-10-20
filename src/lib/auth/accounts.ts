@@ -2,7 +2,7 @@
  * Local account flows. Cookie handling lives in Server Actions; these
  * functions only touch the database so they can be integration-tested.
  */
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import { clinics, invitations, memberships, outboxMessages, passwordResetTokens, users } from "@/lib/db/schema";
 import { withSystem } from "@/lib/db/system";
 import type { DatabaseHandle, DbTransaction } from "@/lib/db/types";
@@ -108,7 +108,7 @@ export async function registerAccount(
     if (invitation) {
       // Throwing (not returning) rolls back the user row inserted above.
       if (!(await consumeInvitation(tx, invitation.id))) throw new AbortTransaction({ ok: false, error: "This invitation was just used or revoked." });
-      await tx.insert(memberships).values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role });
+      await tx.insert(memberships).values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role, canManage: false });
       clinicId = invitation.clinicId;
       await recordAuthEvent(tx, { action: "invite.accepted", clinicId, actorUserId: user.id, entityType: "invitation", entityId: invitation.id, metadata: { role: invitation.role } });
     } else {
@@ -182,20 +182,23 @@ export async function acceptInvitationAsUser(
   meta: RequestMeta = {},
   database?: DatabaseHandle,
 ): Promise<SessionGrant | AuthFailure> {
-  return withSystem(async (tx) => {
+  return withSystem<SessionGrant | AuthFailure>(async (tx) => {
     const invitation = await findUsableInvitation(tx, token);
     if (!invitation) return { ok: false, error: "This invitation link is invalid, expired, or already used." };
     if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
       return { ok: false, error: `This invitation was sent to ${invitation.email}. Sign in with that account to accept it.` };
     }
     if (!(await consumeInvitation(tx, invitation.id))) return { ok: false, error: "This invitation was just used or revoked." };
-    await tx.insert(memberships)
-      .values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role })
-      .onConflictDoUpdate({ target: [memberships.clinicId, memberships.userId], set: { role: invitation.role, status: "active" } });
+    // Never change an existing membership's role or status through an invitation.
+    const [joined] = await tx.insert(memberships)
+      .values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role, canManage: false })
+      .onConflictDoNothing({ target: [memberships.clinicId, memberships.userId] })
+      .returning({ id: memberships.id });
+    if (!joined) throw new AbortTransaction({ ok: false, error: "You already belong to this clinic. Ask its administrator to change your access instead." });
     await recordAuthEvent(tx, { action: "invite.accepted", clinicId: invitation.clinicId, actorUserId: user.id, entityType: "invitation", entityId: invitation.id, metadata: { role: invitation.role } });
     const { token: sessionToken, expiresAt } = await createSessionRecord(tx, { userId: user.id, clinicId: invitation.clinicId, userAgent: meta.userAgent });
     return { ok: true, token: sessionToken, expiresAt, userId: user.id, clinicId: invitation.clinicId };
-  }, database);
+  }, database).catch(unwrapAbort);
 }
 
 /** Simulated email delivery for staff (never patients). */
@@ -248,14 +251,24 @@ export async function issueResetLinkForMember(
   database?: DatabaseHandle,
 ): Promise<{ ok: true; link: string } | AuthFailure> {
   return withSystem(async (tx) => {
-    const [admin] = await tx.select({ role: memberships.role, status: memberships.status }).from(memberships)
+    const [admin] = await tx.select({ canManage: memberships.canManage, status: memberships.status, isSandbox: clinics.isSandbox }).from(memberships)
+      .innerJoin(clinics, eq(clinics.id, memberships.clinicId))
       .where(and(eq(memberships.clinicId, input.clinicId), eq(memberships.userId, input.adminUserId)));
-    if (admin?.role !== "clinic_admin" || admin.status !== "active") return { ok: false, error: "Only clinic administrators can issue reset links." };
-    const [member] = await tx.select({ isPlaceholder: users.isPlaceholder }).from(memberships)
+    if (!admin?.canManage || admin.status !== "active") return { ok: false, error: "Only clinic managers can issue reset links." };
+    // A manager who can mint someone's password can become them. Real clinics use
+    // self-service recovery only; manager-issued links exist for demo workspaces.
+    if (!admin.isSandbox) return { ok: false, error: "Reset links are only available in demo workspaces. Ask the person to use Forgot password." };
+    const [member] = await tx.select({ isPlaceholder: users.isPlaceholder, status: memberships.status }).from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
       .where(and(eq(memberships.clinicId, input.clinicId), eq(memberships.userId, input.memberUserId)));
     if (!member) return { ok: false, error: "That person isn't a member of this clinic." };
     if (member.isPlaceholder) return { ok: false, error: "Fictional placeholder colleagues can't sign in." };
+    if (member.status !== "active") return { ok: false, error: "Re-enable this person's access before issuing a reset link." };
+    // A password belongs to the whole account, not this clinic: never hand one clinic's
+    // admin the keys to someone's access elsewhere.
+    const [elsewhere] = await tx.select({ id: memberships.id }).from(memberships)
+      .where(and(eq(memberships.userId, input.memberUserId), ne(memberships.clinicId, input.clinicId))).limit(1);
+    if (elsewhere) return { ok: false, error: "This person also belongs to another clinic, so only they can reset their password (Forgot password on the sign-in page)." };
     const token = await issueResetToken(tx, input.memberUserId);
     await recordAuthEvent(tx, { action: "auth.password_reset_link_issued", clinicId: input.clinicId, actorUserId: input.adminUserId, entityType: "user", entityId: input.memberUserId });
     return { ok: true, link: resetLink(token) };
@@ -281,6 +294,9 @@ export async function resetPassword(
     const policy = validatePassword(input.password, user.email);
     if (!policy.valid) throw new AbortTransaction({ ok: false, field: "password", error: policy.errors.join(" ") });
     await tx.update(users).set({ passwordHash: await hashPassword(input.password) }).where(eq(users.id, consumed.userId));
+    // Any other outstanding link for this account stops working too.
+    await tx.update(passwordResetTokens).set({ usedAt: sql`now()` })
+      .where(and(eq(passwordResetTokens.userId, consumed.userId), isNull(passwordResetTokens.usedAt)));
     await revokeAllSessionsForUser(tx, consumed.userId);
     await recordAuthEvent(tx, { action: "auth.password_reset_completed", actorUserId: consumed.userId, ipHash: meta.ipHash });
     return { ok: true } as const;

@@ -1,10 +1,18 @@
 import { Suspense } from "react";
-import { CalendarClock, CheckCheck, ClipboardCheck, FlaskConical, ListChecks, Send, Users } from "lucide-react";
+import Link from "next/link";
+import { ClipboardCheck, Inbox } from "lucide-react";
 import { HorizontalBarChart, WeeklyTrendChart } from "@/components/charts/dashboard-charts";
 import { PatientsPanel } from "@/components/app/patients/patients-panel";
-import { PageHeader } from "@/components/app/primitives/layout";
+import { EmptyState, PageHeader } from "@/components/app/primitives/layout";
 import { StatCard } from "@/components/app/primitives/stat-card";
+import { DataFreshness } from "@/components/app/primitives/data-freshness";
+import { getLastSuccessfulImport } from "@/lib/services/imports";
 import { requireSession, toAppContext } from "@/lib/auth/current";
+import { can } from "@/lib/authz/permissions";
+import { formatTimelineDate } from "@/components/app/primitives/timeline-item";
+import { RunDetectionButton } from "@/components/app/review/flag-review";
+import { listFlags, getLastRun } from "@/lib/services/detection";
+import { listTasks } from "@/lib/services/tasks";
 import { ruleLabel, taskCategoryLabel } from "@/lib/labels";
 import { getDashboardSummary } from "@/lib/services/dashboard";
 
@@ -17,9 +25,9 @@ const welcome: Record<string, string> = {
 
 function Panel({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-white p-5 shadow-soft">
+    <section className="border-t border-border py-5">
       <h2 className="text-base font-semibold">{title}</h2>
-      {description ? <p className="mt-0.5 text-sm text-slate-500">{description}</p> : null}
+      {description ? <p className="mt-0.5 text-sm text-body">{description}</p> : null}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -28,52 +36,91 @@ function Panel({ title, description, children }: { title: string; description?: 
 async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
   const [session, params] = await Promise.all([requireSession(), searchParams]);
   const ctx = toAppContext(session);
-  const summary = await getDashboardSummary(ctx);
+  const clinical = can(session.role, "flag.read");
+  const [summary, flags, dueTasks, lastRun, lastImport] = await Promise.all([
+    getDashboardSummary(ctx),
+    clinical ? listFlags(ctx) : Promise.resolve([]),
+    clinical ? Promise.resolve([]) : listTasks(ctx),
+    clinical ? getLastRun(ctx) : Promise.resolve(null),
+    clinical ? getLastSuccessfulImport(ctx) : Promise.resolve(null),
+  ]);
   const locked = "Visible to clinical roles";
   const welcomeMessage = typeof params.welcome === "string" ? welcome[params.welcome] : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Dashboard"
-        description={`${session.clinicName} · follow-up overview`}
+        description={`${session.clinicName} · Review open work, then assign the next follow-up.`}
       />
       {welcomeMessage ? (
-        <p role="status" className="rounded-xl border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
+        <p role="status" className="rounded-md border border-teal/30 bg-teal-soft px-4 py-3 text-sm text-teal-strong">{welcomeMessage}</p>
       ) : null}
+      {clinical ? <DataFreshness lastImport={lastImport} lastRun={lastRun} /> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total demo patients" value={summary.totalPatients} icon={Users} tone="slate" href="/app/patients" />
-        <StatCard label="Open follow-ups" value={summary.openTasks} icon={ListChecks} href="/app/queue" hint="Tasks not yet completed" />
+      <section aria-labelledby="next-work" className="rounded-lg border border-border bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="next-work" className="text-base font-semibold text-navy">{clinical ? "Review next" : "Due next"}</h2>
+          <Link href={clinical ? "/app/review" : "/app/queue"} className="inline-flex min-h-11 items-center text-sm text-brand underline">{clinical ? "Browse flags" : "Open follow-up queue"}</Link>
+        </div>
+        <p className="text-xs text-body">{clinical ? "Oldest open flags first · detection order does not indicate urgency" : "Open tasks ordered by due date"}</p>
+        {clinical && flags.length ? <ul className="mt-2 divide-y divide-border">
+          {flags.slice(0, 4).map((flag) => <li key={flag.id}>
+            <Link href={`/app/review?flag=${flag.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-md py-3 text-sm hover:bg-surface">
+              <span className="min-w-0"><span className="font-semibold text-navy">{flag.patientName}</span><span className="block text-body">{flag.title}</span></span>
+              <span className="text-xs text-body">Detected {formatTimelineDate(flag.firstDetectedAt)}</span>
+            </Link>
+          </li>)}
+        </ul> : !clinical && dueTasks.length ? <ul className="mt-2 divide-y divide-border">
+          {dueTasks.slice(0, 4).map((task) => <li key={task.id} className="py-3 text-sm">
+            <Link href={`/app/queue?task=${task.id}`} className="block min-h-11 rounded-md hover:bg-surface">
+              <span className="font-semibold text-navy">{task.title}</span>
+              <span className="block text-body">{task.patientName ?? "No specific patient"} · {task.assigneeName ?? "Unassigned"} · due {formatTimelineDate(task.dueDate)}</span>
+            </Link>
+          </li>)}
+        </ul> : <EmptyState icon={clinical ? ClipboardCheck : Inbox} className="mt-3 border-0 py-5"
+          title={!summary.totalPatients ? "No patient records yet" : clinical && !lastRun ? "Detection has not run yet" : !clinical && !summary.totalTasks ? "No tasks yet" : "All caught up"}
+          description={!summary.totalPatients ? "Import fictional records to start tracking follow-ups." : clinical ? "Run detection after records change to check for new gaps." : "There are no open follow-up tasks. Create a task from the queue when more work needs tracking."}
+          action={clinical ? !summary.totalPatients ? <Link href="/app/import" className="inline-flex min-h-11 items-center text-brand underline">Import records</Link> : <RunDetectionButton /> : <Link href="/app/queue" className="inline-flex min-h-11 items-center text-brand underline">Open queue to create a task</Link>} />}
+      </section>
+
+      <div className="metric-strip">
+        <StatCard
+          label="Overdue administrative tasks"
+          value={summary.overdueAdminTasks}
+          tone="attention"
+          href="/app/queue?view=admin&due=overdue"
+          hint="Past due date, not completed"
+        />
         <StatCard
           label="Patients needing review"
           value={summary.patientsNeedingReview ?? 0}
-          icon={ClipboardCheck}
           tone="blue"
-          href="/app/review"
+          href="/app/patients?status=awaiting_review"
           hint="With a possible gap awaiting a physician"
           locked={summary.patientsNeedingReview === null ? locked : undefined}
         />
         <StatCard
-          label="Overdue administrative tasks"
-          value={summary.overdueAdminTasks}
-          icon={CalendarClock}
-          tone="attention"
-          href="/app/queue?due=overdue"
-          hint="Past due date, not completed"
-        />
-        <StatCard
-          label="Pending lab follow-ups"
-          value={summary.pendingLabs ?? 0}
-          icon={FlaskConical}
+          label="Lab gaps awaiting review"
+          value={summary.pendingLabFlags ?? 0}
           tone="attention"
           href="/app/review?rule=lab-result-missing"
-          hint="Ordered or collected, no result yet"
-          locked={summary.pendingLabs === null ? locked : undefined}
+          hint="Open lab flags, excluding snoozed"
+          locked={summary.pendingLabFlags === null ? locked : undefined}
         />
-        <StatCard label="Pending specialist records" value={summary.pendingRecords} icon={Send} tone="blue" href="/app/queue?view=records" hint="Referrals without records received" />
-        <StatCard label="Tasks completed this week" value={summary.completedThisWeek} icon={CheckCheck} tone="teal" href="/app/queue?status=completed" hint="Since Monday" />
+        <StatCard label="Open records requests" value={summary.openRecordTasks} tone="blue" href="/app/queue?view=records" hint="Records-request tasks, not completed" />
       </div>
+      {/* Context, not calls to action: kept quiet and out of the headline metrics. */}
+      <p className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-body">
+        <Link href="/app/queue" className="hover:text-navy"><span className="font-medium tabular-nums text-navy">{summary.openTasks}</span> open follow-ups</Link>
+        <span><span className="font-medium tabular-nums text-navy">{summary.completedThisWeek}</span> tasks completed this week</span>
+        <Link href="/app/patients" className="hover:text-navy"><span className="font-medium tabular-nums text-navy">{summary.totalPatients}</span> demo patients</Link>
+      </p>
+
+      <details className="border-y border-border py-3" open={Boolean(params.q || params.status || params.physician || params.page)}>
+        <summary className="min-h-11 cursor-pointer py-3 font-semibold text-navy">Patients ({summary.totalPatients})</summary>
+        <PatientsPanel ctx={ctx} params={params} basePath="/app" />
+      </details>
 
       <div className="grid gap-4 xl:grid-cols-3 [&>*]:min-w-0">
         <div className="xl:col-span-2">
@@ -93,21 +140,19 @@ async function Dashboard({ searchParams }: { searchParams: Promise<Params> }) {
       </div>
 
       {summary.openFlagsByRule ? (
-        <Panel title="Possible documentation gaps awaiting review" description="Open rule-based flags by type. Counts, not urgency — every flag needs physician review.">
+        <Panel title="Possible documentation gaps awaiting review" description="Open rule-based flags by type. Counts do not indicate urgency. Every flag needs physician review.">
           {summary.openFlagsByRule.length ? (
             <HorizontalBarChart
               label="Open flags by rule"
               valueLabel="Open flags"
-              color="#0e9f8e"
+              color="#2b59c3"
               data={summary.openFlagsByRule.map((row) => ({ name: ruleLabel[row.ruleId], value: row.count })).sort((a, b) => b.value - a.value)}
             />
           ) : (
-            <p className="text-sm text-slate-500">No open flags. Run detection from the Review page to check for gaps.</p>
+            <p className="text-sm text-body">No open flags. Run detection from the Review page to check for gaps.</p>
           )}
         </Panel>
       ) : null}
-
-      <PatientsPanel ctx={ctx} params={params} basePath="/app" />
     </div>
   );
 }
@@ -116,10 +161,10 @@ function DashboardFallback() {
   return (
     <div className="space-y-6">
       <div className="h-9 w-48 animate-pulse rounded-lg bg-surface" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 7 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-xl bg-surface" />)}
+      <div className="metric-strip">
+        {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-36 animate-pulse bg-surface" />)}
       </div>
-      <div className="h-80 animate-pulse rounded-xl bg-surface" />
+      <div className="h-80 animate-pulse rounded-lg bg-surface" />
     </div>
   );
 }

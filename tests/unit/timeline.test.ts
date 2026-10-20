@@ -38,7 +38,7 @@ describe("patient timeline", () => {
   it("keeps a visit before its same-day lab order in chronological order", () => {
     const events = buildTimeline(record({
       encounters: [encounter("e1", "2026-01-10", null)],
-      labs: [{ id: "l1", clinicId: "c", patientId: "p1", encounterId: "e1", testName: "TSH", orderedAt: iso("2026-01-10"), expectedWithinDays: 7, status: "ordered", collectedAt: null, resultedAt: null, resultSummary: null, statusReason: null, symptomCode: null, seedKey: null }],
+      labs: [{ id: "l1", clinicId: "c", patientId: "p1", encounterId: "e1", testName: "TSH", orderedAt: iso("2026-01-10"), expectedWithinDays: 7, status: "ordered", collectedAt: null, resultedAt: null, resultSummary: null, statusReason: null, symptomCode: null, seedKey: null, externalRef: null, importBatchId: null }],
     }));
     expect(sortTimeline(events, "asc").map((event) => event.kind)).toEqual(["visit", "lab"]);
   });
@@ -50,8 +50,13 @@ describe("patient timeline", () => {
         { id: "a2", clinicId: "c", patientId: "p1", scheduledFor: iso("2026-07-01"), purpose: "follow_up", status: "confirmed", statusReason: null, originEncounterId: null, completedEncounterId: null, seedKey: null },
       ],
     }), new Date("2026-06-01"));
-    expect(events.find((event) => event.anchor === "ev-appointment-a1")).toMatchObject({ kind: "missed_appointment", upcoming: false });
+    expect(events.find((event) => event.anchor === "ev-appointment-a1")).toMatchObject({ kind: "missed_appointment", upcoming: false, provenance: "documented", outcome: { label: "Cancelled by clinic", tone: "attention" } });
     expect(events.find((event) => event.anchor === "ev-appointment-a2")).toMatchObject({ kind: "appointment", upcoming: true });
+  });
+
+  it("does not present a cancelled future booking as upcoming", () => {
+    const events = buildTimeline(record({ appointments: [{ id: "a1", clinicId: "c", patientId: "p1", scheduledFor: iso("2026-07-01"), purpose: "follow_up", status: "cancelled_by_patient", statusReason: null, originEncounterId: null, completedEncounterId: null, seedKey: null }] }), new Date("2026-06-01"));
+    expect(events[0]).toMatchObject({ upcoming: false, outcome: { label: "Cancelled by patient", tone: "attention" } });
   });
 
   it("distinguishes documented events, missing records, and rule inferences", () => {
@@ -61,7 +66,7 @@ describe("patient timeline", () => {
         id: "f1", clinicId: "c", patientId: "p1", ruleId: "overdue-follow-up", ruleVersion: "1.0.0", fingerprint: "x", subjectType: "encounter", subjectId: "e1",
         title: "Follow-up visit appears overdue", rationale: "…", evidence: [{ kind: "encounter", id: "e1", date: iso("2026-01-10"), label: "Visit", role: "basis" }],
         missingInfo: [{ code: "no_completed_visit_after", description: "No completed visit after Jan 10", certainty: "not_documented" }],
-        evidenceHash: "h", status: "open", firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null,
+        evidenceHash: "h", status: "open", firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null, reviewReason: null, snoozedUntil: null, snoozedBy: null, snoozeNote: null, isSnoozed: false,
       }],
     }));
     expect(events.find((event) => event.kind === "visit")?.provenance).toBe("documented");
@@ -75,7 +80,7 @@ describe("patient timeline", () => {
     const base = buildTimeline(record({ flags: [{
       id: "f1", clinicId: "c", patientId: "p1", ruleId: "lab-result-missing", ruleVersion: "1.0.0", fingerprint: "x", subjectType: "lab_order", subjectId: "l1",
       title: "t", rationale: "r", evidence: [], missingInfo: [], evidenceHash: "h", status: "dismissed",
-      firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null,
+      firstDetectedAt: iso("2026-06-01"), lastDetectedAt: iso("2026-06-01"), reviewedBy: null, reviewedAt: null, reviewNote: null, reviewReason: null, snoozedUntil: null, snoozedBy: null, snoozeNote: null, isSnoozed: false,
     }] }));
     expect(base).toEqual([]);
   });

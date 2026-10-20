@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { startTransition, useActionState, useEffect, useOptimistic } from "react";
 import { KeyRound, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -8,6 +8,7 @@ import {
   inviteStaffAction,
   issueResetLinkAction,
   revokeInvitationAction,
+  setMemberCanManageAction,
   setMemberStatusAction,
   type ActionResult,
 } from "@/app/app/actions";
@@ -42,7 +43,7 @@ export function InviteDialog() {
           <SelectField label="Role" name="role" defaultValue="staff" error={errors.role}>
             <option value="staff">Front desk — administrative tasks only</option>
             <option value="physician">Physician — clinical review</option>
-            <option value="clinic_admin">Clinic admin — staff & audit</option>
+            <option value="clinic_admin">Practice admin — office and reporting (grant manager access after they join)</option>
           </SelectField>
         </>
       )}
@@ -67,6 +68,29 @@ export function RoleSelect({ userId, role, disabled }: { userId: string; role: M
       >
         {(Object.keys(roleLabel) as MemberRole[]).map((value) => <option key={value} value={value}>{roleLabel[value]}</option>)}
       </select>
+    </form>
+  );
+}
+
+/** "Manages the clinic": invite and approve people, change access, read the audit log. Never one's own. */
+export function ManageToggle({ userId, name, canManage, disabled }: { userId: string; name: string; canManage: boolean; disabled?: boolean }) {
+  const [state, action] = useActionState(setMemberCanManageAction, null);
+  // Shows the click at once; reverts on its own if the server refuses the change.
+  const [checked, setChecked] = useOptimistic(canManage);
+  useToastResult(state);
+  return (
+    <form action={action}>
+      <input type="hidden" name="userId" value={userId} />
+      <label className={cn("inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-sm text-body", disabled ? "opacity-70" : "cursor-pointer hover:bg-surface")}
+        title={disabled ? "Ask another manager to change your access." : undefined}>
+        <input type="checkbox" name="canManage" value="true" checked={checked} disabled={disabled} aria-label={`${name} manages the clinic`}
+          onChange={(event) => {
+            const next = event.currentTarget.checked;
+            const data = new FormData(event.currentTarget.form!);
+            startTransition(() => { setChecked(next); action(data); });
+          }} className="size-4 accent-brand" />
+        Manages the clinic
+      </label>
     </form>
   );
 }

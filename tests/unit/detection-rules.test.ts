@@ -191,3 +191,49 @@ describe("engine-wide behavior", () => {
     expect(getDetectionProvider("rules", false).sendsDataExternally).toBe(false);
   });
 });
+
+describe("per-clinic rule configuration", () => {
+  const overdue = patient({ encounters: [visit("e1", -120, interval(30))] });
+  const lateLab = patient({ labOrders: [lab("l1", -20, "ordered")] });
+
+  it("skips rules the clinic has turned off", () => {
+    expect(runRules([overdue, lateLab], ctx)).toHaveLength(2);
+    const findings = runRules([overdue, lateLab], { ...ctx, disabledRules: ["overdue-follow-up"] });
+    expect(findings.map((finding) => finding.ruleId)).toEqual(["lab-result-missing"]);
+  });
+
+  it("applies a clinic's grace periods instead of the defaults", () => {
+    // Ordered 20 days ago, 7-day turnaround: past the default 7-day grace, inside a 14-day grace.
+    const config = { ...DEFAULT_RULE_CONFIG, labResultMissing: { graceDays: 14 } };
+    expect(runRules([lateLab], { ...ctx, config })).toEqual([]);
+  });
+});
+
+describe("fixes from the independent review (2026-10-17)", () => {
+  it("R3: documented receipt of records suppresses the flag regardless of status", () => {
+    const seen = patient({ referrals: [referral("r1", -90, "seen", { specialistAppointmentAt: day(-60), recordsReceivedAt: day(-40) })] });
+    const scheduled = patient({ referrals: [referral("r2", -90, "scheduled", { specialistAppointmentAt: day(-60), recordsReceivedAt: day(-40) })] });
+    expect(rules(seen)).toEqual([]);
+    expect(rules(scheduled)).toEqual([]);
+    // Records dated after the snapshot don't count yet.
+    const later = patient({ referrals: [referral("r3", -90, "seen", { specialistAppointmentAt: day(-60), recordsReceivedAt: day(5) })] });
+    expect(rules(later)).toEqual(["referral-outcome-missing:r3"]);
+  });
+
+  it("R2/R3: never cite an encounter dated after the snapshot as evidence", () => {
+    const snapshot = patient({
+      encounters: [visit("future", 10)],
+      labOrders: [lab("l1", -30, "ordered", { encounterId: "future" })],
+      referrals: [referral("r1", -90, "sent", { encounterId: "future" })],
+    });
+    const findings = runRules([snapshot], ctx);
+    expect(findings).toHaveLength(2);
+    for (const finding of findings) expect(finding.evidence.map((item) => item.id)).not.toContain("future");
+  });
+
+  it("R2: a 'collected' status counts as documented collection even without a date", () => {
+    const [finding] = runRules([patient({ labOrders: [lab("l1", -30, "collected")] })], ctx);
+    expect(finding.missingInfo.map((item) => item.code)).toEqual(["no_result_after_collection"]);
+    expect(finding.title).toMatch(/no documented result$/);
+  });
+});
