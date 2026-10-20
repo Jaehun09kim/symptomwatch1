@@ -4,7 +4,7 @@
 
 **Goal:** A clinic manager generates a 90-second role code (with a live countdown) choosing "I approve each person" or "Let them in right away"; a colleague enters it on a "Join with a code" page reached from sign-in, confirms their email, and either lands in the clinic or waits for one-click approval.
 
-**Architecture:** New tables in migration `0010_join_codes.sql`. Managers create codes and decide requests on the tenant path (RLS via `app.current_can_manage()`). Applicants have no membership yet, so code lookup, join transactions, email verification and pending-identity sessions live in the existing auth module (already on the `withSystem` allowlist). Codes and tokens are stored only as keyed hashes. Clinical-access grants are written to a member-readable table so physicians see who was let in.
+**Architecture:** New tables in migration `0011_join_codes.sql`. Managers create codes and decide requests on the tenant path (RLS via `app.current_can_manage()`). Applicants have no membership yet, so code lookup, join transactions, email verification and pending-identity sessions live in the existing auth module (already on the `withSystem` allowlist). Codes and tokens are stored only as keyed hashes. Clinical-access grants are written to a member-readable table so physicians see who was let in.
 
 **Tech Stack:** Next.js 16 (App Router, Server Actions), TypeScript, Drizzle, Postgres RLS / PGlite, Vitest, Playwright.
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- New migration file `db/migrations/0010_join_codes.sql`; never edit 0001–0009; `npm run db:bundle`.
+- New migration file `db/migrations/0011_join_codes.sql`; never edit 0001–0010; `npm run db:bundle`.
 - Code format: 8 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, displayed `XXXX-XXXX`; generated with `crypto.randomInt`; input normalized by uppercasing and removing spaces and dashes; stored as `hashToken(normalized, "join_code")`; unique index on the hash with collision retry (max 5).
 - Code lifetime **90 seconds** (`expires_at = now() + interval '90 seconds'`), server-enforced. Join transaction lifetime **15 minutes**, single-use, HttpOnly cookie `sw_join`. Email verification link lifetime **30 minutes**, single-use.
 - Approval modes exactly `approve` (default) and `instant`. Instant joins never set `can_manage`. Every join creates a `join_requests` row (instant: `status = 'approved'`, `decided_by` NULL).
@@ -35,7 +35,7 @@
 ### Task 1: Migration 0010 and code primitives
 
 **Files:**
-- Create: `db/migrations/0010_join_codes.sql`, `src/lib/onboarding/codes.ts`
+- Create: `db/migrations/0011_join_codes.sql`, `src/lib/onboarding/codes.ts`
 - Modify: `src/lib/db/schema.ts` (tables `joinCodes`, `joinRequests`, `joinTransactions`, `emailVerifications`, `clinicalAccessGrants`; `users.emailVerifiedAt`; outbox `kind` adds `email_verification`), `src/lib/auth/tokens.ts` (`hashToken` purpose union adds `"join_code" | "join" | "verify"`)
 - Test: `tests/unit/join-codes.test.ts`, `tests/integration/join-codes-rls.test.ts`
 
@@ -51,7 +51,7 @@
 - [ ] **Step 2: Run** `npx vitest run tests/unit/join-codes.test.ts tests/integration/join-codes-rls.test.ts` — Expected: FAIL.
 - [ ] **Step 3: Implement** the migration, schema, `codes.ts`, token purposes; `npm run db:bundle`.
 - [ ] **Step 4: Run** the two files, then `npm run check` — Expected: PASS / green.
-- [ ] **Step 5: Commit** `feat(db): join codes, join requests, verifications, clinical access grants (0010)`.
+- [ ] **Step 5: Commit** `feat(db): join codes, join requests, verifications, clinical access grants (0011)`.
 
 ### Task 2: Manager services — create codes, decide requests, record grants
 
