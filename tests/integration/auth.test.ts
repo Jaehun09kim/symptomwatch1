@@ -114,11 +114,12 @@ describe("authentication and sessions", () => {
     expect(await resetPassword({ token: first, password: "attacker-strong-pass" }, {}, db)).toMatchObject({ ok: false });
   });
 
-  it("lets an admin issue a reset link only for real members of their clinic", async () => {
+  it("refuses manager-issued reset links outside demo workspaces and for non-managers", async () => {
     const admin = await contextFor(db, "hv-admin-shah");
     const physician = await contextFor(db, "hv-dr-rivera");
-    const ok = await issueResetLinkForMember({ adminUserId: admin.userId, clinicId: admin.clinicId, memberUserId: physician.userId }, db);
-    expect(ok).toMatchObject({ ok: true });
+    // Shared demo clinics stand in for real clinics: only self-service recovery there.
+    const shared = await issueResetLinkForMember({ adminUserId: admin.userId, clinicId: admin.clinicId, memberUserId: physician.userId }, db);
+    expect(shared).toMatchObject({ ok: false, error: expect.stringMatching(/only available in demo workspaces/) });
     const notAdmin = await issueResetLinkForMember({ adminUserId: physician.userId, clinicId: admin.clinicId, memberUserId: admin.userId }, db);
     expect(notAdmin.ok).toBe(false);
     const otherClinic = await contextFor(db, "og-dr-brooks");
@@ -161,11 +162,16 @@ describe("invitations", () => {
     expect(accepted).toMatchObject({ ok: true, clinicId: ogAdmin.clinicId });
   });
 
-  it("refuses admin-issued reset links for people who belong to another clinic", async () => {
-    // Dr. Rivera now belongs to both clinics; a reset link would let one clinic's admin into the other.
-    const admin = await contextFor(db, "hv-admin-shah");
+  it("refuses manager-issued reset links for people who belong to another clinic", async () => {
+    // Dr. Rivera joins a demo workspace too; a reset link from its manager would open her Harbor View access.
+    const owner = await registerAccount({ displayName: "Workspace Owner", email: "workspace-owner@example.test", password: "a-valid-long-pass-7" }, {}, db);
+    if (!owner.ok) throw new Error(owner.error);
+    const ownerCtx = { userId: owner.userId, actorUserId: owner.userId, clinicId: owner.clinicId, role: "clinic_admin" as const, canManage: true };
+    const { link } = await inviteStaff(ownerCtx, { email: "physician@harborview.demo.test", role: "physician" }, db);
     const rivera = (await userIdByEmail(db, "physician@harborview.demo.test"))!;
-    const result = await issueResetLinkForMember({ adminUserId: admin.userId, clinicId: admin.clinicId, memberUserId: rivera }, db);
+    const accepted = await acceptInvitationAsUser(link.split("/invite/")[1], { id: rivera, email: "physician@harborview.demo.test" }, {}, db);
+    if (!accepted.ok) throw new Error(accepted.error);
+    const result = await issueResetLinkForMember({ adminUserId: owner.userId, clinicId: owner.clinicId, memberUserId: rivera }, db);
     expect(result).toMatchObject({ ok: false, error: expect.stringMatching(/another clinic/i) });
   });
 

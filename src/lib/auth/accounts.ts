@@ -108,7 +108,7 @@ export async function registerAccount(
     if (invitation) {
       // Throwing (not returning) rolls back the user row inserted above.
       if (!(await consumeInvitation(tx, invitation.id))) throw new AbortTransaction({ ok: false, error: "This invitation was just used or revoked." });
-      await tx.insert(memberships).values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role });
+      await tx.insert(memberships).values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role, canManage: false });
       clinicId = invitation.clinicId;
       await recordAuthEvent(tx, { action: "invite.accepted", clinicId, actorUserId: user.id, entityType: "invitation", entityId: invitation.id, metadata: { role: invitation.role } });
     } else {
@@ -191,7 +191,7 @@ export async function acceptInvitationAsUser(
     if (!(await consumeInvitation(tx, invitation.id))) return { ok: false, error: "This invitation was just used or revoked." };
     // Never change an existing membership's role or status through an invitation.
     const [joined] = await tx.insert(memberships)
-      .values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role })
+      .values({ clinicId: invitation.clinicId, userId: user.id, role: invitation.role, canManage: false })
       .onConflictDoNothing({ target: [memberships.clinicId, memberships.userId] })
       .returning({ id: memberships.id });
     if (!joined) throw new AbortTransaction({ ok: false, error: "You already belong to this clinic. Ask its administrator to change your access instead." });
@@ -251,9 +251,13 @@ export async function issueResetLinkForMember(
   database?: DatabaseHandle,
 ): Promise<{ ok: true; link: string } | AuthFailure> {
   return withSystem(async (tx) => {
-    const [admin] = await tx.select({ role: memberships.role, status: memberships.status }).from(memberships)
+    const [admin] = await tx.select({ canManage: memberships.canManage, status: memberships.status, isSandbox: clinics.isSandbox }).from(memberships)
+      .innerJoin(clinics, eq(clinics.id, memberships.clinicId))
       .where(and(eq(memberships.clinicId, input.clinicId), eq(memberships.userId, input.adminUserId)));
-    if (admin?.role !== "clinic_admin" || admin.status !== "active") return { ok: false, error: "Only clinic administrators can issue reset links." };
+    if (!admin?.canManage || admin.status !== "active") return { ok: false, error: "Only clinic managers can issue reset links." };
+    // A manager who can mint someone's password can become them. Real clinics use
+    // self-service recovery only; manager-issued links exist for demo workspaces.
+    if (!admin.isSandbox) return { ok: false, error: "Reset links are only available in demo workspaces. Ask the person to use Forgot password." };
     const [member] = await tx.select({ isPlaceholder: users.isPlaceholder, status: memberships.status }).from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
       .where(and(eq(memberships.clinicId, input.clinicId), eq(memberships.userId, input.memberUserId)));

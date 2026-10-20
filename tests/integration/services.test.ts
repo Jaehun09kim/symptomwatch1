@@ -146,14 +146,14 @@ describe("tenant services", () => {
   });
 
   describe("staff administration", () => {
-    it("protects the last clinic administrator", async () => {
-      await expect(changeMemberRole(admin, { userId: admin.userId, role: "physician" }, db)).rejects.toThrow(/at least one active administrator/);
+    it("refuses self role changes and self-disable", async () => {
+      await expect(changeMemberRole(admin, { userId: admin.userId, role: "physician" }, db)).rejects.toThrow(/change your own access/);
       await expect(setMemberStatus(admin, { userId: admin.userId, status: "disabled" }, db)).rejects.toThrow(/own access/);
     });
 
-    it("restricts staff administration and audit reading to admins", async () => {
-      await expect(changeMemberRole(physician, { userId: staff.userId, role: "physician" }, db)).rejects.toThrow(/Only clinic administrators/);
-      await expect(listAuditLog(physician, {}, db)).rejects.toThrow(/Only clinic administrators/);
+    it("restricts staff administration and audit reading to managers", async () => {
+      await expect(changeMemberRole(physician, { userId: staff.userId, role: "physician" }, db)).rejects.toThrow(/Only clinic managers/);
+      await expect(listAuditLog(physician, {}, db)).rejects.toThrow(/Only clinic managers/);
       const log = await listAuditLog(admin, {}, db);
       expect(log.total).toBeGreaterThan(0);
       expect(log.entries[0].actorName).toBeTruthy();
