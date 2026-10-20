@@ -37,9 +37,6 @@ const matrix: Record<MemberRole, ReadonlySet<Permission>> = {
     "task.manage",
     "flag.read",
     "detection.run",
-    "staff.manage",
-    "audit.read",
-    "demo.reset",
   ]),
   physician: new Set<Permission>([
     "patient.read_demographics",
@@ -65,10 +62,23 @@ const matrix: Record<MemberRole, ReadonlySet<Permission>> = {
   ]),
 };
 
-export function can(role: MemberRole, permission: Permission): boolean {
-  return matrix[role].has(permission);
+/** Granted only by "manages the clinic", never by a job role (onboarding M1). */
+export const MANAGE_PERMISSIONS = ["staff.manage", "audit.read", "demo.reset"] as const satisfies readonly Permission[];
+
+/** A member's access: job role plus the server-side manager flag. */
+export interface Access {
+  role: MemberRole;
+  canManage: boolean;
 }
 
-export function permissionsFor(role: MemberRole): Permission[] {
-  return PERMISSIONS.filter((permission) => matrix[role].has(permission));
+const isManagePermission = (permission: Permission): boolean => (MANAGE_PERMISSIONS as readonly Permission[]).includes(permission);
+
+/** A bare role answers role permissions only; management needs `{ role, canManage }`. */
+export function can(subject: MemberRole | Access, permission: Permission): boolean {
+  if (isManagePermission(permission)) return typeof subject !== "string" && subject.canManage;
+  return matrix[typeof subject === "string" ? subject : subject.role].has(permission);
+}
+
+export function permissionsFor(subject: MemberRole | Access): Permission[] {
+  return PERMISSIONS.filter((permission) => can(subject, permission));
 }

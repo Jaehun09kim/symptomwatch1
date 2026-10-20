@@ -216,10 +216,10 @@ describe("demo sandboxes and view-as", () => {
     if (!viewing.ok) throw new Error(viewing.error);
     const viewingSession = (await resolveSession(viewing.token, db))!;
     expect(viewingSession).toMatchObject({ role: "physician", originalUserId: owner.userId });
-    // A view-as session lives only as long as the human behind it keeps admin access.
-    await withSystem((tx) => tx.update(memberships).set({ role: "staff" }).where(and(eq(memberships.userId, owner.userId), eq(memberships.clinicId, owner.clinicId))), db);
+    // A view-as session lives only as long as the human behind it still manages the clinic.
+    await withSystem((tx) => tx.update(memberships).set({ canManage: false }).where(and(eq(memberships.userId, owner.userId), eq(memberships.clinicId, owner.clinicId))), db);
     expect(await resolveSession(viewing.token, db)).toBeNull();
-    await withSystem((tx) => tx.update(memberships).set({ role: "clinic_admin" }).where(and(eq(memberships.userId, owner.userId), eq(memberships.clinicId, owner.clinicId))), db);
+    await withSystem((tx) => tx.update(memberships).set({ canManage: true }).where(and(eq(memberships.userId, owner.userId), eq(memberships.clinicId, owner.clinicId))), db);
     const again = await startViewAs(session, physician.userId, {}, db);
     if (!again.ok) throw new Error(again.error);
     const back = await returnToOwnAccount((await resolveSession(again.token, db))!, {}, db);

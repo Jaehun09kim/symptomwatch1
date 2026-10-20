@@ -39,7 +39,7 @@ async function Settings() {
           <p>Every patient and record here is fictional. Free-text fields block likely identifiers. Don&rsquo;t enter real patient information.</p>
           <p>Database: {env.DATABASE_DRIVER === "pglite" ? "embedded local Postgres (PGlite)" : "hosted Postgres"} · Auth: {env.AUTH_PROVIDER === "local" ? "built-in" : "Supabase"}.</p>
         </Card>
-        {can(session.role, "demo.reset") ? (
+        {can(session, "demo.reset") ? (
           <Card icon={RotateCcw} title="Reset demo data">
             <p>Restore this clinic&rsquo;s fictional patients, tasks, and flags to their original state, with dates shifted to today. Staff accounts and the audit log are kept.</p>
             <form action={resetDemoAction}>

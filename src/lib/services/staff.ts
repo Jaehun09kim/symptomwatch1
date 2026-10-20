@@ -13,7 +13,7 @@ import { ServiceError } from "./errors";
 const INVITE_DAYS = 7;
 
 function requireAdmin(ctx: AppContext): void {
-  if (!can(ctx.role, "staff.manage")) throw new ServiceError("Only clinic administrators can manage staff.");
+  if (!can(ctx, "staff.manage")) throw new ServiceError("Only clinic administrators can manage staff.");
 }
 
 export interface InvitationRow {
