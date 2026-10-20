@@ -100,3 +100,9 @@ Exact layouts and copy, code-list presentation, toast wording, where the pending
 3. **Revoking a code declines its pending requests;** expiry does not.
 4. **Practice admin keeps clinical reads for now** (unchanged); revisit with clinics.
 5. **`oauth4webapi` approved.** Google sign-in is built against a mocked provider until the owner creates the Google OAuth client.
+
+## Owner refinement (2026-10-19, after M1)
+
+- **"Join with a code" starts from the sign-in page.** Sign-in shows "Have a code from your clinic? Join with a code" → `/join`: (1) enter the code; a valid code shows the clinic name and role being joined (invalid/expired/revoked codes get one generic message, rate-limited); (2) confirm identity — **Continue with Google** (Google's verified email counts as confirmed; no email sent) or email + password confirmed by a one-time link (dev outbox until a provider is approved); (3) access.
+- **Per-code approval mode, chosen by the manager when creating the code:** "I approve each person" (**default**) → pending request and waiting screen; or "Let them in right away" → membership created as soon as the identity is confirmed. Both paths are audited; a join that grants clinical access (physician / practice admin) appears in the physicians' clinical-grant notice either way. Instant-mode codes never grant the manager flag.
+- Schema: `join_codes.approval_mode text NOT NULL CHECK (approval_mode IN ('approve', 'instant')) DEFAULT 'approve'`. An instant join still records a `join_requests` row (status `approved`, `decided_by` NULL, `decided_role` = code role) so every join has one history.
