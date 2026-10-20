@@ -2,7 +2,7 @@
  * Database side of sessions. Uses the system path because a session must be
  * resolved before any tenant context exists.
  */
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { clinics, memberships, sessions, users } from "@/lib/db/schema";
 import { withSystem } from "@/lib/db/system";
 import type { DatabaseHandle, DbTransaction } from "@/lib/db/types";
@@ -32,7 +32,8 @@ export interface SessionContext {
 
 export async function createSessionRecord(
   tx: DbTransaction,
-  input: { userId: string; clinicId: string; originalUserId?: string | null; userAgent?: string | null },
+  /** `clinicId: null` creates an identity-only session (applicant awaiting approval): no clinic data. */
+  input: { userId: string; clinicId: string | null; originalUserId?: string | null; userAgent?: string | null },
 ): Promise<{ token: string; expiresAt: Date }> {
   const token = generateToken();
   const expiresAt = new Date(Date.now() + SESSION_ABSOLUTE_MS);
@@ -109,6 +110,41 @@ export async function resolveSession(token: string, database?: DatabaseHandle): 
       role: row.role!,
       canManage: row.canManage ?? false,
     };
+  }, database);
+}
+
+export interface IdentitySession {
+  sessionId: string;
+  userId: string;
+  email: string;
+  displayName: string;
+}
+
+/**
+ * Resolves an identity-only session (no active clinic) — used only by the join
+ * waiting screen. Clinic sessions are never returned here, and identity sessions
+ * are never returned by `resolveSession`, so they can't reach tenant data.
+ */
+export async function resolveIdentitySession(token: string, database?: DatabaseHandle): Promise<IdentitySession | null> {
+  return withSystem(async (tx) => {
+    const [row] = await tx.select({
+      sessionId: sessions.id,
+      userId: sessions.userId,
+      lastSeenAt: sessions.lastSeenAt,
+      expiresAt: sessions.expiresAt,
+      email: users.email,
+      displayName: users.displayName,
+    }).from(sessions)
+      .innerJoin(users, eq(users.id, sessions.userId))
+      .where(and(eq(sessions.tokenHash, hashToken(token, "session")), isNull(sessions.activeClinicId)))
+      .limit(1);
+    if (!row) return null;
+    const now = Date.now();
+    if (new Date(row.expiresAt).getTime() <= now || new Date(row.lastSeenAt).getTime() + SESSION_IDLE_MS <= now) {
+      await tx.delete(sessions).where(eq(sessions.id, row.sessionId));
+      return null;
+    }
+    return { sessionId: row.sessionId, userId: row.userId, email: row.email, displayName: row.displayName };
   }, database);
 }
 

@@ -83,3 +83,8 @@ Entries are appended as work proceeds.
 
 - Implemented the approved plan in four tasks on `onboarding-m1`: migration 0009 (flag, RLS replacement, self-change trigger), permission model and sessions, staff rules (lock + re-check, no self-changes, human-manager guard, sandbox-only reset links), Staff page toggle and docs. Every task test-first; rulings recorded in the plan ledger (seed change pulled forward; four pre-existing tests updated where the spec changed behavior).
 - Codex unavailable (usage limit); whole-branch review queued for when it returns.
+
+### 2026-10-19 — Onboarding M2: join codes (Claude, inline TDD)
+
+- Built the approved plan in five tasks on `onboarding-m2`: migration 0011, manager services (codes, atomic approvals, clinical-access grants), applicant flow (join transactions, email confirmation, identity-only sessions), Staff page code panel with a 90-second countdown, and the join pages from sign-in. Owner refinements implemented: per-code "I approve each person" / "Let them in right away", 90-second lifetime with a visible timer, and the code box reachable from the sign-in page.
+- Found while testing: a decided request's row unmounted before its success toast could show (toast now fires inside the action); Next.js 16 keeps visited pages mounted but hidden, so e2e locators are scoped to the visible form.

@@ -12,6 +12,8 @@ import {
 } from "@/lib/auth/accounts";
 import { clearSessionCookie, getCurrentSession, SESSION_COOKIE, setSessionCookie } from "@/lib/auth/current";
 import { deleteSessionByToken, resolveSession } from "@/lib/auth/session-store";
+import { attachJoinAccount, continueJoin, enterApprovedClinic, startJoin, verifyEmailAndJoin, withdrawJoin, type JoinStep } from "@/lib/auth/joining";
+import { getEnv } from "@/lib/env";
 import type { MemberRole } from "@/lib/labels";
 import { rateLimiter, RATE_LIMITS } from "@/lib/security/rate-limit";
 import { getClientIp, hashIp } from "@/lib/security/request";
@@ -20,6 +22,7 @@ import {
   fieldErrorsFrom,
   forgotPasswordSchema,
   resetPasswordSchema,
+  joinNewAccountSchema,
   signInSchema,
   signUpSchema,
   type FieldErrors,
@@ -58,6 +61,10 @@ export async function signInAction(_previous: FormState, form: FormData): Promis
 
   const result = await signInWithPassword(parsed.data, meta);
   if (!result.ok) return { status: "error", message: result.error };
+  if ("pending" in result) {
+    await rotateSession(result);
+    redirect("/join/waiting");
+  }
   const session = await rotateSession(result);
   redirect(safeNext(form.get("next")) ?? landingFor(session?.role));
 }
@@ -169,4 +176,91 @@ export async function returnToOwnAccountAction(): Promise<void> {
   if (!result.ok) redirect("/app?error=view-as");
   await rotateSession(result);
   redirect("/app");
+}
+
+// ── Joining a clinic with a code (onboarding M2) ───────────────────────────
+const JOIN_COOKIE = "sw_join";
+const JOIN_COOKIE_MAX_AGE = 15 * 60;
+
+async function setJoinCookie(token: string): Promise<void> {
+  (await cookies()).set(JOIN_COOKIE, token, {
+    httpOnly: true, sameSite: "lax", secure: getEnv().NODE_ENV === "production", path: "/", maxAge: JOIN_COOKIE_MAX_AGE,
+  });
+}
+
+export async function readJoinCookie(): Promise<string | undefined> {
+  return (await cookies()).get(JOIN_COOKIE)?.value;
+}
+
+async function clearJoinCookie(): Promise<void> {
+  (await cookies()).delete(JOIN_COOKIE);
+}
+
+/** Lands a finished join step: a clinic session, an identity-only waiting session, or "check your email". */
+async function landJoinStep(step: JoinStep): Promise<FormState> {
+  if (!step.ok) {
+    return step.field ? { status: "error", fieldErrors: { [step.field]: step.error } } : { status: "error", message: step.error };
+  }
+  if (step.next === "verify_email") redirect(`/join/check-email?email=${encodeURIComponent(step.email)}`);
+  if (step.next === "verified") redirect("/join/check-email?confirmed=1");
+  await clearJoinCookie();
+  if (step.next === "waiting") {
+    await rotateSession(step.session);
+    redirect("/join/waiting");
+  }
+  const session = await rotateSession(step.session);
+  redirect(`${landingFor(session?.role)}?joined=1`);
+}
+
+export async function startJoinAction(_previous: FormState, form: FormData): Promise<FormState> {
+  const meta = await requestMeta();
+  const result = await startJoin(String(form.get("code") ?? ""), meta);
+  if (!result.ok) return { status: "error", message: result.error };
+  await setJoinCookie(result.token);
+  redirect("/join/confirm");
+}
+
+export async function attachJoinAction(_previous: FormState, form: FormData): Promise<FormState> {
+  const token = await readJoinCookie();
+  if (!token) return { status: "error", message: "This join has expired. Ask your clinic for a new code." };
+  const meta = await requestMeta();
+  if (form.get("mode") === "sign_in") {
+    const parsed = signInSchema.safeParse({ email: form.get("email"), password: form.get("password") });
+    if (!parsed.success) return { status: "error", fieldErrors: fieldErrorsFrom(parsed.error) };
+    if (!rateLimiter().check(`sign-in:ip:${meta.ip}`, RATE_LIMITS.signIn).allowed) return tooMany();
+    return landJoinStep(await attachJoinAccount(token, { mode: "sign_in", ...parsed.data }, meta));
+  }
+  const parsed = joinNewAccountSchema.safeParse({
+    displayName: form.get("displayName"), email: form.get("email"), password: form.get("password"), noRealData: form.get("noRealData") === "on",
+  });
+  if (!parsed.success) return { status: "error", fieldErrors: fieldErrorsFrom(parsed.error) };
+  if (!rateLimiter().check(`sign-up:${meta.ip}`, RATE_LIMITS.signUp).allowed) return tooMany();
+  return landJoinStep(await attachJoinAccount(token, { mode: "sign_up", displayName: parsed.data.displayName, email: parsed.data.email, password: parsed.data.password }, meta));
+}
+
+export async function verifyEmailAction(_previous: FormState, form: FormData): Promise<FormState> {
+  return landJoinStep(await verifyEmailAndJoin(String(form.get("token") ?? ""), await readJoinCookie(), await requestMeta()));
+}
+
+/** "I've confirmed my email" on the check-email page, from the browser that entered the code. */
+export async function continueJoinAction(): Promise<FormState> {
+  const token = await readJoinCookie();
+  if (!token) return { status: "error", message: "This join has expired. Ask your clinic for a new code." };
+  return landJoinStep(await continueJoin(token, await requestMeta()));
+}
+
+export async function enterClinicAction(_previous: FormState, form: FormData): Promise<FormState> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) redirect("/sign-in");
+  const grant = await enterApprovedClinic(token, String(form.get("clinicId") ?? ""), await requestMeta());
+  if (!grant.ok) return { status: "error", message: grant.error };
+  const session = await rotateSession(grant);
+  redirect(`${landingFor(session?.role)}?joined=1`);
+}
+
+export async function withdrawJoinAction(_previous: FormState, form: FormData): Promise<FormState> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) redirect("/sign-in");
+  const result = await withdrawJoin(token, String(form.get("requestId") ?? ""));
+  return result.ok ? { status: "success", message: "Request withdrawn." } : { status: "error", message: "That request can't be withdrawn now." };
 }

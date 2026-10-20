@@ -59,4 +59,5 @@ export const RATE_LIMITS = {
   passwordReset: { limit: 5, windowMs: 60 * 60_000 },
   demoProvision: { limit: 6, windowMs: 60 * 60_000 },
   demoRequest: { limit: 5, windowMs: 60 * 60_000 },
+  joinCode: { limit: 10, windowMs: 10 * 60_000 },
 } satisfies Record<string, RateLimitRule>;

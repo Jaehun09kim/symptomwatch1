@@ -16,7 +16,7 @@ const linkify = (text: string) =>
 
 async function Messages() {
   await connection();
-  if (getEnv().NODE_ENV === "production") notFound();
+  if (!getEnv().DEV_OUTBOX_ENABLED) notFound();
   const messages = await listOutbox();
   if (!messages.length) return <EmptyState icon={Inbox} title="No messages yet" description="Invitations and password resets you trigger will appear here." />;
   return (
@@ -40,7 +40,7 @@ export default function OutboxPage() {
     <main id="main" className="mx-auto w-full max-w-3xl px-4 py-12">
       <h1 className="text-2xl font-semibold">Developer outbox</h1>
       <p className="mt-1 text-sm text-slate-600">
-        Simulated emails to <strong>staff</strong> (invitations, password resets). Local development only — nothing is actually sent, and nothing is ever sent to patients.
+        Simulated emails to <strong>staff</strong> (invitations, password resets, email confirmations). Local development only — nothing is actually sent, and nothing is ever sent to patients.
       </p>
       <div className="mt-8">
         <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-surface" />}>

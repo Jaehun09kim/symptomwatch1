@@ -13,6 +13,7 @@ import { addFlagFeedback, confirmFlag, dismissFlag, runDetectionForClinic, snooz
 import { RULE_IDS, updateRuleSettings } from "@/lib/services/rule-settings";
 import { ServiceError } from "@/lib/services/errors";
 import { scheduleAppointment, updateAppointment, updateLab, updateReferral } from "@/lib/services/records";
+import { cancelJoinCode, createJoinCode, decideJoinRequest } from "@/lib/services/join-codes";
 import { changeMemberRole, inviteStaff, revokeInvitation, setMemberCanManage, setMemberStatus } from "@/lib/services/staff";
 import { createTask, updateTask } from "@/lib/services/tasks";
 import { fieldErrorsFrom, inviteSchema, type FieldErrors } from "@/lib/validation/auth";
@@ -23,6 +24,10 @@ export interface ActionResult {
   fieldErrors?: FieldErrors;
   /** Extra payload, e.g. an invitation link to copy. */
   link?: string;
+  /** A freshly generated join code (shown once; only its hash is stored). */
+  joinCode?: { id: string; display: string; expiresAt: string };
+  /** Which code a successful cancellation applied to. */
+  cancelledCodeId?: string;
 }
 
 const str = (form: FormData, key: string) => {
@@ -231,4 +236,34 @@ export async function flagFeedbackAction(_previous: ActionResult | null, form: F
     verdict: str(form, "verdict") as never,
     comment: str(form, "comment") ?? "",
   }), "Feedback recorded — thank you.");
+}
+
+const ROLES: readonly MemberRole[] = ["physician", "staff", "clinic_admin"];
+const asRole = (value: string | undefined): MemberRole | undefined => ROLES.find((role) => role === value);
+
+export async function createJoinCodeAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const role = asRole(str(form, "role"));
+  if (!role) return { ok: false, message: "Choose a role for this code." };
+  const approvalMode = str(form, "approvalMode") === "instant" ? "instant" : "approve";
+  return run("staff.manage", async (ctx) => {
+    const joinCode = await createJoinCode(ctx, { role, approvalMode });
+    return { ok: true, message: "Code ready. It expires in 90 seconds.", joinCode };
+  }, "Code ready.");
+}
+
+export async function cancelJoinCodeAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const codeId = str(form, "codeId") ?? "";
+  return run("staff.manage", async (ctx) => {
+    await cancelJoinCode(ctx, codeId);
+    return { ok: true, message: "Code cancelled.", cancelledCodeId: codeId };
+  }, "Code cancelled.");
+}
+
+export async function decideJoinRequestAction(_previous: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const decision = str(form, "decision") === "approve" ? "approve" : "decline";
+  return run("staff.manage", (ctx) => decideJoinRequest(ctx, {
+    requestId: str(form, "requestId") ?? "",
+    decision,
+    role: asRole(str(form, "role")),
+  }), decision === "approve" ? "Approved — they can enter the clinic now." : "Request declined.");
 }

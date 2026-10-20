@@ -19,6 +19,8 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   authSubject: text("auth_subject").unique(),
   isPlaceholder: boolean("is_placeholder").notNull().default(false),
+  /** Set once the person proves they control the address (email link or Google). */
+  emailVerifiedAt: time("email_verified_at"),
   seedKey: text("seed_key"),
   createdAt: createdAt(),
 });
@@ -59,9 +61,9 @@ export const outboxMessages = pgTable("outbox_messages", {
   toEmail: citext("to_email").notNull(),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
-  kind: text("kind", { enum: ["invitation", "password_reset"] }).notNull(),
+  kind: text("kind", { enum: ["invitation", "password_reset", "email_verification"] }).notNull(),
   createdAt: createdAt(),
-}, (t) => [check("outbox_messages_kind_check", sql`${t.kind} IN ('invitation', 'password_reset')`)]);
+}, (t) => [check("outbox_messages_kind_check", sql`${t.kind} IN ('invitation', 'password_reset', 'email_verification')`)]);
 
 export const demoRequests = pgTable("demo_requests", {
   id: id(),
@@ -418,3 +420,72 @@ export const auditLogs = pgTable("audit_logs", {
   ipHash: text("ip_hash"),
   createdAt: createdAt(),
 }, (t) => [unique().on(t.clinicId, t.id), index("audit_logs_clinic_date_idx").on(t.clinicId, t.createdAt)]).enableRLS();
+
+/** Onboarding M2 (0011): 90-second role codes a manager hands to a colleague. Only hashes are stored. */
+export const joinCodes = pgTable("join_codes", {
+  id: id(),
+  clinicId: clinicId(),
+  role: text("role", { enum: roles }).notNull(),
+  approvalMode: text("approval_mode", { enum: ["approve", "instant"] }).notNull().default("approve"),
+  codeHash: text("code_hash").notNull().unique(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: createdAt(),
+  expiresAt: time("expires_at").notNull().default(sql`now() + interval '90 seconds'`),
+  revokedAt: time("revoked_at"),
+}, (t) => [
+  unique().on(t.clinicId, t.id),
+  foreignKey({ columns: [t.clinicId, t.createdBy], foreignColumns: [memberships.clinicId, memberships.userId] }),
+]).enableRLS();
+
+export const joinRequests = pgTable("join_requests", {
+  id: id(),
+  clinicId: clinicId(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  requestedRole: text("requested_role", { enum: roles }).notNull(),
+  joinCodeId: uuid("join_code_id").notNull(),
+  status: text("status", { enum: ["pending", "approved", "declined", "withdrawn"] }).notNull().default("pending"),
+  decidedBy: uuid("decided_by").references(() => users.id),
+  decidedRole: text("decided_role", { enum: roles }),
+  decidedAt: time("decided_at"),
+  createdAt: createdAt(),
+}, (t) => [
+  unique().on(t.clinicId, t.id),
+  foreignKey({ columns: [t.clinicId, t.joinCodeId], foreignColumns: [joinCodes.clinicId, joinCodes.id] }),
+  uniqueIndex("join_requests_one_pending").on(t.clinicId, t.userId).where(sql`${t.status} = 'pending'`),
+]).enableRLS();
+
+/** System path only: a browser-bound, 15-minute window to finish joining after entering a valid code. */
+export const joinTransactions = pgTable("join_transactions", {
+  id: id(),
+  tokenHash: text("token_hash").notNull().unique(),
+  joinCodeId: uuid("join_code_id").notNull(),
+  clinicId: clinicId(),
+  role: text("role", { enum: roles }).notNull(),
+  approvalMode: text("approval_mode", { enum: ["approve", "instant"] }).notNull(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+  createdAt: createdAt(),
+  expiresAt: time("expires_at").notNull(),
+  consumedAt: time("consumed_at"),
+}).enableRLS();
+
+/** System path only: single-use email confirmation links (delivered via the dev outbox). */
+export const emailVerifications = pgTable("email_verifications", {
+  id: id(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  joinTransactionId: uuid("join_transaction_id").references(() => joinTransactions.id, { onDelete: "cascade" }),
+  createdAt: createdAt(),
+  expiresAt: time("expires_at").notNull(),
+  usedAt: time("used_at"),
+}).enableRLS();
+
+/** Who was given clinical access, readable by every member so physicians see who was let in. */
+export const clinicalAccessGrants = pgTable("clinical_access_grants", {
+  id: id(),
+  clinicId: clinicId(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role", { enum: roles }).notNull(),
+  grantedBy: uuid("granted_by").references(() => users.id),
+  via: text("via", { enum: ["role_change", "join"] }).notNull(),
+  createdAt: createdAt(),
+}).enableRLS();

@@ -68,7 +68,7 @@ describe("authentication and sessions", () => {
 
   it("invalidates sessions for disabled members and expired sandboxes", async () => {
     const grant = await signInWithPassword({ email: "frontdesk@harborview.demo.test", password: PASSWORD }, {}, db);
-    if (!grant.ok) throw new Error("sign-in failed");
+    if (!grant.ok || "pending" in grant) throw new Error("sign-in failed");
     await withSystem((tx) => tx.update(memberships).set({ status: "disabled" }).where(and(eq(memberships.userId, grant.userId), eq(memberships.clinicId, grant.clinicId))), db);
     expect(await resolveSession(grant.token, db)).toBeNull();
     await withSystem((tx) => tx.update(memberships).set({ status: "active" }).where(eq(memberships.userId, grant.userId)), db);
